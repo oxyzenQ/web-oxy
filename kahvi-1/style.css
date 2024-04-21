@@ -1,0 +1,311 @@
+/* holiday-1/stylee.css */
+@import url('https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@200..800&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Manrope', sans-serif;
+}
+
+*:focus{
+    outline: 1px solid brown;
+    color: brown !important;
+}
+
+*::-webkit-scrollbar{
+    width: 8px;
+    height: 8px;
+    background: gainsboro;
+    border-radius: 160px;
+}
+
+*::-webkit-scrollbar-thumb{
+    background: #c5cae9;
+    border-radius: 160px;
+}
+
+a{
+    text-decoration: none;
+}
+
+body{
+    backdrop-filter: blur(4px);
+    background-image: url(assets/cabin-root.jpg);
+    color: grey;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.container{
+    /*background: rgb(197, 197, 197);*/
+    background-color: rgba(0 0 0 0.8);
+    backdrop-filter: blur(12px);
+    width: 494px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 48px;
+    border-radius: 16px;
+    box-shadow: 0 0 24px brown;
+}
+
+.container header{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+}
+
+.container header .info{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.container header .info .count{
+    padding: 6px;
+    font-weight: 600;
+    width: 100%;
+    background: gainsboro;
+    border: 1px solid gainsboro;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 8px;
+}
+
+.container header .info .count i{
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.container header .profile{
+    width: 400px;
+}
+
+.container header .profile img{
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-top: -50%;
+    border: 2px solid brown;
+    box-shadow: 0 0 8px brown;
+}
+
+.container .about{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.container .about h2{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.container .about h2 i{
+    color: green;
+}
+
+.container .about p{
+    font-size: 16px;
+    color: grey;
+}
+
+.container .social-links{
+    display: flex;
+    gap: 16px;
+}
+
+.container .social-links a{
+    background: rgb(224, 224, 224);
+    padding: 8px;
+    display: flex;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #eee;
+    color: grey;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.container .social-links a i{
+    font-size: 26px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.container .social-links a:hover{
+    border: 2px solid brown;
+}
+
+.container .social-links a:hover i{
+    color:brown;
+}
+
+.container .tabs-container{
+    overflow-x: auto;
+    margin-bottom: 4px;
+    width: 100%;
+}
+
+.container .tabs-container .tabs{
+    position: relative;
+    display: flex;
+    border: 1px solid gainsboro;
+    border-radius: 8px;
+    list-style: none;
+}
+
+.container .tabs-container .tabs li{
+    z-index: 2;
+}
+
+.container .tabs-container .tabs li a{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    min-width: 112px;
+    outline: none;
+    padding: 12px 16px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.container .tabs-container .tabs li a:hover,
+.container .tabs-container .tabs li a.active{
+    color: grey;
+}
+
+.container .tabs-container #active-tab{
+    position: absolute;
+    width: 100%;
+    width: 112px;
+    height: 100%;
+    background: gainsboro;
+    z-index: 1;
+    border-radius: 8px;
+    transition: all 0.5s ease;
+}
+
+.container .tab-content{
+    display: none;
+    overflow-y: auto;
+}
+
+.container .active-tab-content{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 192px;
+    padding: 0 4px;
+    font-size: 15px;
+    margin-bottom: 16px;
+}
+
+.container .tabs-container .tabs li:nth-child(1):has(.active)~#active-tab{
+    transform: translateX(0);
+}
+
+.container .tabs-container .tabs li:nth-child(2):has(.active)~#active-tab{
+    transform: translateX(112px);
+}
+
+.container .tabs-container .tabs li:nth-child(3):has(.active)~#active-tab{
+    transform: translateX(224px);
+}
+
+.container .tabs-container .tabs li:nth-child(4):has(.active)~#active-tab{
+    transform: translateX(348px);
+}
+
+.container .tab-content .vote{
+    display: flex;
+    flex-direction: column;
+    margin-top: 1px;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.container .tab-content .vote a{
+    display: flex;
+    background: gainsboro;
+    gap: 8px;
+    border-radius: 5px;
+    color: grey;
+    padding: 8px;
+    border: 1px solid whitesmoke;
+    transition: all 0.3s ease;
+}
+
+.container .tab-content .vote a:hover{
+    border: 1px solid grey;
+    color: grey;
+}
+
+.container .tab-content .comments{
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.container .tab-content .comments .comment{
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 8px;
+    background: gainsboro;
+    border: 1px solid whitesmoke;
+    border-radius: 8px;
+}
+
+.container .tab-content .comments .comment h4{
+    margin-bottom: 5px;
+}
+
+.container .tab-content .comments .comment p{
+    font-size: 13px;
+}
+
+.container .tab-content .comments .comment .img {
+    width: 48px; /* Lebar gambar */
+    height: 48px; /* Tinggi gambar */
+    object-fit: cover; /* Menyamakan aspek rasio gambar */
+    border-radius: 50%; /* Membuat lingkaran */
+}
+
+.container button{
+    background-color: grey;
+    color: whitesmoke;
+    padding: 10px 16px;
+    border-radius: 8px;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.container button:hover{
+    background-color: grey;
+}
