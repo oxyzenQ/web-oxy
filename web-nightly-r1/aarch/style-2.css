@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+*{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+}
+
+body{
+        font-family: 'Poppins', sans-serif;
+        display: flex;
+        justify-content: center;
+        height: 100vh;
+        color: #fff;
+        background-color: #101220;
+        padding: 50px;       
+}
+
+body .container{
+        max-width: 1000px;
+        
+}
+
+body .container header{
+        background: url(assets/Minotaur_by_gixo_dark-modified.png) center / cover no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 400px;
+        padding: 20px 50px 60px;
+        border-radius: 16px;
+}
+
+body .container header .category {
+        font-size: 1.2rem;
+        font-weight: bold;
+        letter-spacing: 0.3rem;
+        text-transform: uppercase;
+}
+
+body .container header .info{
+        text-align: center;
+}
+
+body .container header .info .tags i{
+        font-size: 18px;
+        margin-right: 4px;
+}
+
+body .container header .info .tags span{
+        font-size: 2rem;
+        font-weight: regular;
+}
+
+body .container header .info .title{
+        margin: 20px 0;
+        font-size: 3rem;
+        font-weight: bold;
+}
+
+body .container header .info .subtitle{
+        min-width: 70%;
+        margin: 0 auto 15px;
+        font-size: 1.2rem;
+        font-weight: normal;
+}
+
+body .details{
+        display: flex;
+        background: url(assets/ubuntu-wallpaper-d.png) center / cover no-repeat;
+        justify-content: space-between;
+        margin-top: 50px;
+        padding: 20px 50px;
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.68);
+}
+    
+body .details .item span{
+        font-size: 1rem;
+        font-weight: bold;
+        color: #ccc;
+}
+    
+body .details .item .item-data{
+        font-size: 1.2rem;
+        font-weight: normal;
+}
+    
+body .details .item .item-text{
+        margin-top: 12px;
+        font-size: 1.5rem;
+}
+
+    
+body article h4{
+        text-align: left;
+}
+    
+body article .item-text{
+        text-align: right;
+}
+
+
+body article{
+        margin-top:  50px;
+        padding-bottom: 20px;
+        line-height: 1.70;
+}
+
+body article h4{
+        margin-top: 50px;
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+}
+
+body article p{
+        margin-bottom: 20px;
+        color: #999;
+        font-size: 1.1rem;
+}
+
+body article blackquote{
+        margin: 40px 0;
+        background-color: #181818;
+        padding: 30px;
+        border-radius: 16px;
+}
+
+@media  screen and (max-width: 768px){
+        body .container header{
+                padding: 10px 20px 30px;
+                min-height: 300px;
+        }
+
+        body .container header .category{
+                font-size: 0.9rem;
+        }
+
+        body .container header .info .title{
+                font-size: 2.2rem;
+        }
+
+        body .container header .info .subtitle{
+                font-size: 0.8rem;
+        }
+
+        body .container .details{
+                flex-direction: column;
+        }
+
+        body .container .details .item:not(:last-child){
+                margin-bottom: 30px;
+        }
+
+        body article h4{
+                text-align: center;
+        }
+            
+            body article .item-text{
+                text-align: center;
+        }
+
+        
+}
+
+@keyframes pulse {
+        0%, 100% {
+            opacity: 0;
+        }
+        35%, 45% {
+            opacity: 1;
+        }
+        60%{
+            box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1);
+            opacity: 0;
+        }
+    }
+
+#homeButton{
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #101431;
+        color: #fff;
+        border: 1px solid transparent;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+        padding: 16px 18px;
+        border-radius: 100%;
+        cursor: pointer;
+        font-size: 20px;
+        transition: all 0.3s;
+        animation: pulse 2s infinite;
+}
+
+#homeButton:hover, #blogButton:hover {
+        background-color: rgb(35, 35, 65);
+    }
+
+
+    #homeButton:hover{
+        border-color: #fff;
+        box-shadow: none;
+    }

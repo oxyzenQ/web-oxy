@@ -1,0 +1,34 @@
+<section id="background">
+                <div class="category">
+                        <i class="fa-solid fa-bolt-lightning" style="font-size: 15px; color: rgb(255, 0, 0);"></i>
+                        <category>TECH</category>
+                </div>
+                <div class="info">
+                <div class="tags">
+                    <i class="fa-solid fa-laptop-code" style="font-size: 45px;"></i>
+                    <span>Technology</span>
+                </div>
+                <h1 class="title">simple blog</h1>
+                <p class="subtitle">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                </p>
+                </div>
+        </section>
+
+
+
+        modif  kode diatas untuk seperti ini;
+
+
+       body .container header{
+        background: url(assets/gentoo.jpg) center / cover no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 400px;
+        padding: 20px 50px 60px;
+        border-radius: 16px;
+}
+
+
+background category info tags title substitle
