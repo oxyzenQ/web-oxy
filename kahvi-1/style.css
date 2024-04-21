@@ -1,4 +1,4 @@
-/* holiday-1/stylee.css */
+/*path */
 @import url('https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@200..800&display=swap');
 
 *{
@@ -287,10 +287,10 @@ body{
 }
 
 .container .tab-content .comments .comment .img {
-    width: 48px; /* Lebar gambar */
-    height: 48px; /* Tinggi gambar */
-    object-fit: cover; /* Menyamakan aspek rasio gambar */
-    border-radius: 50%; /* Membuat lingkaran */
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .container button{
