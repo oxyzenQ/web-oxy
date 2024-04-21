@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Fira Sans', sans-serif;
+}
+
+body{
+    background: #0e0e27;
+    padding: 0 20px;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    margin-top: 20px;
+}
+
+header{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1{
+    color: gray;
+    font-size: 42px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+header p{
+    color: gray;
+    font-weight: bold;
+}
+
+.search-box{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    width: 100%;
+    overflow: hidden;
+    max-width: 720px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.search-box input{
+    display: block;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.search-box:focus-within{
+    box-shadow: 0px 7px 29px 0px rgba(100, 100, 111, 0.2);
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+.results{
+    max-width: 768px;
+    margin: 0 auto;
+}
+
+.results{
+    width: 100%;
+    padding: 16px;
+    margin: 16px 0;
+    background-color: #10131f;
+    border-radius: 14px;
+    transition: all 0.3s ease;
+}
+
+.results:hover{
+    box-shadow: 0px 7px 29px 0px rgba(100, 100, 111, 0.2);
+}
+
+.results h3{
+    color: gray;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.results p{
+    color: rgb(144, 135, 135);
+    font-size: 18px;
+    margin-bottom: 16px;
+}
+
+.results a{
+    display: inline-block;
+    padding: 12px;
+    width: 100%;
+    color: rgb(238, 217, 217);
+    background-color: #928e8e;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.results a:hover{
+    background-color: blue;
+}
+
