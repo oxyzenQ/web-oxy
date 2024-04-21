@@ -1,0 +1,198 @@
+@import url(https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap);
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body{
+    background-image: url(assets/nature.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #1f1c2e;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    background-image: inherit; /* Gunakan gambar latar belakang yang sama */
+    filter: blur(3px); /* Ganti angka untuk mengatur seberapa buramnya efek */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+body::after {
+    content: '';
+    background: rgba(0, 0, 0, 0.5); /* Lapisan dengan warna hitam transparan */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.container{
+    margin: 20px;
+    padding: 20px;
+    height: 400px;
+    background-color: #00000852;
+    color: #fff;
+    border-radius: 25px;
+    box-shadow: 0 5px 15px rgba(17, 33, 75, 0.877);
+}
+
+.left-info{
+    width: 340px;
+    height: 100%;
+    float: left;
+    display: flex;
+    border-radius: 25px;
+    justify-content: center;
+    background: url(assets/north.jpg) center;
+    background-position: center;
+    background-size: cover;
+    transform: scale(1.03); perspective: (200px);
+    cursor: pointer;
+    box-shadow: 0 0 25px -10px rrgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.left-info:hover{
+    transform: scale(1.1) perspective(2500px) rotateY(5deg);
+}
+
+.pic-gradient{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: linear-gradient(135deg, #111736 10%, #0c192c 100%);
+    border-radius: 25px;
+    opacity: 0.4;
+    box-shadow: 0 5px 15px rgba(38, 47, 179, 0.35);
+}
+
+.today-info{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    margin-top: 25px;
+}
+
+.today-weather{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    bottom: 20px;
+    left: 20px;
+}
+
+.today-weather .bx{
+    font-size: 4.6rem;
+}
+
+.weather-temp{
+    font-weight: 700;
+    font-size: 3.5rem;
+}
+
+.right-info{
+    width: 340px;
+    height: 100%;
+    background-color: #0c192c5e;
+    border-radius: 25px;
+    float: right;
+    position: relative;
+    height: 100%;
+    padding-top: 25px;
+}
+
+.day-info{
+    padding: 25px 35px;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-info div:not(:last-child){
+    margin-bottom: 6px;
+}
+
+.day-info div .title{
+    font-weight: 700;
+}
+
+.day-info div .value{
+    float: right;
+}
+
+.days-list{
+    display: flex;
+    list-style: none;
+    margin: 10px 35px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(38, 47, 179, 0.35);
+    
+}
+
+.days-list li{
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.days-list li .bx{
+    margin-bottom: 5px;
+    font-size: 2rem;
+}
+
+.days-list li:hover{
+    transform: scale(1.1);
+    background: #00000357;
+    color: #ececec;
+    box-shadow: 0 5px 15px rgba(69, 96, 248, 0.35);
+}
+
+.day-list li .day-temp{
+    margin-top: 6px;
+    font-weight: 700;
+}
+
+.btn-container{
+    padding: 25px 35px;
+}
+
+.loc-button{
+    outline: none;
+    width: 100%;
+    border: none;
+    font-weight: 700;
+    border-radius: 25px;
+    padding: 10px;
+    background: #13193b;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(38, 47, 179, 0.35);
+    transition: all 0.3s ease;
+}
+
+.loc-button:hover{
+    background: #08083557;
+    transform: translateY(-5px);
+}
