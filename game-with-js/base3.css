@@ -1,0 +1,43 @@
+/*#canvas1 {
+    position: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}*/
+
+#canvas1 {
+    font-family: 'Pixelade', sans-serif;
+    /* Other CSS styles */
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50; /* Hijau */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #45a049; /* Warna hijau yang lebih gelap saat hover */
+  }
+  
+  #pauseButton {
+    background-color: #f44336; /* Merah */
+  }
+  
+  #pauseButton:hover {
+    background-color: #d32f2f; /* Warna merah yang lebih gelap saat hover */
+  }
+  
+  #resetButton {
+    background-color: #fdd835; /* Kuning */
+  }
+  
+  #resetButton:hover {
+    background-color: #fbc02d; /* Warna kuning yang lebih gelap saat hover */
+  }
+  

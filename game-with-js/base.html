@@ -1,0 +1,125 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game with JS by rezky</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    #canvas1 {
+      box-shadow: 1px 1px 5px 1px gray;
+      display: inline-block;
+      width: 80%;
+      height: auto;
+      margin: 90px 0px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50; /* Hijau */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.1s ease;
+      outline: none; /* Hilangkan garis focus bawaan */
+    }
+
+    /* Hover effect */
+    button:hover {
+      background-color: #45a049; /* Warna hijau yang lebih gelap saat hover */
+      transform: scale(1.05); /* Perbesar tombol saat hover */
+    }
+
+    /* Focus effect */
+    button:focus {
+      outline: none; /* Hilangkan garis focus bawaan */
+      box-shadow: 0 0 5px #4CAF50; /* Bayangan saat tombol difokuskan */
+    }
+
+    /* Styling for info button */
+    #infoButton {
+      background-color: #2196F3; /* Biru */
+    }
+
+    #infoButton:hover {
+      background-color: #1976D2; /* Warna biru yang lebih gelap saat hover */
+    }
+
+    /* Styling for clicked buttons */
+    .clicked {
+      background-color: gray !important; /* Merah */
+    }
+
+  </style>
+</head>
+<body>
+  <canvas id="canvas1"></canvas><br>
+  <audio id="successSound" src="assets/alertsucc.wav"></audio>
+  <audio id="loseSound" src="assets/losee.wav"></audio>
+  <button id="startButton">Start</button>
+  <button id="pauseButton">Pause</button>
+  <button id="resetButton">Reset</button>
+  <button id="infoButton">Info</button>
+  <script src="base2.js"></script>
+  <footer>
+    <div id="infoDiv" style="display: none;">
+        <p>© 2024 - Copyright by oxyrezz</p>
+        <p>Source: <a href="https://github.com/oxyrezz-code">github.com/oxyrezz-code</a></p>
+        <p>kiitos, Olen rezky</p>
+      </div>      
+  </footer>
+  <script>
+    const infoButton = document.getElementById('infoButton');
+    const infoDiv = document.getElementById('infoDiv');
+  
+    // Tambahkan event listener untuk klik tombol "Info"
+    infoButton.addEventListener('click', function() {
+      // Periksa apakah infoDiv sedang ditampilkan atau tidak
+      if (infoDiv.style.display === 'none') {
+        // Jika infoDiv sedang disembunyikan, tampilkan
+        infoDiv.style.display = 'block';
+      } else {
+        // Jika infoDiv sedang ditampilkan, sembunyikan
+        infoDiv.style.display = 'none';
+      }
+    });
+
+    const startButton = document.getElementById('startButton');
+    const pauseButton = document.getElementById('pauseButton');
+    const resetButton = document.getElementById('resetButton');
+
+    startButton.addEventListener('click', function() {
+      startButton.classList.add('clicked');
+      pauseButton.classList.remove('clicked');
+      resetButton.classList.remove('clicked');
+    });
+
+    pauseButton.addEventListener('click', function() {
+      pauseButton.classList.add('clicked');
+      startButton.classList.remove('clicked');
+      resetButton.classList.remove('clicked');
+    });
+
+    resetButton.addEventListener('click', function() {
+      startButton.classList.remove('clicked');
+      pauseButton.classList.remove('clicked');
+      resetButton.classList.remove('clicked');
+
+      // Additional logic for resetting colors when game over
+      // You can add similar logic in your reset game function
+      // Misalnya:
+      // if (gameOver) {
+      //   startButton.classList.remove('clicked');
+      //   pauseButton.classList.remove('clicked');
+      //   resetButton.classList.remove('clicked');
+      // }
+    });
+  </script>
+  
+</body>
+</html>

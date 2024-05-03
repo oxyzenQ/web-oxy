@@ -1,0 +1,23 @@
+#note i got the probelm when build this game
+
+//dan aliennya cuma 1 , seharusnya ada 3-4 alien dengan random position, dan ketika car berhasil menghindari alien akan mendapatkan score, sampai batas scorenya 360 dan wins, setiap menghindari alien akan mendapatkan 3 score.
+
+
+-note process
+--problem notify [passed]
+--problem car,alien [passed]
+--problem control [passed]
+--problem size .png [passed]
+--alien some unit and random position [passed]
+--make button start, reset, list highest score [lol- but passed]
+--make title layer [passed]
+
+------fix 
+
+--fix size, and edit like css [passed]
+--fix text if click button [passed]
+--fix car unlimit x, y [passed]
+
+
+
+---finishee 
