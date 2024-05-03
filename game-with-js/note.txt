@@ -1,9 +1,10 @@
 #note i got the probelm when build this game
 
-//dan aliennya cuma 1 , seharusnya ada 3-4 alien dengan random position, dan ketika car berhasil menghindari alien akan mendapatkan score, sampai batas scorenya 360 dan wins, setiap menghindari alien akan mendapatkan 3 score.
+// deskripsi simpel
+dan aliennya cuma 1 , seharusnya ada 3-4 alien dengan random position, dan ketika car berhasil menghindari alien akan mendapatkan score, sampai batas scorenya 360 dan wins, setiap menghindari alien akan mendapatkan 3 score.
 
 
--note process
+(note process)
 --problem notify [passed]
 --problem car,alien [passed]
 --problem control [passed]
@@ -20,4 +21,4 @@
 
 
 
----finishee 
+---finishee at 1.00 am
