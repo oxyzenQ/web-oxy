@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tebak Angka by oxy</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url(assets/foretfox.png);
+            background-position: left;
+            background-size: cover; /* Menyesuaikan ukuran background secara otomatis */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            backdrop-filter: blur(8px);
+            position: relative; /* Menambahkan blur pada latar belakang */
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Warna hitam dengan opasitas 0.5 */
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(40, 40, 40, 0.924);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 8px green;
+        }
+        h1, h3, p {
+            margin: 0;
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin-top: 10px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #pesan {
+            margin-top: 20px;
+            color: #333;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Game Tebak Angka</h1>
+        <h3>modify by oxyrezz <a href="https://github.com/oxyrezz-code" target="_blank">github.com</a></h3>
+        <p>Masukkan angka antara 1 dan 100:</p>
+        <input type="text" id="inputan">
+        <button onclick="periksaInputan()">Tebak!</button>
+        <button onclick="refreshGame()">Refresh</button>
+        <p id="pesan"></p>
+    </div>
+
+    <script>
+        let angkaRandom;
+        let inputan;
+        let pesan;
+        let percobaan;
+
+        function setupGame() {
+            angkaRandom = Math.floor(Math.random() * 100) + 1;
+            inputan = document.getElementById('inputan');
+            pesan = document.getElementById('pesan');
+            percobaan = 0;
+            pesan.textContent = '';
+            inputan.disabled = false;
+            inputan.value = '';
+            inputan.focus();
+        }
+
+        function periksaInputan() {
+            percobaan++;
+            const inputanUser = parseInt(inputan.value);
+
+            if (inputanUser === angkaRandom) {
+                pesan.textContent = `Selamat! Anda menebak angka yang benar (${angkaRandom}) dengan ${percobaan} tebakan.`;
+                pesan.style.color = '#4CAF50';
+                inputan.disabled = true;
+            } else if (inputanUser < angkaRandom) {
+                pesan.textContent = 'Tebakan Anda terlalu kecil, coba lagi.';
+                pesan.style.color = '#FF5722';
+            } else if (inputanUser > angkaRandom) {
+                pesan.textContent = 'Tebakan Anda terlalu tinggi, coba lagi.';
+                pesan.style.color = '#FF5722';
+            }
+
+            inputan.value = '';
+            inputan.focus();
+        }
+
+        function refreshGame() {
+            setupGame();
+        }
+
+        // Panggil setupGame saat halaman dimuat
+        window.onload = setupGame;
+    </script>
+</body>
+</html>
