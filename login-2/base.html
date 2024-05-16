@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" id="login-container">
+        <h2>Login</h2>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Enter username" required>
+            <input type="password" id="login-password" placeholder="Enter password" required>
+            <button type="button" id="show-pw1">Show Password</button>
+            <input type="submit" value="Login">
+        </form>
+        <p id="error-message" class="error-message"></p>
+
+        <button id="register-btn">Register</button>
+    </div>
+
+    <div class="container" id="register-container" style="display: none;">
+        <h2>Register</h2>
+        <form id="register-form-fields">
+            <input type="text" id="new-username" placeholder="Enter new username" required>
+            <input type="password" id="new-password" placeholder="Enter new password" required>
+            <button type="button" id="show-pw">Show Password</button>
+            <input type="submit" value="Sign Up">
+        </form>
+        <button id="back-to-login">Back</button>
+    </div>
+
+    <script>
+        // Password function for login
+        var loginPasswordInput = document.getElementById("login-password");
+        var showLoginPasswordButton = document.getElementById("show-pw1");
+    
+        showLoginPasswordButton.addEventListener("click", function() {
+            if (loginPasswordInput.type === "password") {
+                loginPasswordInput.type = "text";
+                showLoginPasswordButton.textContent = "Hide Password";
+            } else {
+                loginPasswordInput.type = "password";
+                showLoginPasswordButton.textContent = "Show Password";
+            }
+        });
+    
+        // Password function for registration
+        var registerPasswordInput = document.getElementById("new-password");
+        var showRegisterPasswordButton = document.getElementById("show-pw");
+    
+        showRegisterPasswordButton.addEventListener("click", function() {
+            if (registerPasswordInput.type === "password") {
+                registerPasswordInput.type = "text";
+                showRegisterPasswordButton.textContent = "Hide Password";
+            } else {
+                registerPasswordInput.type = "password";
+                showRegisterPasswordButton.textContent = "Show Password";
+            }
+        });
+    
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // prevent form submission
+    
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+    
+            // Check if the username and password are correct
+            if (localStorage.getItem(username) === password) {
+                // Save the username to localStorage
+                localStorage.setItem("currentUsername", username);
+                // Redirect to the specified URL
+                window.location.href = "http://192.168.0.116:5500/web-oxy/gues-game-with-js/base.html";
+            } else {
+                // If incorrect, display an error message
+                var errorMessage = document.getElementById("error-message");
+                errorMessage.textContent = "Wrong data. Please try again.";
+            }
+        });
+    
+        document.getElementById("register-btn").addEventListener("click", function() {
+            // Hide login container and display register container
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("register-container").style.display = "block";
+        });
+    
+        document.getElementById("back-to-login").addEventListener("click", function() {
+            // Hide register container and display login container
+            document.getElementById("register-container").style.display = "none";
+            document.getElementById("login-container").style.display = "block";
+            window.location.href = "http://192.168.0.116:5500/web-oxy/login-2/base.html";
+        });
+    
+        document.getElementById("register-form-fields").addEventListener("submit", function(event) {
+            event.preventDefault(); // prevent form submission
+    
+            // Get username and password from registration form
+            var newUsername = document.getElementById("new-username").value;
+            var newPassword = document.getElementById("new-password").value;
+    
+            // Save new user to localStorage
+            localStorage.setItem(newUsername, newPassword);
+    
+            alert("Registration successful! You can now login.");
+    
+            // Clear registration form
+            document.getElementById("new-username").value = "";
+            document.getElementById("new-password").value = "";
+    
+            // Delay redirect to login page for 1 second (1000 milliseconds)
+            setTimeout(function() {
+                window.location.href = "http://192.168.0.116:5500/web-oxy/login-2/base.html";
+            }, 1000);
+        });
+    </script>    
+</body>
+</html>

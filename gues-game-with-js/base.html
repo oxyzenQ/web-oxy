@@ -85,6 +85,7 @@
         <input type="text" id="inputan">
         <button onclick="periksaInputan()">Tebak!</button>
         <button onclick="refreshGame()">Refresh</button>
+        <button onclick="backToLogin()">Back</button>
         <p id="pesan"></p>
     </div>
 
@@ -93,6 +94,10 @@
         let inputan;
         let pesan;
         let percobaan;
+        
+        function backToLogin() {
+        window.location.href = "http://192.168.0.116:5500/web-oxy/login-2/base.html";
+        }
 
         function setupGame() {
             angkaRandom = Math.floor(Math.random() * 100) + 1;
