@@ -7,12 +7,12 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "web-nightly-r1/Currency/$1"
-    },
-    {
       "src": "/",
       "dest": "web-nightly-r1/Currency/c.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "web-nightly-r1/Currency/$1"
     }
   ]
 }
