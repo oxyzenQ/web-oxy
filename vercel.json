@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "web-nightly-r1/Currency/index.html",
+      "src": "web-nightly-r1/Currency/c.html",
       "use": "@vercel/static"
     }
   ],
