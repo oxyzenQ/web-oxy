@@ -1,0 +1,99 @@
+Untuk menyambungkan aplikasi Anda dengan Google Cloud SQL dan menyimpan data pengguna, Anda perlu mengikuti beberapa langkah untuk menyiapkan database dan konektivitas. Berikut adalah panduan langkah demi langkah:
+
+### **1. Menyiapkan Google Cloud SQL**
+
+1. **Buat Instance Cloud SQL:**
+   - Masuk ke [Google Cloud Console](https://console.cloud.google.com/).
+   - Pilih atau buat proyek.
+   - Navigasikan ke **SQL** di menu **Databases**.
+   - Klik **Create Instance**.
+   - Pilih **MySQL** dan klik **Next**.
+   - Masukkan detail instance, seperti nama instance, password root, dan zona.
+   - Klik **Create**.
+
+2. **Konfigurasi Database:**
+   - Setelah instance dibuat, pilih instance Anda di Cloud SQL.
+   - Pergi ke tab **Databases** dan klik **Create Database**.
+   - Masukkan nama database (misalnya, `user_db`).
+
+3. **Atur Koneksi:**
+   - Navigasikan ke tab **Connections**.
+   - Di bagian **Public IP**, klik **Add Network** dan tambahkan IP address Anda atau rentang IP yang diizinkan untuk mengakses database.
+   - Catat **Public IP Address** untuk digunakan dalam koneksi aplikasi Anda.
+
+### **2. Menyiapkan Koneksi dari Aplikasi**
+
+1. **Instalasi Paket untuk Koneksi MySQL:**
+   - Jika Anda menggunakan Node.js, Anda bisa menggunakan `mysql2` atau `mysql` npm package.
+     ```bash
+     npm install mysql2
+     ```
+   - Jika Anda menggunakan Python, gunakan `mysql-connector-python`.
+     ```bash
+     pip install mysql-connector-python
+     ```
+
+2. **Buat Koneksi ke Database:**
+
+   **Node.js (Express.js)**
+   ```javascript
+   const mysql = require('mysql2');
+
+   // Konfigurasi koneksi
+   const connection = mysql.createConnection({
+     host: 'YOUR_CLOUD_SQL_IP_ADDRESS',
+     user: 'YOUR_DB_USER',
+     password: 'YOUR_DB_PASSWORD',
+     database: 'YOUR_DATABASE_NAME'
+   });
+
+   // Koneksi
+   connection.connect((err) => {
+     if (err) throw err;
+     console.log('Connected to the database.');
+   });
+
+   // Fungsi untuk menambahkan pengguna
+   function addUser(email, password, callback) {
+     const query = 'INSERT INTO users (email, password) VALUES (?, ?)';
+     connection.query(query, [email, password], (err, results) => {
+       if (err) return callback(err);
+       callback(null, results);
+     });
+   }
+   ```
+
+   **Python (Flask)**
+   ```python
+   import mysql.connector
+
+   # Konfigurasi koneksi
+   connection = mysql.connector.connect(
+       host='YOUR_CLOUD_SQL_IP_ADDRESS',
+       user='YOUR_DB_USER',
+       password='YOUR_DB_PASSWORD',
+       database='YOUR_DATABASE_NAME'
+   )
+
+   # Fungsi untuk menambahkan pengguna
+   def add_user(email, password):
+       cursor = connection.cursor()
+       query = 'INSERT INTO users (email, password) VALUES (%s, %s)'
+       cursor.execute(query, (email, password))
+       connection.commit()
+       cursor.close()
+   ```
+
+3. **Gunakan Koneksi dalam Aplikasi:**
+   - Integrasikan fungsi database dengan logika aplikasi Anda. Pastikan Anda menangani data sensitif (seperti password) dengan aman (misalnya, hashing password sebelum menyimpannya).
+
+### **3. Mengamankan Koneksi**
+
+1. **Gunakan Variabel Lingkungan:**
+   - Simpan kredensial dan konfigurasi database dalam variabel lingkungan (environment variables) untuk keamanan.
+   - Di Vercel, Anda bisa menambahkan variabel lingkungan melalui dashboard Vercel di bagian **Settings** > **Environment Variables**.
+
+2. **Enkripsi dan Hash Password:**
+   - Selalu enkripsi password sebelum menyimpannya di database. Gunakan pustaka seperti bcrypt untuk hashing password.
+
+Dengan langkah-langkah ini, Anda dapat menyambungkan aplikasi Anda ke Google Cloud SQL dan mulai menyimpan data pengguna. Pastikan untuk menguji konektivitas dan keamanan aplikasi Anda secara menyeluruh sebelum menerapkannya ke produksi.
