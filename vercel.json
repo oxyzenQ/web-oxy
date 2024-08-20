@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "web-nightly-r1/Currency/index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "web-nightly-r1/Currency/$1"
+    }
+  ]
+}
