@@ -1,165 +1,283 @@
+/* powered by rezky */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-*{
+* {
     margin: 0;
     padding: 0;
-    border: none;
-    outline: none;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
 
-body{
+body {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
     padding: 0 10px;
-    background-image: url(assets/darkbyte.jpg);
+    background: url('assets/pine-3.png') no-repeat center center fixed;
     background-size: cover;
     overflow: hidden;
+    position: relative;
+    color: #fff;
 }
 
-body::before{
+/* Create a blurred background overlay */
+body::before {
     content: "";
-    position: absolute;
+    position: fixed; /* Fixed to cover the whole viewport */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit; /* Inherit the body background image */
+    filter: blur(8px); /* Adjust the blur level */
+    z-index: -1; /* Ensure it stays behind the content */
+}
+
+/* Decorative elements */
+body::after {
+    content: "";
+    position: fixed;
     width: 220px;
     height: 220px;
-    background-color: #000;
+    background-color: rgba(0, 0, 0, 0.914);
+    filter: blur(150px);
+    z-index: -2; /* Ensure it's behind the background overlay */
+}
+
+body::after {
     left: 15%;
     top: 20%;
-    filter: blur(150px);
 }
 
-body::after{
-    content: "";
-    position: absolute;
-    width: 220px;
-    height: 220px;
-    background-color: #000;
+body::after {
+    width: 180px; /* Adjusted size for a better fit */
+    height: 180px; /* Adjusted size for a better fit */
     left: 80%;
     top: 58%;
-    filter: blur(150px);
 }
 
-.container{
-    width: 30rem;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.55);
-    padding: 20px 30px;
+/* Keyframes for scaling up and then scaling down */
+@keyframes scaleUp {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Apply animation on hover */
+.container:hover {
+    animation: scaleUp 1.55s forwards;
+}
+
+/* Container styling */
+.container {
+    max-width: 90%;
+    width: 100%;
+    max-width: 30rem; /* Maintain a max-width for larger screens */
+    background: rgba(0, 0, 0, 0.808);
+    padding: 20px 20px;
     border-radius: 1rem;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 30px rgba(77, 76, 76, 0.775);
     backdrop-filter: blur(8.2px);
-    -webkit-backdrop-filter: blur(8.2px);
-    border: 1px solid #ffffff20;
+    border: 2px solid #616268b7;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 0 auto; /* Center horizontally */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
 }
 
-.container h2{
-    font-size: 1.6rem;
-    font-weight: 500;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        width: 95%; /* Increase width on smaller screens */
+        padding: 15px 20px; /* Adjust padding for better fit */
+    }
+
+    .A{
+        font-size: 1.4rem;
+    }
+
+    .container h2 {
+        font-size: 1.4rem; /* Adjust font size for smaller screens */
+    }
+
+    .container form p,
+    .container form input,
+    .convert-box {
+        font-size: 0.9rem; /* Adjust font size for better readability */
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 100%; /* Full width on very small screens */
+        padding: 10px 15px; /* Adjust padding for very small screens */
+    }
+
+    .A{
+        font-size: 1.2rem;
+    }
+
+    .container h2 {
+        font-size: 1.2rem; /* Further adjust font size */
+    }
+
+    .container form p,
+    .container form input,
+    .convert-box {
+        font-size: 0.8rem; /* Further adjust font size */
+    }
+}
+
+.A{
+    font-size: 1rem;
+    margin-bottom: -10px;
+    margin-top: 10px;
     text-align: center;
 }
 
-.container form{
-    margin: 30px 0 10px 0;
+.icon-oxy {
+    font-size: 1.5rem;
+    margin-bottom: -10px;
 }
 
-.container form p{
+.container h2 {
+    font-size: 1.6rem;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.amount {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.container form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.container form p {
     font-size: 1rem;
-    margin-bottom: 7px;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    text-align: center;
 }
 
-.container form input{
+.container form input {
     height: 40px;
     width: 100%;
-    border-radius: 5px;
+    border-radius: 1rem;
     font-size: 1rem;
     padding: 0 15px;
     background: transparent;
     color: #fff;
-    border: 3px solid #70707080;
-    transition: all 0.3s ease;
+    border: 1.5px solid;
+    border-color: #ffffff73;
+    transition: border-color 0.3s ease;
 }
 
-.container form input:hover{
-    border: 1px solid rgb(10, 139, 10);
+.container form input:hover,
+.container form input:focus {
+    border: 2px solid;
+    border-color: #9ca1b3;;
+    outline: none;
 }
 
-.container form input:focus{
-    padding: 0 14px;
-    border: 1px solid rgb(10, 139, 10);
-}
-
-.container form .convert-box{
+.convert-box {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 20px;
+    gap: 20px;
 }
 
-.container form .from, .container form .to{
-    width: 100%;
-}
-
-.container .convert-box .select-input{
+.select-input {
     display: flex;
-    width: 100%;
-    border: 3px solid #70707080;
-    height: 40px;
     align-items: center;
-    border-radius: 5px;
+    border: 1.5px solid;
+    border-color: #ffffff73;
+    height: 40px;
+    border-radius: 1rem;
     padding: 0 20px;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease;
 }
 
-.container .convert-box .select-input:hover{
-    border: 1px solid rgb(10, 139, 10);
+.select-input:hover {
+    border: 2px solid;
+    border-color: #9ca1b3;;
 }
 
-.container .convert-box .select-input img{
+.select-input img {
     max-width: 20px;
+    margin-right: 10px;
 }
 
-.container .convert-box .select-input select{
+.select-input select {
     width: 100%;
-    cursor: pointer;
-    font-size: 1rem;
     background: none;
-    margin: 0 -5px 0 5px;
     color: #fff;
+    font-size: 1rem;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
 
-.container .convert-box .select-input select option{
+.select-input select option {
     color: #000;
 }
 
-.container .convert-box .reverse{
+.reverse {
+    border: 1.5px solid;
+    border-color: #ffffff73;
+    border-radius: 50%;
+    padding: 8px;
     cursor: pointer;
-    margin-top: 32px;
     font-size: 22px;
-    transform: rotate(90deg);
-    transition: all 0.3s ease;
+    transition: color 0.3s ease, transform 0.3s ease;
+    margin-top: 32px;
 }
 
-.container .convert-box .reverse:hover{
-    color: rgb(10, 139, 10);
+.reverse:hover {
+    transform: scale(1.1);
+    border: 2px solid;
+    border-color: #9ca1b3;;
 }
 
-.container form .result{
+.result {
     font-size: 1.1rem;
-    margin: 20px 0 30px;
+    margin: 20px 0;
+    text-align: center;
 }
 
-.container form button{
+button {
     width: 100%;
     height: 42px;
     color: #fff;
-    background: rgb(26, 25, 25);
+    background: #171717;
     font-size: 1rem;
     cursor: pointer;
     border-radius: 1rem;
-    transition: all 0.3s ease;
+    border-color: #ffffff73;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 43px;
+}
+
+button:hover {
+    border-color: #9ca1b3;
+    background: #262b3b;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }

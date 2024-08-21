@@ -3,47 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="cstyle.css">
-    <title>by-rezky</title>
+    <title>Currency Converter by Rezky</title>
 </head>
 
 <body>
-
     <div class="container">
         <h2>Currency Converter</h2>
-        <form>
+        <div class="A">
+            <p>Amount</p>
+        </div>
+        <form id="converter-form">
             <div class="amount">
-                <p>Amount</p>
-                <input type="text" value="1">
+                <input type="number" id="amount-input" value="1" step="0.01" min="0" aria-label="Amount to convert">
             </div>
             <div class="convert-box">
                 <div class="from">
-                    <p>Form</p>
+                    <p>From</p>
                     <div class="select-input">
-                        <img src="https://flagcdn.com/48x36/us.png">
-                        <select class="from-select"></select>
+                        <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag">
+                        <select class="from-select" aria-label="From currency">
+                            <!-- Options will be populated dynamically -->
+                        </select>
                     </div>
                 </div>
-                <div class="reverse"><i class="fas fa-exchange-alt"></i></div>
+                <div class="reverse" aria-label="Swap currencies">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
                 <div class="to">
                     <p>To</p>
                     <div class="select-input">
-                        <img src="https://flagcdn.com/48x36/fr.png">
-                        <select class="to-select"></select>
+                        <img id="to-flag" src="https://flagcdn.com/48x36/fr.png" alt="To currency flag">
+                        <select class="to-select" aria-label="To currency">
+                            <!-- Options will be populated dynamically -->
+                        </select>
                     </div>
                 </div>
-                <div class="result">Getting Exchange Rate...</div>
-                <button>Get Exchange Rate</button>
-            
+                <div class="result" aria-live="polite">Getting Exchange Rate...</div>
+                <button type="submit">Get Exchange Rate</button>
+                <div class="icon-oxy">
+                    <i class="fa-brands fa-github"></i>
+                </div>
+                <p>&copy; 2024 oxyzenQ. All rights reserved.</p>
             </div>
         </form>
     </div>
 
     <script src="country.js"></script>
     <script src="cc.js"></script>
-
 </body>
-
 </html>

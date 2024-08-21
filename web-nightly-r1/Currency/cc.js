@@ -22,13 +22,13 @@ const exRateTxt = document.querySelector("form .result");
 //function to get exchange rate from api
 
 async function getExchangeRate() {
-    const amountVal = amount.value || 1;
+    const amountVal = parseFloat(amount.value) || 1; // Ensure amount is a number
     exRateTxt.innerText = "Getting exchange rate...";
     try {
         const response = await fetch(`https://v6.exchangerate-api.com/v6/de1695208ebf652f2f84fe41/latest/${fromCur.value}`);
         const result = await response.json();
-        const exchangerate = result.conversion_rates[toCur.value];
-        const totalExRate = (amountVal * exchangerate).toFixed(2);
+        const exchangeRate = result.conversion_rates[toCur.value];
+        const totalExRate = (amountVal * exchangeRate).toFixed(2);
 
         // Format the totalExRate using Intl.NumberFormat
         const formatter = new Intl.NumberFormat('en-US', {
@@ -38,7 +38,7 @@ async function getExchangeRate() {
             maximumFractionDigits: 2,
         });
 
-        exRateTxt.innerText = `1.00 ${fromCur.value} = ${formatter.format(totalExRate)}`;
+        exRateTxt.innerText = `${amountVal.toFixed(2)} ${fromCur.value} = ${formatter.format(totalExRate)}`;
     } catch (error) {
         exRateTxt.innerText = "Something went wrong...";
     }
