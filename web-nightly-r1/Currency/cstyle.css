@@ -14,11 +14,13 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 0 10px;
-    background: url('assets/pine-3.png') no-repeat center center fixed;
-    background-size: cover;
     overflow: hidden;
     position: relative;
-    color: #fff;
+    width: 100%;
+    height: 100vh; /* Ensure the height covers the full viewport */
+    margin: 0; /* Remove default margin */
+    background: radial-gradient(90% 90% at 101.61% 76.99%, rgb(35, 7, 70) 0%, rgb(5, 3, 32) 100%);
+    color: #e0e0e0; /* Optional: Light text color for better contrast */
 }
 
 /* Create a blurred background overlay */
@@ -29,7 +31,6 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: inherit; /* Inherit the body background image */
     filter: blur(8px); /* Adjust the blur level */
     z-index: -1; /* Ensure it stays behind the content */
 }
@@ -40,7 +41,6 @@ body::after {
     position: fixed;
     width: 220px;
     height: 220px;
-    background-color: rgba(0, 0, 0, 0.914);
     filter: blur(150px);
     z-index: -2; /* Ensure it's behind the background overlay */
 }
@@ -83,10 +83,10 @@ body::after {
     max-width: 90%;
     width: 100%;
     max-width: 30rem; /* Maintain a max-width for larger screens */
-    background: rgba(0, 0, 0, 0.808);
+    background: radial-gradient(80% 80% at 101.61% 76.99%, rgba(85, 85, 85, 0.786) 0%, rgb(13, 9, 59) 100%);
     padding: 20px 20px;
     border-radius: 1rem;
-    box-shadow: 0 4px 30px rgba(77, 76, 76, 0.775);
+    box-shadow: 0 4px 30px rgba(73, 73, 73, 0.775);
     backdrop-filter: blur(8.2px);
     border: 2px solid #616268b7;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
