@@ -1,6 +1,15 @@
 /* powered by rezky */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
+:root {
+    --main-bg-color: rgba(34, 16, 66, 0.868);
+    --secondary-bg-color: rgb(5, 3, 32);
+    --container-bg-color: rgba(85, 85, 85, 0.636);
+    --text-color: #e0e0e0;
+    --highlight-color: #9ca1b3;
+    --border-color: #616268b7;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -13,53 +22,66 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    padding: 0 10px;
-    overflow: hidden;
-    position: relative;
     width: 100%;
-    height: 100vh; /* Ensure the height covers the full viewport */
-    margin: 0; /* Remove default margin */
-    background: radial-gradient(90% 90% at 101.61% 76.99%, rgb(35, 7, 70) 0%, rgb(5, 3, 32) 100%);
-    color: #e0e0e0; /* Optional: Light text color for better contrast */
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    color: var(--text-color);
+    position: relative;
 }
 
-/* Create a blurred background overlay */
 body::before {
     content: "";
-    position: fixed; /* Fixed to cover the whole viewport */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    filter: blur(8px); /* Adjust the blur level */
-    z-index: -1; /* Ensure it stays behind the content */
+    background: inherit; /* Simplifying background effect */
+    filter: blur(8px);
+    z-index: -1;
 }
 
-/* Decorative elements */
 body::after {
     content: "";
     position: fixed;
-    width: 220px;
-    height: 220px;
+    width: 180px; 
+    height: 180px;
     filter: blur(150px);
-    z-index: -2; /* Ensure it's behind the background overlay */
-}
-
-body::after {
+    z-index: -2;
     left: 15%;
     top: 20%;
 }
 
 body::after {
-    width: 180px; /* Adjusted size for a better fit */
-    height: 180px; /* Adjusted size for a better fit */
     left: 80%;
     top: 58%;
 }
 
-/* Keyframes for scaling up and then scaling down */
+.container {
+    max-height: 100%;
+    height: 865px;
+    width: 465px;
+    max-width: 100%;
+    background: radial-gradient(80% 80% at 101.61% 76.99%, var(--container-bg-color) 0%, rgb(13, 9, 59) 100%);
+    padding: 20px;
+    border-radius: 1rem;
+    box-shadow: 0 4px 30px rgba(73, 73, 73, 0.775);
+    backdrop-filter: blur(8.2px);
+    border: 2px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container:hover {
+    animation: scaleUp 1.55s forwards;
+}
+
 @keyframes scaleUp {
-    0% {
+    0%, 100% {
         transform: scale(1);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
@@ -67,82 +89,75 @@ body::after {
         transform: scale(1.2);
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
     }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+/* Additional responsive adjustments */
+@media (min-width: 1024px) {
+    .container {
+        width: 60%; /* Menggunakan persentase untuk menyesuaikan dengan ukuran layar besar */
+        padding: 30px;
+    }
+    .A, .container h2 {
+        font-size: 1.5rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 1rem;
     }
 }
 
-/* Apply animation on hover */
-.container:hover {
-    animation: scaleUp 1.55s forwards;
+@media (min-width: 1440px) {
+    .container {
+        width: 50%;
+        padding: 40px;
+    }
+    .A, .container h2 {
+        font-size: 1.6rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 1.1rem;
+    }
 }
 
-/* Container styling */
-.container {
-    max-width: 90%;
-    width: 100%;
-    max-width: 30rem; /* Maintain a max-width for larger screens */
-    background: radial-gradient(80% 80% at 101.61% 76.99%, rgba(85, 85, 85, 0.786) 0%, rgb(13, 9, 59) 100%);
-    padding: 20px 20px;
-    border-radius: 1rem;
-    box-shadow: 0 4px 30px rgba(73, 73, 73, 0.775);
-    backdrop-filter: blur(8.2px);
-    border: 2px solid #616268b7;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    margin: 0 auto; /* Center horizontally */
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Center children horizontally */
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
-        width: 95%; /* Increase width on smaller screens */
-        padding: 15px 20px; /* Adjust padding for better fit */
+        width: 95%;
+        padding: 15px;
     }
-
-    .A{
+    .A, .container h2 {
         font-size: 1.4rem;
     }
-
-    .container h2 {
-        font-size: 1.4rem; /* Adjust font size for smaller screens */
-    }
-
-    .container form p,
-    .container form input,
-    .convert-box {
-        font-size: 0.9rem; /* Adjust font size for better readability */
+    .container form p, .container form input, .convert-box {
+        font-size: 0.9rem;
     }
 }
 
 @media (max-width: 480px) {
     .container {
-        width: 100%; /* Full width on very small screens */
-        padding: 10px 15px; /* Adjust padding for very small screens */
+        width: 100%;
+        padding: 10px 15px;
     }
-
-    .A{
+    .A, .container h2 {
         font-size: 1.2rem;
     }
-
-    .container h2 {
-        font-size: 1.2rem; /* Further adjust font size */
-    }
-
-    .container form p,
-    .container form input,
-    .convert-box {
-        font-size: 0.8rem; /* Further adjust font size */
+    .container form p, .container form input, .convert-box {
+        font-size: 0.8rem;
     }
 }
 
-.A{
+@media (max-width: 280px) {
+    .container {
+        padding: 5px;
+    }
+    .A, .container h2 {
+        font-size: 1.1rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 0.7rem;
+    }
+}
+
+.A {
     font-size: 1rem;
-    margin-bottom: -10px;
-    margin-top: 10px;
+    margin: 10px 0 -10px;
     text-align: center;
 }
 
@@ -171,8 +186,7 @@ body::after {
 
 .container form p {
     font-size: 1rem;
-    margin-bottom: 20px;
-    margin-top: 10px;
+    margin: 10px 0 20px;
     text-align: center;
 }
 
@@ -182,17 +196,15 @@ body::after {
     border-radius: 1rem;
     font-size: 1rem;
     padding: 0 15px;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.5);
     color: #fff;
-    border: 1.5px solid;
-    border-color: #ffffff73;
+    border: 1.5px solid var(--border-color);
     transition: border-color 0.3s ease;
 }
 
 .container form input:hover,
 .container form input:focus {
-    border: 2px solid;
-    border-color: #9ca1b3;;
+    border-color: var(--highlight-color);
     outline: none;
 }
 
@@ -206,8 +218,7 @@ body::after {
 .select-input {
     display: flex;
     align-items: center;
-    border: 1.5px solid;
-    border-color: #ffffff73;
+    border: 1.5px solid var(--border-color);
     height: 40px;
     border-radius: 1rem;
     padding: 0 20px;
@@ -217,8 +228,7 @@ body::after {
 }
 
 .select-input:hover {
-    border: 2px solid;
-    border-color: #9ca1b3;;
+    border-color: var(--highlight-color);
 }
 
 .select-input img {
@@ -241,20 +251,18 @@ body::after {
 }
 
 .reverse {
-    border: 1.5px solid;
-    border-color: #ffffff73;
+    border: 1.5px solid #ffffff73;
     border-radius: 50%;
     padding: 8px;
     cursor: pointer;
     font-size: 22px;
-    transition: color 0.3s ease, transform 0.3s ease;
+    transition: transform 0.3s ease;
     margin-top: 32px;
 }
 
 .reverse:hover {
     transform: scale(1.1);
-    border: 2px solid;
-    border-color: #9ca1b3;;
+    border-color: var(--highlight-color);
 }
 
 .result {
@@ -271,13 +279,13 @@ button {
     font-size: 1rem;
     cursor: pointer;
     border-radius: 1rem;
-    border-color: #ffffff73;
+    border: 1.5px solid #ffffff73;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     margin-bottom: 43px;
 }
 
 button:hover {
-    border-color: #9ca1b3;
     background: #262b3b;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-color: var(--highlight-color);
 }
