@@ -1,0 +1,176 @@
+/* Base Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: rgb(7, 25, 68);
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.main-container {
+    width: 90%;
+    max-width: 800px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 30px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+    font-size: 2.4rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 20px;
+}
+
+.profile-info {
+    margin-bottom: 30px;
+}
+
+.profile-info i {
+    color: rgb(10, 139, 10);
+    margin-bottom: 15px;
+}
+
+.profile-info p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.profile-info strong {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.container-2 {
+    margin-top: 20px;
+}
+
+.container-2 h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+#history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#history-table th,
+#history-table td {
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#history-table th {
+    background: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+#history-table td {
+    background: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+footer {
+    margin-top: 30px;
+    padding: 10px 0;
+    background: rgba(0, 0, 0, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    border-radius: 0.5rem;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+footer i {
+    margin-right: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-container {
+        width: 95%;
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .profile-info p {
+        font-size: 1rem;
+    }
+
+    .container-2 h2 {
+        font-size: 1.6rem;
+    }
+
+    #history-table th,
+    #history-table td {
+        font-size: 0.9rem;
+    }
+}
+
+/* Button Styling */
+.option-box {
+    margin-bottom: 15px;
+}
+
+.option {
+    margin-top: 10%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+}
+
+.option i {
+    margin-right: 10px;
+}
+
+.option:hover {
+    background: rgb(10, 139, 10);
+}
+
+/* About Link Styling */
+.about {
+    margin: 20px 0;
+}
+
+.about-link {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 15px;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+}
+
+.about-link:hover {
+    background: rgb(10, 139, 10);
+}

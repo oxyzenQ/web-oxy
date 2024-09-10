@@ -1,0 +1,480 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&display=swap');
+
+html {
+    scroll-behavior: smooth;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Raleway', sans-serif;
+}
+
+body {
+    font-size: 14px;
+    color: #dadada;
+    background-color: #121429;
+}
+
+.blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Optional: To darken the blur */
+    backdrop-filter: blur(8px); /* Apply blur */
+    z-index: 1;
+}
+
+/* Header Info Text Styling */
+header {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: url('assets/fractalloxy.png') no-repeat center center/cover;
+}
+
+header .info-text {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1.8rem;
+    font-weight: 500;
+    font-family: 'Ubuntu';
+    text-align: center;
+    opacity: 0.9; /* Slightly visible by default */
+    transform: translateY(0); /* Normal position */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    animation: fadeInUp 1s ease-out forwards; /* Smooth entry animation */
+}
+
+/* Fade-in and Move-up Animation */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+}
+
+/* Scroll Icon Styling */
+header .info-text .scroll {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    color: #fff;
+    transition: opacity 0.3s ease;
+}
+
+header .info-text .scroll:hover {
+    opacity: 1;
+}
+h3, h4{
+    font-family: 'Ubuntu';
+    font-weight: 500;
+    font-size: 1.2rem;
+    color: rgb(177, 172, 177);
+}
+
+header .info-text .scroll i {
+    font-size: 2.5rem;
+    color: rgb(255, 255, 255); /* Adjust as needed */
+    animation: pulse 2s infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Blur Overlay Styling */
+.blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    z-index: 1;
+}
+
+
+/* Scroll Button Styling */
+.scroll {
+    position: absolute;
+    bottom: 20px; /* Adjust this value to position the button below the h3 */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
+}
+
+.scroll a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+}
+
+.scroll i {
+    font-size: 2.5rem;
+    color: #4aa0e6;
+    margin-bottom: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.scroll span {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Pulse Effect */
+.scroll::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    content: '';
+    width: 90px; /* Larger size for the pulse effect */
+    height: 90px; /* Larger size for the pulse effect */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Animation for Pulse */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
+}
+
+/* Hover Effect */
+.scroll:hover i {
+    transform: scale(3); /* Increase size by 3x on hover */
+}
+
+.scroll:hover {
+    opacity: 1;
+}
+
+
+/* Animation Effect */
+@keyframes pulse {
+    0% {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+}
+
+/* Hover Effect */
+header:hover .info-text, /* When cursor hovers over header */
+header .info-text:hover { /* When cursor hovers over info-text */
+    animation: pulse 1s infinite;
+    opacity: 1;
+}
+
+/* Ensure Header Container has Relative Position */
+header {
+    position: relative;
+}
+
+
+.container {
+    padding: 40px;
+}
+
+#about, #features {
+    background-color: #1b1e36;
+    padding: 60px 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+}
+
+#about .header, #features .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.header-1 h1 {
+    text-align: center;
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 2.5rem;
+}
+
+.header-1 p{
+    padding-top: 10px;
+    padding-bottom: 20px;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: yellow;
+    font-weight: 600;
+}
+
+.header-2 h1 {
+    text-align: center;
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 2.5rem;
+}
+.header-2 p {
+    padding-top: 10px;
+    padding-bottom: 20px;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: yellow;
+    font-weight: 600;
+}
+
+#about-3, .header-3 h1 {
+    padding-top: 10px;
+    padding-bottom: 20px;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#features .header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.header a {
+    text-decoration: none;
+    font-size: 1.3em;
+    color: #fff;
+    background-color: #2d304a;
+    padding: 10px 30px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.header a:hover {
+    background-color: #667dcf;
+}
+
+/* Base Styles for Cards */
+.card-link {
+    display: block; /* Ensure the link takes up space */
+    text-decoration: none; /* Remove underline from the link */
+}
+
+.card-1 {
+    background-color: #0e122b;
+    margin-bottom: 40px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #ffffff; /* Ensure text color is white */
+    cursor: pointer; /* Pointer cursor on hover */
+}
+
+.card-1:hover {
+    transform: scale(1.05); /* Slightly enlarge card on hover */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* More prominent shadow on hover */
+}
+
+.card-1 .info h2 {
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.759);
+    margin-bottom: 15px;
+}
+
+.card-1 .info p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #ffffff;
+}
+
+.card {
+    background-color: #0e122b;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #ffffff; /* Ensure text color is white */
+    cursor: pointer; /* Pointer cursor on hover */
+}
+
+.card:hover {
+    transform: scale(1.05); /* Slightly enlarge card on hover */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* More prominent shadow on hover */
+}
+
+.card img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.card .info h2 {
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.759);
+    margin-bottom: 15px;
+}
+
+.card .info p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #ffffff;
+}
+
+
+/* Responsive Grid Layout */
+.feature-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* Centering Content */
+.feature-cards .card {
+    text-align: center;
+    justify-content: center;
+}
+
+/* Icon Styling */
+.feature-cards .card i {
+    font-size: 4rem;
+    color: #9d9fa8;
+    margin-bottom: 10px;
+}
+
+/* Hover Effect */
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* Scroll to Top Button */
+.scroll-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4aa0e6;
+    color: #fff;
+    border-radius: 50%;
+    padding: 10px;
+    display: none;
+    transition: background-color 0.3s;
+}
+
+.scroll-top:hover {
+    background-color: #2a7db3;
+}
+
+/* Blog Button */
+#blogButton {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4aa0e6;
+    color: #fff;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+    animation: pulse 2s infinite;
+}
+
+#blogButton:hover {
+    background-color: #2a7db3;
+}
+
+/* Footer Styles */
+footer {
+    background-color: #1b1e36;
+    padding: 20px;
+    text-align: center;
+    margin-top: 40px;
+    border-radius: 10px;
+}
+
+footer p {
+    margin: 0;
+    color: #aaa;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Animation on Resize */
+@media (max-width: 768px) {
+    .feature-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        max-width: 90%;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 769px) {
+    .card {
+        transition: transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+    }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Application - signup</title>
+    <link rel="icon" href="assets/logobmii.png">
+    <link rel="stylesheet" href="style-3.css">
+</head>
+<body>
+    <div class="container" id="register-container">
+        <h2>Register</h2>
+        <form id="register-form-fields">
+            <div class="form-group">
+                <input type="text" id="register-username" placeholder="Enter username" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="register-email" placeholder="Enter email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="register-password" placeholder="Enter password" required>
+                <button type="button" id="show-pw-register">Show Password</button>
+            </div>            
+            <div class="form-group">
+                <input type="number" id="register-age" placeholder="Enter age" required>
+            </div>
+            <div class="form-group">
+                <textarea id="register-hobbies" placeholder="Describe your hobbies" required></textarea>
+            </div>
+            <button type="submit" id="register-btn">Register</button>
+            <div>
+                <a href="home.html" id="back-to-home" class="button">Back</a>
+            </div>
+        </form>
+        <p>Already have an account? <a href="sign.html">Login here</a></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
