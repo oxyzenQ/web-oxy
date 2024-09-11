@@ -15,6 +15,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Initialize password toggle functionality for login and registration forms
+    togglePasswordVisibility('show-pw-login', 'login-password');
+    togglePasswordVisibility('show-pw-register', 'register-password');
+
+    // Function to show notifications
+    function showNotification(message, type) {
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        
+        if (type === 'success') {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        } else {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+    }
+
     // Utility function for making API requests with error handling
     async function fetchData(url, options) {
         try {

@@ -44,11 +44,11 @@ input[type="email"],
 input[type="password"] {
     width: 100%;
     padding: 8px;
+    margin-left: -10px;
     border-radius: 0.5rem;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
-    font-size: 1rem;
     transition: border-color 0.3s ease;
 }
 
@@ -136,7 +136,7 @@ a:hover {
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        width: 95%;
+        width: 100%;
         padding: 20px;
     }
 
