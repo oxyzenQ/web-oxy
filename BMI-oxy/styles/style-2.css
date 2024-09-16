@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #ececec;
+    background-color: black;
+    background-size: cover;
+    padding: 20px 0 140px 0;
+    position: relative;
+    overflow: hidden; /* Prevent scrollbar issues with ::before pseudo-element */
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0)), url('../assets/fractalloxy.png') no-repeat center center fixed;
+    background-size: cover;
+    z-index: -1;
+    filter: blur(10px); /* Apply the blur here */
+    transition: background-position 3s ease-in-out;
+}
+
+#homeButton {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.829);
+    color: #cccccce0;
+    border: 1px solid transparent;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    padding: 16px 18px;
+    border-radius: 50%;
+    border-left: 2px solid #cccccce0;
+    border-top: 2px solid #cccccce0;
+    cursor: pointer;
+    font-size: 28px;
+    backdrop-filter: none; /* No blur effect on the button */
+    transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+    z-index: 1000;
+}
+
+#homeButton:hover {
+    background: #0f0f1d;
+    border-color: #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+
+.container {
+    max-width: 1000px;
+    width: 100%;
+}
+
+header {
+    position: relative; /* Ensure that the pseudo-element is positioned relative to the header */
+    background: url('../assets/health1.jpg') center / cover no-repeat;
+    backdrop-filter: blur(1px); /* Apply blur to the background */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 20px 50px 20px 50px;
+    border-radius: 16px;
+    color: #fff;
+    text-align: center;
+    border: 2px solid rgba(128, 128, 128, 0.338);
+    margin: 80px 0 120px 0;
+    overflow: hidden; /* Ensure the pseudo-element doesn't overflow */
+}
+
+header::before {
+    content: ''; /* Required for pseudo-elements */
+    position: absolute; /* Position it absolutely within the header */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark overlay */
+    z-index: 1; /* Place it above the image but below the text */
+    backdrop-filter: blur(1px); /* Optional: apply blur to the overlay */
+}
+
+header * {
+    position: relative; /* Ensure the text and other elements are positioned above the overlay */
+    z-index: 2; /* Ensure text and elements are above the overlay */
+}
+
+
+header .category {
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+header .info .tags i {
+    font-size: 24px;
+    margin-right: 8px;
+}
+
+header .info .tags span {
+    font-size: 2.5rem;
+    font-weight: 400;
+}
+
+header .info .title {
+    margin: 20px 0;
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+header .info .subtitle,
+header .info .subtitle2 {
+    max-width: 70%;
+    margin: 0 auto;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.details {
+    background : rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgb(0, 0, 0);
+    border: 2px solid rgba(128, 128, 128, 0.338);
+    color: #ccc;
+    overflow: hidden;
+    backdrop-filter: blur(2px); /* Apply blur to the background */
+}
+
+.details::before {
+    content: ''; /* Required for pseudo-elements */
+    position: absolute; /* Position it absolutely within the header */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* Semi-transparent dark overlay */
+    z-index: 1; /* Place it above the image but below the text */
+    backdrop-filter: blur(4px); /* Optional: apply blur to the overlay */
+}
+
+.details * {
+    position: relative; /* Ensure the text and other elements are positioned above the overlay */
+    z-index: 2; /* Ensure text and elements are above the overlay */
+}
+
+.details .item {
+    flex: 1 1 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.details .item span {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #ccc;
+}
+
+.details .item .item-data {
+    font-size: 1.2rem;
+    font-weight: normal;
+}
+
+.details .item .item-text {
+    margin-top: 12px;
+    font-size: 1.5rem;
+}
+
+@media screen and (max-width: 768px) {
+    header {
+        padding: 10px 20px;
+        min-height: 300px;
+    }
+
+    header .category {
+        font-size: 0.9rem;
+    }
+
+    header .info .title {
+        font-size: 2.2rem;
+    }
+
+    header .info .subtitle,
+    header .info .subtitle2 {
+        font-size: 0.8rem;
+    }
+
+    .details {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .details .item {
+        flex: 1 1 100%;
+        margin-bottom: 30px;
+    }
+
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1);
+    }
+}
+
+
+/* other styles */
+
+hr{
+    border: 2px solid #cccccce0;
+    height: 1px;
+    width: 70%;
+    margin: 60px auto 60px auto;
+    border-radius: 2px;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    -ms-border-radius: 2px;
+    -o-border-radius: 2px;
+}
+
+.fa-redhat{
+    color: red;
+}
+
+.fa-copyright{
+    color: green;
+}
+
+.anonymous {
+    font-style: bold;
+    color: #ccc;
+    margin: 10px 0 10px 0;
+    font-size: medium;
+    font-weight: 500;
+}
+
+footer {
+    width: 50%; /* Set the desired width */
+    max-width: 1000px; /* Optional: Limit the maximum width */
+    min-width: 300px; /* Optional: Set a minimum width */
+    margin: 0 auto 0 auto; /* Center the footer horizontally */
+    line-height: 1.7;
+    color: #ccc;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(128, 128, 128, 0.338);
+    text-align: center; /* Center text for better readability */
+    padding: 20px; /* Optional: Add padding for better content spacing */
+}
+
+
+article {
+    width: 100%; /* Ensure full width scaling */
+    max-width: 1000px; /* Set a max-width for readability on large screens */
+    min-width: 300px; /* Prevent too small article width on small devices */
+    margin: 120px auto 100px auto; /* Center and add spacing at the bottom */
+    line-height: 1.8; /* Increase line spacing for better readability */
+    color: #cccccce0; /* Softer text color */
+    background: rgba(0, 0, 0, 0.7); /* Slightly darker background for contrast */
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Softer shadow for depth */
+    border: 2px solid rgba(128, 128, 128, 0.4); /* Subtle border */
+    text-align: center; /* Left-align for better flow in longer articles */
+    padding: 30px 40px; /* More padding for spacious layout */
+}
+
+article h3,
+article h4 {
+    margin: 20px 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+article h3 {
+    font-size: 2rem; /* Slightly larger heading for emphasis */
+    font-weight: 600; /* Bold the heading */
+    color: #ffffff; /* Standout white for heading */
+}
+
+article h4 {
+    font-size: 1.3rem; /* Slightly larger subheading */
+    font-weight: 500;
+    color: #e0e0e0; /* Lighter subheading color */
+}
+
+article p {
+    font-size: 1.1rem; /* Slightly larger for readability */
+    max-width: 800px; /* Restrict the paragraph width */
+    margin: 0 auto 20px auto; /* Center text and add spacing */
+    background: rgba(0, 0, 0, 0.6); /* Soft background */
+    padding: 20px; /* Add padding for spacious content */
+    border-radius: 12px; /* Softer edges */
+    border: 1px solid rgba(128, 128, 128, 0.3); /* Subtle border */
+}
+
+article blockquote {
+    margin: 40px auto;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 30px;
+    border-radius: 16px;
+    font-style: italic;
+    border-right: 4px solid #cccccc;
+    border-top: 2px solid #cccccc;
+    max-width: 90%; /* Widen the blockquote for more content */
+    color: #e0e0e0; /* Softer color */
+    text-align: left; /* Left-align blockquote */
+    font-size: 1rem;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 768px) {
+    article h3 {
+        font-size: 1.8rem; /* Adjust heading size for mobile */
+    }
+
+    article h4 {
+        font-size: 1.1rem; /* Adjust subheading size */
+    }
+
+    article p {
+        font-size: 1rem; /* Smaller paragraph text for mobile */
+        padding: 15px; /* Less padding on smaller screens */
+    }
+
+    article blockquote {
+        font-size: 1rem; /* Reduce blockquote font size */
+        padding: 20px; /* Less padding */
+    }
+}

@@ -1,30 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 html {
     scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 body {
     font-size: 14px;
-    color: #dadada;
-    background-color: #121429;
+    color: #ccc;
+    background-color: #0c0d1b;
+    padding: 20px 0 20px 0;
 }
 
+/* Blur Overlay Styling */
 .blur-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: To darken the blur */
-    backdrop-filter: blur(8px); /* Apply blur */
+    background: rgba(0, 0, 0, 0.793);
+    backdrop-filter: blur(10px);
     z-index: 1;
 }
 
@@ -38,7 +44,7 @@ header {
     align-items: center;
     justify-content: center;
     color: #fff;
-    background: url('assets/fractalloxy.png') no-repeat center center/cover;
+    background: url('../assets/oxyy.png') no-repeat center center/cover;
 }
 
 header .info-text {
@@ -51,7 +57,6 @@ header .info-text {
     height: 100%;
     font-size: 1.8rem;
     font-weight: 500;
-    font-family: 'Ubuntu';
     text-align: center;
     opacity: 0.9; /* Slightly visible by default */
     transform: translateY(0); /* Normal position */
@@ -85,7 +90,6 @@ header .info-text .scroll:hover {
     opacity: 1;
 }
 h3, h4{
-    font-family: 'Ubuntu';
     font-weight: 500;
     font-size: 1.2rem;
     color: rgb(177, 172, 177);
@@ -108,19 +112,6 @@ header .info-text .scroll i {
         transform: scale(1.2);
     }
 }
-
-/* Blur Overlay Styling */
-.blur-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    z-index: 1;
-}
-
 
 /* Scroll Button Styling */
 .scroll {
@@ -216,21 +207,32 @@ header .info-text:hover { /* When cursor hovers over info-text */
 }
 
 /* Ensure Header Container has Relative Position */
-header {
+.header p {
     position: relative;
-}
-
-
-.container {
-    padding: 40px;
+    text-align: center;
 }
 
 #about, #features {
-    background-color: #1b1e36;
+    position: relative; /* Ensure ::before covers the section */
+    background-size: cover;
     padding: 60px 20px;
     margin-bottom: 20px;
     border-radius: 10px;
+    z-index: 1; /* Make sure the content is on top */
 }
+
+#about::before, #features::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    backdrop-filter: blur(2px); /* Blur the background */
+    z-index: -1; /* Send the overlay behind the content */
+}
+
 
 #about .header, #features .header {
     display: flex;
@@ -239,22 +241,32 @@ header {
     margin-bottom: 40px;
 }
 
+.header h1 {
+    color: #ccc;
+    text-transform: uppercase;
+    font-size: 2.5rem;
+}
+
 .header-1 h1 {
-    text-align: center;
     color: #fff;
     text-transform: uppercase;
     font-size: 2.5rem;
 }
 
-.header-1 p{
+.header-1 p, .header-2 p {
     padding-top: 10px;
     padding-bottom: 20px;
     text-align: center;
     margin-top: 10px;
-    margin-bottom: 10px;
-    color: yellow;
+    margin-bottom: 30px;
     font-weight: 600;
+    font-size: 1.2rem;
+    background: linear-gradient(to right, #4aa0e6, #667dcf);
+    -webkit-background-clip: text; /* For WebKit browsers */
+    background-clip: text; /* For other modern browsers */
+    color: transparent; /* Make the text itself transparent to show gradient */
 }
+
 
 .header-2 h1 {
     text-align: center;
@@ -262,15 +274,7 @@ header {
     text-transform: uppercase;
     font-size: 2.5rem;
 }
-.header-2 p {
-    padding-top: 10px;
-    padding-bottom: 20px;
-    text-align: center;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    color: yellow;
-    font-weight: 600;
-}
+
 
 #about-3, .header-3 h1 {
     padding-top: 10px;
@@ -301,83 +305,6 @@ header {
 .header a:hover {
     background-color: #667dcf;
 }
-
-/* Base Styles for Cards */
-.card-link {
-    display: block; /* Ensure the link takes up space */
-    text-decoration: none; /* Remove underline from the link */
-}
-
-.card-1 {
-    background-color: #0e122b;
-    margin-bottom: 40px;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    color: #ffffff; /* Ensure text color is white */
-    cursor: pointer; /* Pointer cursor on hover */
-}
-
-.card-1:hover {
-    transform: scale(1.05); /* Slightly enlarge card on hover */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* More prominent shadow on hover */
-}
-
-.card-1 .info h2 {
-    font-size: 1.8rem;
-    color: rgba(255, 255, 255, 0.759);
-    margin-bottom: 15px;
-}
-
-.card-1 .info p {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #ffffff;
-}
-
-.card {
-    background-color: #0e122b;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    color: #ffffff; /* Ensure text color is white */
-    cursor: pointer; /* Pointer cursor on hover */
-}
-
-.card:hover {
-    transform: scale(1.05); /* Slightly enlarge card on hover */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* More prominent shadow on hover */
-}
-
-.card img {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.card .info h2 {
-    font-size: 1.8rem;
-    color: rgba(255, 255, 255, 0.759);
-    margin-bottom: 15px;
-}
-
-.card .info p {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #ffffff;
-}
-
 
 /* Responsive Grid Layout */
 .feature-cards {
@@ -441,20 +368,6 @@ header {
     background-color: #2a7db3;
 }
 
-/* Footer Styles */
-footer {
-    background-color: #1b1e36;
-    padding: 20px;
-    text-align: center;
-    margin-top: 40px;
-    border-radius: 10px;
-}
-
-footer p {
-    margin: 0;
-    color: #aaa;
-}
-
 /* Pulse Animation */
 @keyframes pulse {
     0%, 100% { opacity: 0.7; }
@@ -477,4 +390,125 @@ footer p {
     .card {
         transition: transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
     }
+}
+
+
+/* Custom Styling */
+
+.fa-redhat{
+    color: red;
+}
+
+.fa-copyright{
+    color: green;
+}
+
+.container {
+    padding: 10px 20px 10px 20px;
+    text-align: center;
+    align-items: center;
+    color: #ccc;
+    font-size: 1rem;
+   
+}
+
+.container p {
+    font-weight: 500;
+}
+
+/* Footer Styles */
+footer {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    border-left: 2px solid #4aa0e6;
+    border-bottom: 2px solid #4aa0e6;
+    width: fit-content;
+    margin: 45px auto 45px auto;
+}
+
+
+.card {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 30px;
+    border-radius: 10px;
+    border-left: 2px solid #4aa0e6;
+    border-bottom: 2px solid #4aa0e6;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #ffffff; /* Ensure text color is white */
+    cursor: pointer; /* Pointer cursor on hover */
+    width: fit-content;
+    max-width: 1000px;
+    text-align: center;
+    margin: 45px auto 45px auto;
+}
+
+.card:hover {
+    box-shadow: 0 8px 20px rgb(0, 13, 152);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transform: scale(1.09);
+    -webkit-transform: scale(1.09);
+    -moz-transform: scale(1.09);
+    -ms-transform: scale(1.09);
+    -o-transform: scale(1.09);
+}
+
+
+.card img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.card .info h2 {
+    font-size: 1.2rem;
+    color: grey;
+    margin-bottom: 15px;
+}
+
+.card .info p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: grey;
+}
+
+/*.info a{
+    color: #4aa0e6;
+    text-decoration: none;
+}
+
+.feature-cards a {
+    color: transparent;
+}*/
+
+a{
+    color: #4aa0e68e;
+    text-decoration: none;
+}
+
+#menu{
+    background-color: black;
+    width: fit-content;
+    margin: 45px auto 45px auto;
+    border-radius: 10px;
+    border: 2px solid grey;
+}
+
+#features{
+    background-color: black;
+    width: fit-content;
+    margin: 45px auto 45px auto;
+    border: 2px solid grey;
+    border-radius: 20px;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    -ms-border-radius: 20px;
+    -o-border-radius: 20px;
 }

@@ -260,4 +260,5 @@ async function calculateBMI() {
     } else {
         alert('Please fill out all fields.');
     }
+    
 }

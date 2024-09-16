@@ -1,0 +1,454 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0)), url('../assets/oxyy.png') no-repeat center center fixed;
+    background-size: cover;
+   /* background-repeat: no-repeat;
+    background-position: center;*/
+    backdrop-filter: blur(10px);
+    transition: background-position 3s ease-in-out;
+    position: relative;
+}
+
+/* Initial State for Chart and Info Section */
+.chart-container, .info-section {
+    width: 80%;
+    max-width: 800px;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 20px 30px;
+    border-radius: 1rem;
+    box-shadow: 0 4px 30px rgb(0, 0, 0);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    margin-top: 8%;
+    margin-bottom: 20%;
+    overflow: auto;
+    color: grey;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover Effect Example (Add hover state or class) */
+.chart-container:hover, .info-section:hover {
+    transform: scale(1.05); /* Example transform to scale up */
+    box-shadow: 0 6px 40px rgb(0, 0, 0); /* Example box-shadow change */
+}
+
+.container {
+    width: 55%;
+    max-width: 540px;
+    color: grey;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 20px 30px; /* Increase top padding to push content down */
+    border-radius: 1rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8.2px);
+    -webkit-backdrop-filter: blur(8.2px);
+    border: 2px solid #ffffff20;
+    margin-top: 10%;
+    margin-bottom: 40%;
+    text-align: center;
+    position: relative;
+}
+
+.chart-container h2, .info-section h3 {
+    font-size: 1.6rem;
+    font-weight: 500;
+    margin-top: 10%;
+    margin-bottom: 10%;
+    color: white;
+}
+
+.icon-wrapper {
+    font-size: 3.5rem;
+    color: rgb(61, 88, 198);
+    margin: 20px 0 10px 0;
+}
+
+.container h2 {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 500;
+    text-align: center;
+    margin: 20px 0 10px 0;
+    text-decoration: none;
+}
+
+.form-group p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    text-align: center;
+    margin: 20px 0 20px 0;
+    color: grey;
+    text-decoration: none;
+    
+}
+
+.form-group input {
+    width: 50%;
+    height: 40px;
+    border-radius: 1rem;
+    padding: 0 15px;
+    font-size: 1rem;
+    background: transparent;
+    color: grey;
+    border: 3px solid rgba(112, 112, 112, 0.5);
+    transition: border-color 0.3s ease;
+    -webkit-border-radius: 1rem;
+    -moz-border-radius: 1rem;
+    -ms-border-radius: 1rem;
+    -o-border-radius: 1rem;
+    text-align: center;
+    font-weight: 400;
+}
+
+.form-group input:hover,
+.form-group input:focus {
+    border-color: rgba(88, 112, 164, 0.789);
+}
+
+button {
+    width: 50%;
+    height: 42px;
+    border-radius: 1rem;
+    font-size: 1rem;
+    color: white;
+    background: rgb(26, 25, 25);
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin: 60px 0 30px 0;
+    -webkit-border-radius: 1rem;
+    -moz-border-radius: 1rem;
+    -ms-border-radius: 1rem;
+    -o-border-radius: 1rem;
+    -webkit-transition: background 0.3s ease;
+    -moz-transition: background 0.3s ease;
+    -ms-transition: background 0.3s ease;
+    -o-transition: background 0.3s ease;
+}
+
+button:hover {
+    background:  rgba(10, 139, 10, 0.663);
+    color: white;
+}
+
+#reset-button {
+    width: 50%;
+    height: 42px;
+    border-radius: 1rem;
+    font-size: 1rem;
+    color: grey;
+    background: rgb(26, 25, 25); /* Example color */
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin: 10px 0 40px 0;
+    -webkit-border-radius: 1rem;
+    -moz-border-radius: 1rem;
+    -ms-border-radius: 1rem;
+    -o-border-radius: 1rem;
+    -webkit-transition: background 0.3s ease;
+    -moz-transition: background 0.3s ease;
+    -ms-transition: background 0.3s ease;
+    -o-transition: background 0.3s ease;
+}
+
+#reset-button:hover {
+    background-color: rgba(255, 247, 0, 0.542); /* Darker shade on hover */
+    color: white;
+}
+
+.result {
+    font-weight: 500;
+    font-size: 1.2rem;
+    padding-top: 10px;
+    padding-bottom: 40px;
+    color: white;
+}
+
+.result span {
+    font-weight: bold;
+}
+
+.result .underweight { color: yellow; }
+.result .healthy { color: green; }
+.result .overweight { color: orange; }
+.result .obesity { color: red; }
+
+.chart-container img {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 1rem;
+    margin: 20px 0;
+}
+
+.chart-description, .info-section p {
+    font-size: 1rem;
+    color: #aaa;
+    margin: 10% 0;
+}
+
+.info-section table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.info-section th,
+.info-section td {
+    padding: 10px;
+    border: 1px solid rgba(112, 112, 112, 0.5);
+}
+
+.info-section th {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.info-section td {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+footer {
+    background: rgba(0, 0, 0, 0.55);
+    padding: 20px 0;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8.2px);
+    -webkit-backdrop-filter: blur(8.2px);
+    border-top: 1px solid #ffffff20;
+    color: grey;
+    text-align: center;
+    position: relative;
+    border-radius: 1rem;
+    margin-top: 10%;
+    margin-bottom: 6%;
+}
+
+.footer-container {
+    width: 100%; /* Adjust to full width of the footer */
+    max-width: 600px; /* Set max-width for better responsiveness */
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-container p {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #aaa;
+    margin: 0;
+}
+
+/* Scroll Up Icon Styling */
+.scroll-up {
+    position: fixed; /* Fixed positioning to stay in view */
+    bottom: 6%; /* Adjust based on footer height and spacing */
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 30%;
+    border: 2px solid #ffffff20;
+    padding: 10px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    z-index: 100; /* Ensure it's above other content */
+    transition: background 0.6s ease, transform 0.6s ease; /* Smooth transition */
+    width: 5%;
+}
+
+.scroll-up a {
+    color: grey;
+    text-decoration: none;
+    font-size: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+}
+
+.scroll-up:hover {
+    background: rgb(10, 139, 10); 
+    transform: scale(1.1); 
+    transform: translateY(-50%); 
+    cursor: pointer;
+}
+
+/* Scroll Icon Styling */
+.scroll-down, .scroll-prof, .scroll-art, .scroll-left, .scroll-up {
+    position: fixed;
+    /*Fixedpositioningtostayinview*/
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 30%;
+    border: 2px solid #ffffff20;
+    padding: 10px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    z-index: 100;
+    /*Ensureit'saboveothercontent*/
+    transition: background 0.6s ease, transform 0.6s ease;
+     /* Smooth transition */
+    -webkit-border-radius: 30%;
+    -moz-border-radius: 30%;
+    -ms-border-radius: 30%;
+    -o-border-radius: 30%;
+}
+
+/* Common styling for the buttons */
+.scroll-down, .scroll-prof, .scroll-art, .scroll-left {
+    color: grey;
+    text-decoration: none;
+    font-size: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 15%;
+}
+
+.scroll-down:hover, .scroll-prof:hover, .scroll-art:hover, .scroll-left:hover {
+    background: rgba(10, 139, 10, 0.455);
+    transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+/* Specific button positions */
+
+.scroll-left {
+    left: calc(45% - 27%); /* Adjust position from the left */
+    bottom: -18%;
+}
+
+.scroll-down {
+    left: calc(45% + 7%); /* Adjust position from the left */
+    bottom: -18%; /* Adjust based on footer height and spacing */
+}
+
+.scroll-prof {
+    left: calc(45% - 10%); /* Adjust position from the left */
+    bottom: -18%;
+}
+
+.scroll-art {
+    left: calc(45% + 24%); /* Adjust position from the left */
+    bottom: -18%;
+}
+
+
+/* Custom Styling */
+
+/* regular icons */
+.fa-solid, .fa-regular {
+    color: rgba(45, 0, 206, 0.736);
+}
+.fa-copyright {
+    color: green;
+    font-size: 2.5rem;
+    padding-bottom: 20px;
+}
+
+/* gender style options */
+
+.gender-options {
+    display: flex;
+    gap: 30px; /* Increased space for better clarity */
+    justify-content: center; /* Centers the options horizontally */
+    align-items: center;
+    margin: 0 auto; /* Centers the whole group within its parent container */
+    padding: 20px 0; /* Adds vertical padding for better spacing */
+    flex-wrap: wrap;
+    
+    width: fit-content; /* Adjust width to fit the content */
+}
+
+.gender-options label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: grey; /* Darker text for better contrast */
+    transition: color 0.3s ease;
+}
+
+.gender-options input[type="radio"] {
+    display: none; /* Hide the default radio button */
+}
+
+.gender-options i {
+    font-size: 30px; /* Larger icon for better visibility */
+    color: #aaa;
+    margin-right: 10px;
+    transition: color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+/* When the radio button is checked, change the icon color */
+.gender-options input[type="radio"]:checked + i {
+    color: green;
+}
+
+/* Custom hover effect */
+.gender-options label:hover i {
+    color: #666;
+}
+
+.gender-options label:hover {
+    color: #444; /* Darker text on hover for better interaction */
+}
+
+/* Custom table styling */
+.cinfoT {
+    width: 100%;
+    border-collapse: separate; /* Use 'separate' to allow border-radius */
+    border-spacing: 0; /* Remove space between borders */
+    background-color: transparent; /* Light background for the table */
+    border: 2px solid grey; /* Border for the table */
+    border-radius: 10px; /* Rounded corners */
+    overflow: hidden; /* Ensure rounded corners apply */
+    color: rgba(255, 255, 255, 0.735);
+    
+}
+
+.cinfoT th, .cinfoT td {
+    padding: 12px 15px; /* Add padding for spacing */
+    text-align: left;
+    border-bottom: 1.5px solid grey; /* Adds border between rows */
+    font-size: 16px; /* Font size for readability */
+}
+
+.cinfoT th {
+    background-color: #604cafba; /* Table header background color */
+    color: white; /* White text for contrast */
+    font-weight: bold;
+    border-top-left-radius: 10px; /* Rounded top-left corner */
+    border-top-right-radius: 10px; /* Rounded top-right corner */
+    text-align: center;
+}
+
+.cinfoT tbody tr:last-child td {
+    border-bottom: none; /* Remove bottom border from the last row */
+}
+
+.cinfoT tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 10px; /* Rounded bottom-left corner */
+}
+
+.cinfoT tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 10px; /* Rounded bottom-right corner */
+}
