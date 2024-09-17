@@ -6,16 +6,25 @@
     box-sizing: border-box;
 }
 
+:root {
+    --main-bg-color: #000762;  /* Primary background color */
+    --secondary-bg-color: #0b0f3a;  /* Secondary background color */
+    --text-color: #ffffff;  /* Text color */
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: rgb(7, 25, 68); /* Consistent background color */
-    color: #fff;
+    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    color: var(--text-color);
     padding: 20px;
 }
+
+/* Other styles remain unchanged */
+
 
 .main-container {
     width: 90%;
@@ -34,6 +43,8 @@ body {
     transform: translateY(-5px);
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
 }
+
+/* Other CSS remains unchanged */
 
 .logo {
     width: 150px;
