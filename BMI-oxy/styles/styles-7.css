@@ -10,6 +10,14 @@ body {
     height: 100vh;
 }
 
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0
+}
+
 .main-container {
     width: 90%;
     max-width: 800px;

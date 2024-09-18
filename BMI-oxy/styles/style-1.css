@@ -6,6 +6,14 @@
     box-sizing: border-box;
 }
 
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0
+}
+
 :root {
     --main-bg-color: #000762;  /* Primary background color */
     --secondary-bg-color: #0b0f3a;  /* Secondary background color */
