@@ -55,18 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bmi = weight / (heightInMeters * heightInMeters);
                 document.getElementById('bmi-output').textContent = bmi.toFixed(2);
 
-                const result = await fetch('/api/user/calc', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ bmi, date: new Date() })
-                }).then(response => response.json());
+                // uncomment if use node js (server).
+                //const result = await fetch('/api/user/calc', {
+                //    method: 'POST',
+                //    headers: {
+                //        'Content-Type': 'application/json',
+                //        'Authorization': `Bearer ${token}`
+                //    },
+                //    body: JSON.stringify({ bmi, date: new Date() })
+                //}).then(response => response.json());
 
-                if (!result.success) {
-                    console.error('Failed to save BMI:', result.error);
-                }
+                //if (!result.success) {
+                //    console.error('Failed to save BMI:', result.error);
+                //}
             });
         }
     }
@@ -146,15 +147,16 @@ async function calculateBMI() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const scrollUpLink = document.getElementById('scroll-up-link');
-    
-    if (scrollUpLink) {
-        scrollUpLink.addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent default anchor behavior
-            document.querySelector(scrollUpLink.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
-});
+// comment for smooth scrolling , enable on style-4.css
+//document.addEventListener('DOMContentLoaded', () => {
+//   const scrollUpLink = document.getElementById('scroll-up-link');
+//    
+//    if (scrollUpLink) {
+//        scrollUpLink.addEventListener('click', (event) => {
+//            event.preventDefault(); // Prevent default anchor behavior
+//           document.querySelector(scrollUpLink.getAttribute('href')).scrollIntoView({
+//                behavior: 'smooth'
+//            });
+//        });
+//    }
+//});
