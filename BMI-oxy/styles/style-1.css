@@ -1,9 +1,56 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+/* In 2025, I changed the style of the website to be more elegant but lightweight for any device */
+/* Author: rezky_nightly 2025 */
+
+:root {
+    /* Font Settings */
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1; /* Fix Chrome */
+  
+    /* Background Colors */
+    --main-bg-color: #070a1c; /* Deep Space Blue */
+    --secondary-bg-color: #040717; /* Dark Galactic Black */
+    --accent-bg-color: #1b1f3a; /* Distant Nebula Blue */
+  
+    /* Plasma & Glow Colors */
+    --plasma-blue: #4285f4; /* Electric Plasma Blue */
+    --plasma-purple: #9b59b6; /* Cosmic Purple */
+    --star-glow: #f4e542; /* Soft Yellow Star Glow */
+    --nebula-glow: #7f7fd5; /* Ethereal Nebula Glow */
+  
+    /* Text Colors */
+    --text-color: #e0e0e0; /* Soft White */
+    --subtext-color: #c5c8e6; /* Light Bluish White */
+  
+    /* Borders & Shadows */
+    --border-color: rgba(66, 133, 244, 0.5); /* Subtle Plasma Blue */
+    --shadow-color: rgba(7, 10, 28, 0.7); /* Deep Space Shadow */
+  
+    /* Button Gradient */
+    --button-gradient: linear-gradient(135deg, var(--plasma-blue), var(--plasma-purple));
+  
+    /* Container */
+    --container-bg: rgba(15, 20, 40, 0.85);
+    --container-border: rgba(255, 255, 255, 0.15);
+      --icon-1: rgba(128, 128, 128); /* Neutral icon color */
+  }
+  
+  /* Variable Font Support */
+  @supports (font-variation-settings: normal) {
+      :root {
+          font-family: InterVariable, sans-serif;
+      }
+  }
+  
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: inherit; /* Warisi dari :root */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -14,42 +61,31 @@ html, body {
     padding: 0
 }
 
-:root {
-    --main-bg-color: #000762;  /* Primary background color */
-    --secondary-bg-color: #0b0f3a;  /* Secondary background color */
-    --text-color: #ffffff;  /* Text color */
-}
-
 body {
-    font-family: 'Poppins', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    /* ✨ Gradient Background */
+    background: radial-gradient(circle at 40% 80%, var(--main-bg-color) 10%, var(--accent-bg-color) 40%, var(--secondary-bg-color) 100%);
     color: var(--text-color);
     padding: 20px;
+    font-size: clamp(14px, 2vw, 18px); /* Min 14px, max 18px, skala responsif */
+    padding: min(5vw, 20px); /* Gunakan nilai terkecil antara 5% viewport atau 20px */
 }
 
 /* Other styles remain unchanged */
-
-
 .main-container {
     width: 90%;
     max-width: 800px;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
+    background: var(--container-bg);
     border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 30px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
+    padding: 100px;
     text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.main-container:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+    margin: auto;
 }
 
 /* Other CSS remains unchanged */
@@ -59,13 +95,13 @@ body {
     height: auto;
     margin-bottom: 20px;
     border-radius: 50%;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    filter: brightness(80%);
 }
 
 h1 {
     font-size: 2.4rem;
     margin: 20px 0;
-    color: rgba(255, 255, 255, 0.9);
+    color: white;
 }
 
 .intro {
@@ -74,11 +110,11 @@ h1 {
 
 .intro p {
     font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: white;
 }
 
 .green-icon {
-    color: rgb(10, 139, 10);
+    color: green;
     font-size: 1rem;
     vertical-align: middle;
 }
@@ -87,14 +123,18 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    margin-bottom: 30px;
+    margin-top: 50px;
 }
 
 .option-box {
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    background: rgba(0, 0, 0, 0.7);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--container-border);
+    border-radius: 1rem;
+    border-top-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+
+    box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2), 
+                0 8px 20px rgba(0, 255, 0, 0.1);
+    background: rgba(0, 128, 0, 0.5);
 }
 
 .option-box .option {
@@ -103,9 +143,8 @@ h1 {
     justify-content: center;
     padding: 15px;
     text-decoration: none;
-    color: #fff;
-    font-size: 1.1rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    color: white;
+    font-size: 1.2rem;
 }
 
 .option-box .option i {
@@ -113,24 +152,29 @@ h1 {
 }
 
 .option-box .option:hover {
-    background: rgb(10, 139, 10);
-    color: #fff;
+    background: green;
+    color: white;
+    border-radius: 1rem;
+    border-top-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+
+    box-shadow: 0 4px 15px rgba(0, 255, 0, 0.3), 
+    0 8px 30px rgba(0, 255, 0, 0.2);
 }
 
 .about {
-    margin-bottom: 30px;
+    margin-top: 50px;
+    padding-top: 10px;
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
 }
 
 .about .about-link {
     display: inline-flex;
     align-items: center;
     text-decoration: none;
-    color: #007bff;
+    color: var(--text-color);
     font-size: 1.2rem;
-    padding: 15px;
-    border-radius: 0.5rem;
-    background: rgba(0, 0, 0, 0.7);
-    transition: background-color 0.3s ease;
 }
 
 .about .about-link i {
@@ -138,26 +182,63 @@ h1 {
 }
 
 .about .about-link:hover {
-    background: rgb(10, 139, 10);
-    color: #fff;
+    color: green;
 }
 
 footer {
     margin-top: 30px;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--container-bg);
     padding: 10px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
     text-align: center;
-    color: #fff;
-    border-radius: 0.5rem;
+    color: var(--text-color);
 }
 
 footer p {
-    margin: 0;
     font-size: 0.9rem;
+    color: grey;
 }
 
-footer i {
-    margin-right: 5px;
-    color: #007bff;
+@media screen and (max-width: 768px) {
+    .main-container {
+        padding: 50px;
+        margin: 50px;
+    }
+    
+}
+
+/* Custom Styling */
+
+.fa-champagne-glasses {
+    color: purple;
+    font-size: 1.2rem;
+}
+
+.fa-copyright{
+    color: rgba(0, 128, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-heart-circle-check {
+    color: rgba(255, 0, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-envelope {
+    color: rgba(255, 255, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-github {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-people-group {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-box-open {
+    color: rgba(210, 105, 30, 0.8);
+    font-size: 1.2rem;
 }

@@ -1,4 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+/* In 2025, I changed the style of the website to be more elegant but lightweight for any device */
+/* Author: rezky_nightly 2025 */
+
+:root {
+    /* Font Settings */
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1; /* Fix Chrome */
+  
+    /* Background Colors */
+    --main-bg-color: #070a1c; /* Deep Space Blue */
+    --secondary-bg-color: #040717; /* Dark Galactic Black */
+    --accent-bg-color: #1b1f3a; /* Distant Nebula Blue */
+  
+    /* Plasma & Glow Colors */
+    --plasma-blue: #4285f4; /* Electric Plasma Blue */
+    --plasma-purple: #9b59b6; /* Cosmic Purple */
+    --star-glow: #f4e542; /* Soft Yellow Star Glow */
+    --nebula-glow: #7f7fd5; /* Ethereal Nebula Glow */
+  
+    /* Text Colors */
+    --text-color: #e0e0e0; /* Soft White */
+    --subtext-color: #c5c8e6; /* Light Bluish White */
+  
+    /* Borders & Shadows */
+    --border-color: rgba(66, 133, 244, 0.5); /* Subtle Plasma Blue */
+    --shadow-color: rgba(7, 10, 28, 0.7); /* Deep Space Shadow */
+  
+    /* Button Gradient */
+    --button-gradient: linear-gradient(135deg, var(--plasma-blue), var(--plasma-purple));
+  
+    /* Container */
+    --container-bg: rgba(15, 20, 40, 0.85);
+    --container-border: rgba(255, 255, 255, 0.15);
+      --icon-1: rgb(128, 128, 128); /* Neutral icon color */
+  }
+  
+  /* Variable Font Support */
+  @supports (font-variation-settings: normal) {
+      :root {
+          font-family: InterVariable, sans-serif;
+      }
+  }
+  
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit; /* Warisi dari :root */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-background-clip: text; /* For WebKit browsers */
+    background-clip: text; /* For other modern browsers */
+}
 
 html, body {
     scroll-behavior: smooth;
@@ -8,30 +63,14 @@ html, body {
     padding: 0;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
-
 body {
     font-size: 14px;
-    color: #ccc;
-    background-color: #0c0d1b;
+    color: var(--text-color);
+    background: radial-gradient(circle at 40% 80%, var(--main-bg-color) 10%, var(--accent-bg-color) 40%, var(--secondary-bg-color) 100%);
+    background-size: cover;
     padding: 20px 0 20px 0;
-}
-
-/* Blur Overlay Styling */
-.blur-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.793);
-    backdrop-filter: blur(10px);
-    z-index: 1;
+    font-size: clamp(14px, 2vw, 18px); /* Min 14px, max 18px, skala responsif */
+    padding: min(5vw, 20px); /* Gunakan nilai terkecil antara 5% viewport atau 20px */
 }
 
 /* Header Info Text Styling */
@@ -39,12 +78,8 @@ header {
     position: relative;
     width: 100%;
     height: 100vh;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    background: url('../assets/oxyy.png') no-repeat center center/cover;
+    margin-top: 0;
+    padding: 0;
 }
 
 header .info-text {
@@ -55,23 +90,38 @@ header .info-text {
     align-items: center;
     justify-content: center;
     height: 100%;
+    width: 100%;
+    margin: auto;
     font-size: 1.8rem;
     font-weight: 500;
     text-align: center;
-    opacity: 0.9; /* Slightly visible by default */
-    transform: translateY(0); /* Normal position */
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    animation: fadeInUp 1s ease-out forwards; /* Smooth entry animation */
+    transform: translateY(0);
+    animation: fadeInUp 3s ease-out forwards;
+    background: none;
+    border-radius: 1rem;
+    border-top: 5px solid var(--container-border);
+    border-right: 6px solid var(--container-border);
+    border-left: 6px solid var(--container-border);
 }
 
+header .info-text h1 {
+    font-size: 3.5rem;
+    letter-spacing: 0.2rem;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+header .info-text p, header .info-text small {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    letter-spacing: 0.1rem;
+    color: grey;
+}
 /* Fade-in and Move-up Animation */
 @keyframes fadeInUp {
     0% {
-        opacity: 0;
         transform: translateY(20px);
     }
     100% {
-        opacity: 0.9;
         transform: translateY(0);
     }
 }
@@ -82,23 +132,23 @@ header .info-text .scroll {
     bottom: 20%;
     left: 50%;
     transform: translate(-50%, 0);
-    color: #fff;
-    transition: opacity 0.3s ease;
+    color: var(--text-color);
 }
 
 header .info-text .scroll:hover {
     opacity: 1;
 }
+
 h3, h4{
     font-weight: 500;
     font-size: 1.2rem;
-    color: rgb(177, 172, 177);
+    color: var(--text-color);
 }
 
 header .info-text .scroll i {
     font-size: 2.5rem;
-    color: rgb(255, 255, 255); /* Adjust as needed */
-    animation: pulse 2s infinite;
+    color: var(--text-color);
+
 }
 
 /* Pulse Animation */
@@ -123,7 +173,6 @@ header .info-text .scroll i {
     flex-direction: column;
     align-items: center;
     opacity: 0.9;
-    transition: opacity 0.3s ease;
 }
 
 .scroll a {
@@ -136,9 +185,8 @@ header .info-text .scroll i {
 
 .scroll i {
     font-size: 2.5rem;
-    color: #4aa0e6;
+    color: blue;
     margin-bottom: 0.5rem;
-    transition: transform 0.3s ease;
 }
 
 .scroll span {
@@ -156,7 +204,7 @@ header .info-text .scroll i {
     content: '';
     width: 90px; /* Larger size for the pulse effect */
     height: 90px; /* Larger size for the pulse effect */
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--container-border);
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
@@ -217,7 +265,6 @@ header .info-text:hover { /* When cursor hovers over info-text */
     background-size: cover;
     padding: 60px 20px;
     margin-bottom: 20px;
-    border-radius: 10px;
     z-index: 1; /* Make sure the content is on top */
 }
 
@@ -228,9 +275,6 @@ header .info-text:hover { /* When cursor hovers over info-text */
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: 10px;
-    
-    backdrop-filter: blur(2px); /* Blur the background */
     z-index: -1; /* Send the overlay behind the content */
 }
 
@@ -243,13 +287,13 @@ header .info-text:hover { /* When cursor hovers over info-text */
 }
 
 .header h1 {
-    color: #ccc;
+    color: var(--text-color);
     text-transform: uppercase;
     font-size: 2.5rem;
 }
 
 .header-1 h1 {
-    color: #fff;
+    color: var(--text-color);
     text-transform: uppercase;
     font-size: 2.5rem;
 }
@@ -262,16 +306,14 @@ header .info-text:hover { /* When cursor hovers over info-text */
     margin-bottom: 30px;
     font-weight: 600;
     font-size: 1.2rem;
-    background: linear-gradient(to right, #4aa0e6, #667dcf);
-    -webkit-background-clip: text; /* For WebKit browsers */
-    background-clip: text; /* For other modern browsers */
-    color: transparent; /* Make the text itself transparent to show gradient */
+    background: none;
+    color: grey; /* Make the text itself transparent to show gradient */
 }
 
 
 .header-2 h1 {
     text-align: center;
-    color: #fff;
+    color: var(--text-color);
     text-transform: uppercase;
     font-size: 2.5rem;
 }
@@ -293,19 +335,6 @@ header .info-text:hover { /* When cursor hovers over info-text */
     margin-bottom: 40px;
 }
 
-.header a {
-    text-decoration: none;
-    font-size: 1.3em;
-    color: #fff;
-    background-color: #2d304a;
-    padding: 10px 30px;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
-
-.header a:hover {
-    background-color: #667dcf;
-}
 
 /* Responsive Grid Layout */
 .feature-cards {
@@ -323,15 +352,14 @@ header .info-text:hover { /* When cursor hovers over info-text */
 /* Icon Styling */
 .feature-cards .card i {
     font-size: 4rem;
-    color: #9d9fa8;
+    color: var(--text-color);
     margin-bottom: 10px;
 }
 
-/* Hover Effect */
+/* Hover Effect
 .card:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-}
+}*/
 
 /* Scroll to Top Button */
 .scroll-top {
@@ -343,7 +371,6 @@ header .info-text:hover { /* When cursor hovers over info-text */
     border-radius: 50%;
     padding: 10px;
     display: none;
-    transition: background-color 0.3s;
 }
 
 .scroll-top:hover {
@@ -357,11 +384,10 @@ header .info-text:hover { /* When cursor hovers over info-text */
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #4aa0e6;
+    background-color: #4aa0;
     color: #fff;
     padding: 10px;
     border-radius: 50%;
-    transition: background-color 0.3s;
     animation: pulse 2s infinite;
 }
 
@@ -387,88 +413,94 @@ header .info-text:hover { /* When cursor hovers over info-text */
     }
 }
 
-@media (min-width: 769px) {
-    .card {
-        transition: transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
-    }
-}
-
 
 /* Custom Styling */
 
-.fa-redhat{
-    color: red;
+.fa-champagne-glasses {
+    color: purple;
+    font-size: 1.2rem;
 }
 
 .fa-copyright{
-    color: green;
+    color: rgba(0, 128, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-heart-circle-check {
+    color: rgba(255, 0, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-envelope {
+    color: rgba(255, 255, 0, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-github {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-people-group {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+}
+
+.fa-box-open {
+    color: rgba(210, 105, 30, 0.8);
+    font-size: 1.2rem;
 }
 
 .container {
     padding: 10px 20px 10px 20px;
     text-align: center;
     align-items: center;
-    color: #ccc;
+    color: var(--text-color);
     font-size: 1rem;
-    margin: 45px auto 45px auto;
 }
 
 .container p {
-    font-weight: 500;
+    font-size: 0.9rem;
+    color: grey;
 }
 
 /* Footer Styles */
 footer {
-    /*background: rgba(0, 0, 0, 0.7);
-    */background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    background: transparent;
     color: var(--text-color);
     padding: 20px;
     text-align: center;
-    border-radius: 20px;
-    border-left: 2px solid #4aa0e6;
-    border-bottom: 2px solid #4aa0e6;
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
     width: fit-content;
     margin: 45px auto 45px auto;
-    -webkit-border-radius: 20px;
-    -moz-border-radius: 20px;
-    -ms-border-radius: 20px;
-    -o-border-radius: 20px;
 }
 
 .card, .card-1, .card-2, .card-3, .card-4, .card-5 {
-    background: rgba(0, 0, 0, 0.7);
-    color: var(--text-color);
+    background: transparent;
+    color: var(--icon-1);
     padding: 30px;
-    border-radius: 20px;
-    border-left: 2px solid #4aa0e6;
-    border-bottom: 2px solid #4aa0e6;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    color: #ffffff;
-    /*Ensuretextcoloriswhite*/cursor: pointer;
-    /*Pointercursoronhover*/width: fit-content;
+    cursor: pointer;
+    width: fit-content;
     max-width: 1000px;
     text-align: center;
     margin: 20px auto 20px auto;
-    -webkit-border-radius: 20px;
-    -moz-border-radius: 20px;
-    -ms-border-radius: 20px;
-    -o-border-radius: 20px;
 }
 
-.card:hover, .card-1:hover, .card-2:hover, .card-3:hover, .card-4:hover, .card-5:hover {
-    box-shadow: 0 8px 20px rgb(0, 13, 152);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+/*.card:hover, .card-1:hover, .card-2:hover, .card-3:hover, .card-4:hover, .card-5:hover {
+    transition: transform 0.3s ease;
     transform: scale(1.09);
-    -webkit-transform: scale(1.09);
-    -moz-transform: scale(1.09);
-    -ms-transform: scale(1.09);
-    -o-transform: scale(1.09);
-}
+}*/
 
 
 .card img {
@@ -476,11 +508,12 @@ footer {
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
+    filter: brightness(80%);
 }
 
 .card .info h2 {
     font-size: 1.2rem;
-    color: grey;
+    color: var(--text-color);
     margin-bottom: 15px;
 }
 
@@ -498,40 +531,55 @@ footer {
 .feature-cards a {
     color: transparent;
 }*/
+.header a {
+    text-decoration: none;
+    font-size: 1.3em;
+    color: #fff;
+    background: var(--container-bg);
+    padding: 10px 30px;
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
+}
+
+.header a:hover {
+    background-color: var(--container-border);
+}
 
 a{
-    color: #4aa0e68e;
+    color: var(--text-color);
     text-decoration: none;
 }
 
 #menu{
     /*background-color: black;*/
-    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    background: transparent;
     width: 100%;
     max-width: 1000px;
     min-width: auto;
     padding: 10px 20px 10px 20px;
     margin: 45px auto 45px auto;
-    border-radius: 20px;
-    border: 2px solid grey;
-    -webkit-border-radius: 20px;
-    -moz-border-radius: 20px;
-    -ms-border-radius: 20px;
-    -o-border-radius: 20px;
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
 }
 
 #features{
     /*background-color: black;*/
-    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    background: transparent;
     width: 100%;
     max-width: 1000px;
     margin: 45px auto 45px auto;
-    border: 2px solid grey;
-    border-radius: 20px;
-    -webkit-border-radius: 20px;
-    -moz-border-radius: 20px;
-    -ms-border-radius: 20px;
-    -o-border-radius: 20px;
-    padding: 10px 20px 10px 20px;
+    border-radius: 1rem;
+    border-top: 1px solid var(--container-border);
+    border-left: 1px solid var(--container-border);
+    border-right: 1px solid var(--container-border);
    
+}
+
+.highlight {
+    color: darkgoldenrod; /* Warna dark-yellow */
+    font-weight: bold;
 }
