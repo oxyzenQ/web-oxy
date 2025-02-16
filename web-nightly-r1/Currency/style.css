@@ -1,86 +1,108 @@
-/* powered by rezky */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+/* In 2025, I changed the style of the website to be more elegant but lightweight for any device */
+/* Author: rezky_nightly 2025 */
 
 :root {
-    --main-bg-color: rgba(34, 16, 66, 0.868);
-    --secondary-bg-color: rgb(5, 3, 32);
-    --container-bg-color: rgba(85, 85, 85, 0.636);
-    --text-color: #e0e0e0;
-    --highlight-color: #9ca1b3;
-    --border-color: #616268b7;
+  /* Font Settings */
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1; /* Fix Chrome */
+
+  /* Background Colors */
+  --main-bg-color: #070a1c; /* Deep Space Blue */
+  --secondary-bg-color: #040717; /* Dark Galactic Black */
+  --accent-bg-color: #1b1f3a; /* Distant Nebula Blue */
+
+  /* Plasma & Glow Colors */
+  --plasma-blue: #4285f4; /* Electric Plasma Blue */
+  --plasma-purple: #9b59b6; /* Cosmic Purple */
+  --star-glow: #f4e542; /* Soft Yellow Star Glow */
+  --nebula-glow: #7f7fd5; /* Ethereal Nebula Glow */
+
+  /* Text Colors */
+  --text-color: #e0e0e0; /* Soft White */
+  --subtext-color: #c5c8e6; /* Light Bluish White */
+
+  /* Borders & Shadows */
+  --container-border: rgba(66, 133, 244, 0.5); /* Subtle Plasma Blue */
+  --shadow-color: rgba(7, 10, 28, 0.7); /* Deep Space Shadow */
+
+  /* Button Gradient */
+  --button-gradient: linear-gradient(135deg, var(--plasma-blue), var(--plasma-purple));
+
+  /* Container */
+  --container-bg: rgba(15, 20, 40, 0.85);
+  --container-border: rgba(255, 255, 255, 0.15);
+    --icon-1: rgba(128, 128, 128); /* Neutral icon color */
 }
+
+/* Variable Font Support */
+@supports (font-variation-settings: normal) {
+    :root {
+        font-family: InterVariable, sans-serif;
+    }
+}
+  
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit; /* Warisi dari :root */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0
 }
 
 body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    width: 100%;
+    flex-direction: column;
+    min-height: 100%;
     height: 100vh;
-    overflow: hidden;
-    background: radial-gradient(90% 90% at 101.61% 76.99%, var(--main-bg-color) 0%, var(--secondary-bg-color) 100%);
+    overflow: auto;
+    /* ✨ Gradient Background */
+    background: radial-gradient(circle at 40% 80%, var(--main-bg-color) 10%, var(--accent-bg-color) 40%, var(--secondary-bg-color) 100%);
     color: var(--text-color);
     position: relative;
 }
 
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: inherit; /* Simplifying background effect */
-    filter: blur(8px);
-    z-index: -1;
-}
-
-body::after {
-    content: "";
-    position: fixed;
-    width: 180px; 
-    height: 180px;
-    filter: blur(150px);
-    z-index: -2;
-    left: 15%;
-    top: 20%;
-}
-
-body::after {
-    left: 80%;
-    top: 58%;
-}
 
 .container {
-    max-height: 100%;
-    height: 865px;
-    width: 465px;
-    max-width: 100%;
-    background: radial-gradient(80% 80% at 101.61% 76.99%, var(--container-bg-color) 0%, rgb(13, 9, 59) 100%);
-    padding: 20px;
+    /*max-height: 90vh; 
+    min-height: 300px; 
+    width: clamp(300px, 50%, 600px); */
+    min-width: 500px;
+    height: 800px;
+    
+    /* 🎨 Efek Transparan + Gradient */
+    background: rgba(0, 0, 0, 0.4); /* Soft transparent */
     border-radius: 1rem;
-    box-shadow: 0 4px 30px rgba(73, 73, 73, 0.775);
-    backdrop-filter: blur(8.2px);
-    border: 2px solid var(--border-color);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    margin: 0 auto;
+    
+    border: 2px solid var(--container-border);
+
+    margin: 120px 0 0 0;
+    
+    /* ⚡ Flexbox untuk Layout Optimal */
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+/*
 .container:hover {
-    animation: scaleUp 1.55s forwards;
-}
+    transform: scale(1.05);
+}*/
 
-@keyframes scaleUp {
+/* @keyframes scaleUp {
     0%, 100% {
         transform: scale(1);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -90,10 +112,10 @@ body::after {
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
     }
 }
-/* Additional responsive adjustments */
+/* Additional responsive adjustments 
 @media (min-width: 1024px) {
     .container {
-        width: 60%; /* Menggunakan persentase untuk menyesuaikan dengan ukuran layar besar */
+        width: 90%;
         padding: 30px;
     }
     .A, .container h2 {
@@ -153,7 +175,7 @@ body::after {
     .container form p, .container form input, .convert-box {
         font-size: 0.7rem;
     }
-}
+} */
 
 .A {
     font-size: 1rem;
@@ -161,16 +183,15 @@ body::after {
     text-align: center;
 }
 
-.icon-oxy {
-    font-size: 1.5rem;
-    margin-bottom: -10px;
+.fi-xnsuxl-github {
+    font-size: 1.2rem;
 }
 
 .container h2 {
     font-size: 1.6rem;
-    font-weight: 500;
+    font-weight: bold;
     text-align: center;
-    margin-bottom: 20px;
+    margin: 50px 0 10px;
 }
 
 .amount {
@@ -196,15 +217,15 @@ body::after {
     border-radius: 1rem;
     font-size: 1rem;
     padding: 0 15px;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    border: 1.5px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.4);
+    color: darkgrey;
+    border: 1.5px solid var(--container-border);
     transition: border-color 0.3s ease;
 }
 
 .container form input:hover,
 .container form input:focus {
-    border-color: var(--highlight-color);
+    border-color: var(--container-border);
     outline: none;
 }
 
@@ -218,17 +239,17 @@ body::after {
 .select-input {
     display: flex;
     align-items: center;
-    border: 1.5px solid var(--border-color);
+    border: 1.5px solid var(--container-border);
     height: 40px;
     border-radius: 1rem;
     padding: 0 20px;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     cursor: pointer;
     transition: border-color 0.3s ease;
 }
 
 .select-input:hover {
-    border-color: var(--highlight-color);
+    border-color: var(--container-border);
 }
 
 .select-input img {
@@ -239,7 +260,7 @@ body::after {
 .select-input select {
     width: 100%;
     background: none;
-    color: #fff;
+    color: darkgrey;
     font-size: 1rem;
     border: none;
     padding: 0;
@@ -247,12 +268,13 @@ body::after {
 }
 
 .select-input select option {
-    color: #000;
+    color: none;
 }
 
 .reverse {
-    border: 1.5px solid #ffffff73;
+    border: 1.5px solid var(--container-border);
     border-radius: 50%;
+    color: rgba(255, 255, 0, 0.4);
     padding: 8px;
     cursor: pointer;
     font-size: 22px;
@@ -262,7 +284,8 @@ body::after {
 
 .reverse:hover {
     transform: scale(1.1);
-    border-color: var(--highlight-color);
+    border-color: yellow;
+    color: yellow;
 }
 
 .result {
@@ -274,18 +297,30 @@ body::after {
 button {
     width: 100%;
     height: 42px;
-    color: #fff;
-    background: #171717;
+    color: darkgrey;
+    background: rgba(0, 128, 0, 0.4);
     font-size: 1rem;
     cursor: pointer;
     border-radius: 1rem;
-    border: 1.5px solid #ffffff73;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1.5px solid var(--container-border);
+    transition: background-color 0.3s ease;
     margin-bottom: 43px;
 }
 
 button:hover {
-    background: #262b3b;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    border-color: var(--highlight-color);
+    background: green;
+    border-color: var(--container-border);
+}
+
+/* Footer */
+footer {
+    position: relative;
+    text-align: center;
+    bottom: 0;
+    width: 100%;
+    margin-bottom: 50px;
+}
+
+footer p {
+    margin: 35px 0 0 0;
 }
