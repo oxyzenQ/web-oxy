@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <script defer src="https://friconix.com/cdn/friconix.js"> </script>
+    <script defer src="https://friconix.com/cdn/friconix.js"></script>
     <link rel="stylesheet" href="style.css">
-    <title>Currency Converter by Rezky</title>
+    <link rel="icon" href="assets/currency-conversion.png">
+    <title>A simple & fast currency converter</title>
 </head>
 
 <body>
@@ -18,8 +19,10 @@
         </div>
         <form id="converter-form">
             <div class="amount">
-                <input type="number" id="amount-input" value="1" step="0.01" min="0" aria-label="Amount to convert">
+                <input type="number" id="amount-input" step="0.01" min="0" max="1000000" 
+                aria-label="Amount to convert" placeholder="Enter amount">
             </div>
+
             <div class="convert-box">
                 <div class="from">
                     <p>From</p>
@@ -36,25 +39,26 @@
                 <div class="to">
                     <p>To</p>
                     <div class="select-input">
-                        <img id="to-flag" src="https://flagcdn.com/48x36/fr.png" alt="To currency flag">
+                        <img id="to-flag" src="https://flagcdn.com/48x36/ch.png" alt="To currency flag">
                         <select class="to-select" aria-label="To currency">
                             <!-- Options will be populated dynamically -->
                         </select>
                     </div>
                 </div>
                 <div class="result" aria-live="polite">Getting Exchange Rate...</div>
-                <button type="submit">Get Exchange Rate</button>
+                <button type="submit" id="convert-button">Get Exchange Rate</button>
+                <button type="reset" id="reset-button">Reset</button> <!-- Menggunakan type="reset" -->
             </div>
         </form>
     </div>
 
     <footer>
         <p>
-            <i class="fi-xnsuxl-github"></i>
+            <a href="https://github.com/oxyzenq">
+                <i class="fi-xnsuxl-github"></i>
+            </a>
         </p>
-
         <p>&copy; 2024-2025 oxyzenQ. All rights reserved.</p>
-
     </footer>
 
     <script src="countrys.js"></script>

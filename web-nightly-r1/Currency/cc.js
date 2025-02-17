@@ -9,7 +9,7 @@ const exRateTxt = document.querySelector("form .result");
 
 [fromCur, toCur].forEach((select, i) => {
     for (let curCode in Country_List) {
-        const selected = (i === 0 && curCode === "USD") || (i === 1 && curCode === "EUR") ? "selected" : "";
+        const selected = (i === 0 && curCode === "USD") || (i === 1 && curCode === "CHF") ? "selected" : "";
         select.insertAdjacentHTML("beforeend", `<option value="${curCode}" ${selected}>${curCode}</option>`);
     }
     select.addEventListener("change", () => {
@@ -61,3 +61,41 @@ exIcon.addEventListener("click", () => {
     });
     getExchangeRate();
 });
+
+// Function to reset the form fields //
+document.addEventListener('DOMContentLoaded', function() {
+    // Event listener restrict value
+    document.getElementById('amount-input').addEventListener('input', function() {
+        let value = parseFloat(this.value);
+        if (value > 1000000) {
+            this.value = 1000000;
+        } else if (value < 0) {
+            this.value = 0;
+        }
+    });
+
+    // Reset form with button click
+    document.getElementById('reset-button').addEventListener('click', function() {
+        // Make sure amount input is cleared
+        document.getElementById('amount-input').value = '';
+
+        // Reset dropdown values
+        const fromSelect = document.querySelector('.from-select');
+        const toSelect = document.querySelector('.to-select');
+        fromSelect.selectedIndex = 0;
+        toSelect.selectedIndex = 0;
+
+        // Reset text in result element
+        let resultElement = document.querySelector('.result');
+        if (resultElement) {
+            resultElement.textContent = 'Getting Exchange Rate...';
+        }
+
+        // Reset flags automatically (USD & CHF)
+        document.getElementById('from-flag').src = `https://flagcdn.com/48x36/us.png`;
+        document.getElementById('to-flag').src = `https://flagcdn.com/48x36/ch.png`;
+    });
+});
+
+
+// end //

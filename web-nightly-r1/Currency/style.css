@@ -66,8 +66,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    min-height: 100%;
-    height: 100vh;
+    min-height: 100vh;
     overflow: auto;
     /* ✨ Gradient Background */
     background: radial-gradient(circle at 40% 80%, var(--main-bg-color) 10%, var(--accent-bg-color) 40%, var(--secondary-bg-color) 100%);
@@ -80,27 +79,26 @@ body {
     /*max-height: 90vh; 
     min-height: 300px; 
     width: clamp(300px, 50%, 600px); */
-    min-width: 500px;
-    height: 800px;
+    max-width: 550px;
+    min-width: 400px;
+    max-height: 780px;
+
     
     /* 🎨 Efek Transparan + Gradient */
     background: rgba(0, 0, 0, 0.4); /* Soft transparent */
     border-radius: 1rem;
     
-    border: 2px solid var(--container-border);
+    border-top: 1.5px solid var(--container-border);
+    border-right: 1.5px solid var(--container-border);
+    border-left: 1.5px solid var(--container-border);
 
-    margin: 120px 0 0 0;
+    margin: 35px 0 90px 0;
     
     /* ⚡ Flexbox untuk Layout Optimal */
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-
-/*
-.container:hover {
-    transform: scale(1.05);
-}*/
 
 /* @keyframes scaleUp {
     0%, 100% {
@@ -112,27 +110,27 @@ body {
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
     }
 }
-/* Additional responsive adjustments 
-@media (min-width: 1024px) {
+/* Additional responsive adjustments */
+@media (min-width: 1440px) {
     .container {
-        width: 90%;
+        width: 50%;
         padding: 30px;
     }
     .A, .container h2 {
         font-size: 1.5rem;
     }
     .container form p, .container form input, .convert-box {
-        font-size: 1rem;
+        font-size: 1.2rem;
     }
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1080px) {
     .container {
         width: 50%;
-        padding: 40px;
+        padding: 20px;
     }
     .A, .container h2 {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
     }
     .container form p, .container form input, .convert-box {
         font-size: 1.1rem;
@@ -141,11 +139,11 @@ body {
 
 @media (max-width: 768px) {
     .container {
-        width: 95%;
+        width: 50%;
         padding: 15px;
     }
     .A, .container h2 {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
     .container form p, .container form input, .convert-box {
         font-size: 0.9rem;
@@ -154,8 +152,8 @@ body {
 
 @media (max-width: 480px) {
     .container {
-        width: 100%;
-        padding: 10px 15px;
+        width: 50%;
+        padding: 10px;
     }
     .A, .container h2 {
         font-size: 1.2rem;
@@ -167,6 +165,7 @@ body {
 
 @media (max-width: 280px) {
     .container {
+        width: 50%;
         padding: 5px;
     }
     .A, .container h2 {
@@ -175,23 +174,19 @@ body {
     .container form p, .container form input, .convert-box {
         font-size: 0.7rem;
     }
-} */
+}
 
 .A {
     font-size: 1rem;
-    margin: 10px 0 -10px;
+    margin: 10px 0;
     text-align: center;
-}
-
-.fi-xnsuxl-github {
-    font-size: 1.2rem;
 }
 
 .container h2 {
     font-size: 1.6rem;
     font-weight: bold;
     text-align: center;
-    margin: 50px 0 10px;
+    margin: 30px 0 15px 0;
 }
 
 .amount {
@@ -213,14 +208,21 @@ body {
 
 .container form input {
     height: 40px;
-    width: 100%;
+    width: 100%;  /* Makes input flexible and responsive */
+    max-width: 200px;  /* You can adjust this based on the desired maximum width */
     border-radius: 1rem;
     font-size: 1rem;
     padding: 0 15px;
-    background: rgba(0, 0, 0, 0.4);
+    background: transparent;
     color: darkgrey;
-    border: 1.5px solid var(--container-border);
+    border: 0.5px solid darkgrey;
     transition: border-color 0.3s ease;
+}
+
+
+#amount-input::placeholder{
+    text-align: center;
+    color: grey;
 }
 
 .container form input:hover,
@@ -239,13 +241,18 @@ body {
 .select-input {
     display: flex;
     align-items: center;
-    border: 1.5px solid var(--container-border);
+    border: 0.5px solid darkgrey;
     height: 40px;
     border-radius: 1rem;
     padding: 0 20px;
-    background: rgba(0, 0, 0, 0.4);
+    background: transparent;
     cursor: pointer;
     transition: border-color 0.3s ease;
+}
+
+.from, .to{
+    max-width: 140px;
+    width: 100%;
 }
 
 .select-input:hover {
@@ -253,14 +260,15 @@ body {
 }
 
 .select-input img {
-    max-width: 20px;
+    width: 24px; /* Sesuaikan dengan ukuran yang pas */
+    height: auto; /* Biarkan proporsional */
     margin-right: 10px;
 }
 
 .select-input select {
     width: 100%;
-    background: none;
-    color: darkgrey;
+    background: transparent;
+    color: whitesmoke;
     font-size: 1rem;
     border: none;
     padding: 0;
@@ -268,13 +276,14 @@ body {
 }
 
 .select-input select option {
-    color: none;
+    color: whitesmoke;
+    background: black;
 }
 
 .reverse {
-    border: 1.5px solid var(--container-border);
+    border: 1px solid darkgrey;
     border-radius: 50%;
-    color: rgba(255, 255, 0, 0.4);
+    color: darkgray;
     padding: 8px;
     cursor: pointer;
     font-size: 22px;
@@ -283,33 +292,76 @@ body {
 }
 
 .reverse:hover {
-    transform: scale(1.1);
+    transform: scale(1.5);
     border-color: yellow;
     color: yellow;
 }
 
+.reverse:active {
+    transform: scale(0.90);
+}
+
 .result {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin: 20px 0;
     text-align: center;
 }
 
 button {
     width: 100%;
+    max-width: 200px;
     height: 42px;
-    color: darkgrey;
-    background: rgba(0, 128, 0, 0.4);
-    font-size: 1rem;
     cursor: pointer;
-    border-radius: 1rem;
-    border: 1.5px solid var(--container-border);
-    transition: background-color 0.3s ease;
-    margin-bottom: 43px;
+    margin-bottom: 12px;
 }
 
-button:hover {
+/* Echange+Reset Button */
+button#reset-button {
+    background: #1e1e1e;
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: medium;
+    border-radius: 1rem;
+    border: 1px solid var(--container-border);
+    transition: background 0.3s, border-color 0.3s, transform 0.1s;
+    margin-bottom: 30px;
+}
+
+button#reset-button:hover {
+    background: #3a3a3a;
+    border-color: var(--container-border);
+    transform: scale(1.05); 
+}
+
+button#reset-button:active {
+    background: var(--container-bg);
+    border-color: var(--container-border);
+    transform: scale(0.90);
+}
+
+
+button#convert-button {
+    background: rgba(0, 128, 0, 0.4);
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: medium;
+    border-radius: 1rem;
+    border: 1px solid var(--container-border);
+    transition: background 0.3s, border-color 0.3s, transform 0.1s;
+}
+
+button#convert-button:hover {
     background: green;
     border-color: var(--container-border);
+    transform: scale(1.05);
+}
+
+button#convert-button:active {
+    background: var(--container-bg);
+    border-color: var(--container-border);
+    transform: scale(0.90);
 }
 
 /* Footer */
@@ -323,4 +375,15 @@ footer {
 
 footer p {
     margin: 35px 0 0 0;
+    color: grey;
+}
+
+.fi-xnsuxl-github {
+    font-size: 1.2rem;
+    color: grey;
+}
+
+.result {
+    color: rgb(212, 212, 157);
+    padding: 5px;
 }
