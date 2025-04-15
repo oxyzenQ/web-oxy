@@ -17,33 +17,45 @@
 
 ---
 
-## ✨ Project Overview
-
-**Web-Oxy** is a clean, elegant, and fast web app collection built for utility and simplicity.  
-Explore lightweight tools built with love by Rezky Nightky and the community.
-
----
-
-## 🖼️ Previews
+## ✨ Projects Showcase
 
 ### 🧮 Simple & Elegant BMI Calculator
+**Live Preview:** [logigo-bmi.vercel.app](https://logigo-bmi.vercel.app)
+
 <p align="center">
-  <img src="assets/bmi.png" alt="BMI Calculator Preview" width="700"/>
+  <img src="assets/bmi.png" alt="BMI Calculator preview" width="600"/>
 </p>
 
 ---
 
-### 💱 Simple & Fast Currency Converter
+### 💱 Fast & Clean Currency Converter
+**Live Preview:** [oxyme.vercel.app](https://oxyme.vercel.app)
+
 <p align="center">
-  <img src="assets/currency.png" alt="Currency Converter Preview" width="700"/>
+  <img src="assets/currency.png" alt="Currency Converter preview" width="600"/>
 </p>
 
 ---
 
-## 🚀 Open Project
+## 🚀 Getting Started
 
-Clone, copy, tweak, remix, or deploy — your creativity is the limit.  
-Feel free to fork and build upon it!
+Feel free to:
+- View the source code
+- Copy and reuse components
+- Fork or contribute
 
-```bash
-git clone https://github.com/oxyzenQ/web-oxy.git
+No restrictions — just **enjoy and create**!
+
+---
+
+## 💝 Thanks to
+
+- [rezky_nightky](https://github.com/oxyzenQ)
+- The open-source community
+- All contributors 🙌
+
+---
+
+<p align="center">
+  Made with 💻, ☕, and infinite curiosity.
+</p>
