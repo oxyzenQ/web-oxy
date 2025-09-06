@@ -1,9 +1,16 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.presentation.screen
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +51,12 @@ fun KconvertMainScreen(
     val autoUpdateEnabled by viewModel.autoUpdateEnabled.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    
+    // Initialize app on first composition
+    LaunchedEffect(Unit) {
+        viewModel.initializeApp(context)
+    }
     
     // Handle scroll to top
     LaunchedEffect(uiState.shouldScrollToTop) {
@@ -156,8 +169,8 @@ fun KconvertMainScreen(
             isVisible = uiState.confirmationDialog.isVisible,
             title = uiState.confirmationDialog.title,
             type = uiState.confirmationDialog.type,
-            onConfirm = { viewModel.onConfirmationResult(true) },
-            onDismiss = { viewModel.onConfirmationResult(false) }
+            onConfirm = { viewModel.onConfirmationResult(true, context) },
+            onDismiss = { viewModel.onConfirmationResult(false, context) }
         )
         
         // Error handling

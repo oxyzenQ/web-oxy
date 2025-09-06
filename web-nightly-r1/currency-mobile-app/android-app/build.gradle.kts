@@ -1,3 +1,7 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 // Buildscript dependencies are now managed via plugins block
 

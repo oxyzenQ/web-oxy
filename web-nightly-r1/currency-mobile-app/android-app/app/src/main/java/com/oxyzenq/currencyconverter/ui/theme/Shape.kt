@@ -1,3 +1,7 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Currency Converter</string>
+    <string name="app_name">Kconvert</string>
     <string name="amount_label">Amount</string>
     <string name="from_currency">From</string>
     <string name="to_currency">To</string>

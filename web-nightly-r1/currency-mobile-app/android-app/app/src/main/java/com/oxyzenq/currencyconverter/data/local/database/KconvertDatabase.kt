@@ -1,3 +1,7 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.data.local.database
 
 import androidx.room.Database

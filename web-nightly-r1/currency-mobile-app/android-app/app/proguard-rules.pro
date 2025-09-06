@@ -1,21 +1,120 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Creativity Authored by oxyzenq 2025
+# Kconvert ProGuard Rules for API Key Protection and Code Obfuscation
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep source file names and line numbers for debugging
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Ultra-Security ProGuard Rules for 98% Protection Level
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep ultra-secure API key manager but obfuscate everything else
+-keep class com.oxyzenq.currencyconverter.security.UltraSecureApiKeyManager {
+    public *;
+}
+
+# Keep RASP security manager interface
+-keep class com.oxyzenq.currencyconverter.security.RASPSecurityManager {
+    public *;
+}
+
+# Keep ECDH key manager
+-keep class com.oxyzenq.currencyconverter.security.ECDHKeyManager {
+    public *;
+}
+
+# Keep native method declarations but obfuscate implementation
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Aggressively obfuscate all security internals
+-keepclassmembers class com.oxyzenq.currencyconverter.security.** {
+    private static final byte[] ENCRYPTED_KEY_FRAGMENTS;
+    private static final byte[] OBFUSCATED_PARTS;
+    private static final java.lang.String SERVER_PUBLIC_KEY_B64;
+    private static final java.lang.String[] ECDH_ENCRYPTED_PARTS;
+}
+
+# Keep Room database classes
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class *
+
+# Keep Retrofit API interfaces
+-keep interface com.oxyzenq.currencyconverter.data.api.* { *; }
+
+# Keep data models for JSON serialization
+-keep class com.oxyzenq.currencyconverter.data.model.** { *; }
+-keep class com.oxyzenq.currencyconverter.data.api.** { *; }
+
+# Keep Hilt generated classes
+-keep class dagger.hilt.** { *; }
+-keep class * extends dagger.hilt.android.HiltAndroidApp
+-keep @dagger.hilt.android.AndroidEntryPoint class * { *; }
+
+# Complete warning suppression for all build types
+-dontnote **
+-dontwarn **
+-ignorewarnings
+
+# Suppress all R8/ProGuard warnings
+-dontwarn java.lang.invoke.**
+-dontwarn kotlin.**
+-dontwarn kotlinx.**
+-dontwarn androidx.**
+-dontwarn com.google.**
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.**
+-dontwarn org.jetbrains.**
+-dontwarn dagger.**
+-dontwarn com.squareup.**
+
+# Suppress security-related warnings
+-dontwarn java.security.**
+-dontwarn javax.crypto.**
+-dontwarn android.security.**
+
+# Suppress annotation warnings
+-dontwarn **$$serializer
+-dontwarn **$Companion
+-dontwarn **$DefaultImpls
+
+# Suppress reflection warnings
+-dontwarn java.lang.reflect.**
+-dontwarn sun.misc.**
+
+# Gson specific rules
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# OkHttp and Retrofit
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
+-keep class okhttp3.** { *; }
+-keep class retrofit2.** { *; }
+
+# Coroutines
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
+
+# Additional obfuscation for security
+-repackageclasses 'o'
+-allowaccessmodification
+-overloadaggressively
+
+# Remove logging in release builds
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+}

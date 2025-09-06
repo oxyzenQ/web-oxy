@@ -1,3 +1,7 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.data.repository
 
 import com.oxyzenq.currencyconverter.data.local.dao.CurrencyDao
@@ -5,6 +9,8 @@ import com.oxyzenq.currencyconverter.data.local.entity.CurrencyEntity
 import com.oxyzenq.currencyconverter.data.local.entity.ExchangeRateEntity
 import com.oxyzenq.currencyconverter.data.local.entity.AppMetadataEntity
 import com.oxyzenq.currencyconverter.data.model.Currency
+import com.oxyzenq.currencyconverter.data.network.NetworkDataSource
+import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -18,7 +24,8 @@ import java.util.*
  */
 @Singleton
 class CurrencyRepository @Inject constructor(
-    private val currencyDao: CurrencyDao
+    private val currencyDao: CurrencyDao,
+    private val networkDataSource: NetworkDataSource
 ) {
     
     companion object {
@@ -57,32 +64,80 @@ class CurrencyRepository @Inject constructor(
     }
     
     /**
-     * Fetch and save currency data from API (stubbed for now)
+     * Fetch and save currency data from API with fallback to sample data
      */
-    suspend fun fetchAndSaveCurrencyData(): Result<String> {
+    suspend fun fetchAndSaveCurrencyData(context: Context): Result<String> {
         return try {
-            // TODO: Implement actual API call
-            // For now, insert sample data
-            val sampleCurrencies = getSampleCurrencies()
-            currencyDao.insertCurrencies(sampleCurrencies)
+            val networkResult = networkDataSource.fetchAllCurrencyData(context)
             
-            val sampleRates = getSampleExchangeRates()
-            currencyDao.insertExchangeRates(sampleRates)
-            
-            // Save metadata
-            val timestamp = System.currentTimeMillis()
-            val formattedTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
-            
-            currencyDao.insertMetadata(
-                AppMetadataEntity(LAST_UPDATE_KEY, formattedTime)
-            )
-            currencyDao.insertMetadata(
-                AppMetadataEntity(DATA_SOURCE_KEY, "API")
-            )
-            
-            Result.success("Data updated successfully")
+            if (networkResult.isSuccess) {
+                val (currencies, rates) = networkResult.getOrThrow()
+                currencyDao.insertCurrencies(currencies)
+                currencyDao.insertExchangeRates(rates)
+                
+                // Save metadata
+                val timestamp = System.currentTimeMillis()
+                val formattedTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+                
+                currencyDao.insertMetadata(
+                    AppMetadataEntity(LAST_UPDATE_KEY, formattedTime)
+                )
+                currencyDao.insertMetadata(
+                    AppMetadataEntity(DATA_SOURCE_KEY, "Real-time API (Ultra-Secure)")
+                )
+                
+                Result.success("Ultra-secure real-time data updated successfully")
+            } else {
+                // Fallback to sample data if API fails
+                val sampleCurrencies = getSampleCurrencies()
+                currencyDao.insertCurrencies(sampleCurrencies)
+                
+                val sampleRates = getSampleExchangeRates()
+                currencyDao.insertExchangeRates(sampleRates)
+                
+                // Save metadata
+                val timestamp = System.currentTimeMillis()
+                val formattedTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+                
+                currencyDao.insertMetadata(
+                    AppMetadataEntity(LAST_UPDATE_KEY, formattedTime)
+                )
+                currencyDao.insertMetadata(
+                    AppMetadataEntity(DATA_SOURCE_KEY, "Offline Sample Data")
+                )
+                
+                Result.success("Sample data loaded (API unavailable)")
+            }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Check if data needs refresh (older than 1 hour)
+     */
+    suspend fun isDataStale(): Boolean {
+        val lastUpdate = currencyDao.getMetadata(LAST_UPDATE_KEY)
+        if (lastUpdate == null) return true
+        
+        return try {
+            val lastUpdateTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(lastUpdate.value)
+            val currentTime = Date()
+            val diffInHours = (currentTime.time - lastUpdateTime.time) / (1000 * 60 * 60)
+            diffInHours >= 1 // Refresh if older than 1 hour
+        } catch (e: Exception) {
+            true // Refresh if parsing fails
+        }
+    }
+    
+    /**
+     * Sync data if needed (smart refresh)
+     */
+    suspend fun syncDataIfNeeded(context: Context): Result<String> {
+        return if (isDataStale()) {
+            fetchAndSaveCurrencyData(context)
+        } else {
+            Result.success("Data is up to date")
         }
     }
     

@@ -1,3 +1,7 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.data.api
 
 import com.oxyzenq.currencyconverter.data.model.ConversionRequest

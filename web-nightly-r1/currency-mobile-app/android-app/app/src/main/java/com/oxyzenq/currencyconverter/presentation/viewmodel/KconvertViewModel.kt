@@ -1,9 +1,14 @@
+/*
+ * Creativity Authored by oxyzenq 2025
+ */
+
 package com.oxyzenq.currencyconverter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oxyzenq.currencyconverter.data.preferences.AppPreferences
 import com.oxyzenq.currencyconverter.data.repository.CurrencyRepository
+import android.content.Context
 import com.oxyzenq.currencyconverter.data.repository.ConversionResult
 import com.oxyzenq.currencyconverter.data.model.Currency
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,14 +47,13 @@ class KconvertViewModel @Inject constructor(
         )
 
     init {
-        // Load initial data
-        loadInitialData()
+        // Initial setup - context will be provided via initializeApp()
     }
 
     /**
      * Load initial data and check auto update setting
      */
-    private fun loadInitialData() {
+    fun initializeApp(context: Context) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
@@ -67,10 +71,30 @@ class KconvertViewModel @Inject constructor(
                     isLoading = false
                 )
 
-                // Check auto update setting
+                // Check auto update setting and sync data if needed
                 val autoUpdate = appPreferences.getAutoUpdateOnLaunch()
-                if (autoUpdate && currencyCount == 0) {
-                    refreshCurrencyData()
+                if (autoUpdate) {
+                    if (currencyCount == 0) {
+                        // First launch - fetch data
+                        refreshData(context)
+                    } else {
+                        // Check if data needs refresh (smart sync)
+                        val syncResult = currencyRepository.syncDataIfNeeded(context)
+                        syncResult.fold(
+                            onSuccess = { message ->
+                                if (message != "Data is up to date") {
+                                    val newLastUpdate = currencyRepository.getLastUpdateTimestamp()
+                                    _uiState.value = _uiState.value.copy(
+                                        dataIndicator = "this data has been updated last seen $newLastUpdate"
+                                    )
+                                    showNotification("Auto-sync completed", NotificationType.SUCCESS)
+                                }
+                            },
+                            onFailure = { 
+                                // Silent fail for auto-sync, continue with cached data
+                            }
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -158,34 +182,49 @@ class KconvertViewModel @Inject constructor(
     /**
      * Refresh currency data from API
      */
-    fun refreshCurrencyData() {
+    fun refreshData(context: Context) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isRefreshing = true)
                 
-                val result = currencyRepository.fetchAndSaveCurrencyData()
+                val result = currencyRepository.fetchAndSaveCurrencyData(context)
                 
-                result.fold(
-                    onSuccess = { message ->
-                        val lastUpdate = currencyRepository.getLastUpdateTimestamp()
-                        _uiState.value = _uiState.value.copy(
-                            dataIndicator = "this data has been updated last seen $lastUpdate",
-                            isRefreshing = false,
-                            error = null
-                        )
-                        showNotification("Data refreshed successfully", NotificationType.SUCCESS)
-                    },
-                    onFailure = { error ->
-                        _uiState.value = _uiState.value.copy(
-                            isRefreshing = false,
-                            error = "Failed to refresh data: ${error.message}"
-                        )
-                    }
-                )
+                if (result.isSuccess) {
+                    showNotification("Ultra-secure data refreshed successfully", NotificationType.SUCCESS)
+                    loadCurrencies() // Reload currencies after refresh
+                } else {
+                    showNotification("Failed to refresh data: ${result.exceptionOrNull()?.message}", NotificationType.ERROR)
+                    _uiState.value = _uiState.value.copy(
+                        isRefreshing = false,
+                        error = "Failed to refresh data: ${result.exceptionOrNull()?.message}"
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isRefreshing = false,
                     error = "Refresh error: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Load currencies from repository
+     */
+    private fun loadCurrencies() {
+        viewModelScope.launch {
+            try {
+                val currencies = currencyRepository.getAllCurrencies()
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isRefreshing = false,
+                    error = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isRefreshing = false,
+                    error = "Failed to load currencies: ${e.message}"
                 )
             }
         }
@@ -298,13 +337,13 @@ class KconvertViewModel @Inject constructor(
     /**
      * Handle confirmation dialog result
      */
-    fun onConfirmationResult(confirmed: Boolean) {
+    fun onConfirmationResult(confirmed: Boolean, context: Context) {
         val dialogType = _uiState.value.confirmationDialog.type
         hideConfirmationDialog()
         
         if (confirmed) {
             when (dialogType) {
-                ConfirmationType.REFRESH_DATA -> refreshCurrencyData()
+                ConfirmationType.REFRESH_DATA -> refreshData(context)
                 ConfirmationType.DELETE_DATA -> deleteAllData()
             }
         }
