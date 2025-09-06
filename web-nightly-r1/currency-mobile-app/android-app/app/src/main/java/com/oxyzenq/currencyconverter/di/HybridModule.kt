@@ -1,0 +1,75 @@
+package com.oxyzenq.currencyconverter.di
+
+import android.content.Context
+import com.oxyzenq.currencyconverter.data.api.CurrencyApi
+import com.oxyzenq.currencyconverter.data.database.CurrencyDatabase
+import com.oxyzenq.currencyconverter.data.database.dao.CurrencyDao
+import com.oxyzenq.currencyconverter.data.repository.HybridCurrencyRepository
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object HybridModule {
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.exchangerate-api.com/v4/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyApi(retrofit: Retrofit): CurrencyApi {
+        return retrofit.create(CurrencyApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyDatabase(@ApplicationContext context: Context): CurrencyDatabase {
+        return CurrencyDatabase.getDatabase(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyDao(database: CurrencyDatabase): CurrencyDao {
+        return database.currencyDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHybridCurrencyRepository(
+        currencyApi: CurrencyApi,
+        currencyDao: CurrencyDao
+    ): HybridCurrencyRepository {
+        return HybridCurrencyRepository(currencyApi, currencyDao)
+    }
+}
