@@ -31,7 +31,7 @@ android {
         minSdk = 26  // Android 8.0 (API level 26)
         targetSdk = 34
         versionCode = 1
-        versionName = "AX-1"
+        versionName = "Kconvert.1.rc2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -88,40 +88,14 @@ android {
         }
     }
 
+    // ========================================
+    // 🏗️ BUILD TYPES CONFIGURATION
+    // Available: debug, ultraRelease
+    // ========================================
     buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            signingConfig = signingConfigs.getByName("release")
-            
-            // Performance monitoring flags
-            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "true")
-            buildConfigField("boolean", "ENABLE_ANR_DETECTION", "true")
-        }
-        
-        // Ultra-optimized build variant for maximum performance
-        create("ultraRelease") {
-            initWith(getByName("release"))
-            isMinifyEnabled = true
-            isShrinkResources = true
-            isDebuggable = false
-            
-            // Aggressive optimization
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules-aggressive.pro"
-            )
-            signingConfig = signingConfigs.getByName("release")
-            
-            // Ultra performance flags
-            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "false")
-            buildConfigField("boolean", "ENABLE_ANALYTICS", "false")
-            buildConfigField("boolean", "ENABLE_CRASH_REPORTING", "false")
-        }
+        // 🐛 DEBUG BUILD TYPE
+        // Command: ./gradlew assembleDebug
+        // Purpose: Development and testing
         debug {
             isMinifyEnabled = false
             proguardFiles(
@@ -141,42 +115,64 @@ android {
         }
     }
     
-    // Comprehensive lint configuration to suppress all warnings
+    // Basic lint configuration - show warnings but don't fail build
     lint {
         abortOnError = false
-        checkReleaseBuilds = false
         warningsAsErrors = false
-        quiet = true
+        // Only disable truly unnecessary checks
         disable += setOf(
-            "MissingTranslation", 
-            "ExtraTranslation",
-            "UnusedResources",
-            "IconMissingDensityFolder",
-            "IconDensities",
-            "IconLocation",
-            "Deprecated",
-            "ObsoleteLintCustomCheck",
-            "GradleDependency",
-            "NewerVersionAvailable",
-            "AllowBackup",
-            "GoogleAppIndexingWarning",
-            "UnusedAttribute",
-            "ContentDescription",
-            "HardcodedText",
-            "RtlHardcoded",
-            "RtlCompat",
-            "VectorDrawableCompat",
-            "UnusedIds",
-            "UselessParent",
-            "InefficientWeight",
-            "DisableBaselineAlignment",
-            "Overdraw",
-            "TooManyViews",
-            "TooDeepLayout"
+            "MissingTranslation" // Multi-language support not required yet
         )
     }
     
-    // Custom APK naming will be handled by build tasks
+    // ========================================
+    // 🏷️ APK RENAMING TASK
+    // Command: ./gradlew renameApks
+    // Purpose: Rename APKs with proper naming convention
+    // ========================================
+    tasks.register("renameApks") {
+        dependsOn("assembleDebug", "assembleUltraRelease")
+        
+        val buildDir = layout.buildDirectory
+        val packageName = "Kconvert"
+        val version = "Kconvert.1.rc2"
+        
+        doLast {
+            // Rename debug APKs
+            val debugDir = buildDir.get().asFile.resolve("outputs/apk/debug")
+            if (debugDir.exists()) {
+                debugDir.listFiles()?.forEach { file ->
+                    if (file.name.endsWith(".apk")) {
+                        val newName = when {
+                            file.name.contains("arm64-v8a") -> "$packageName-$version-debug-arm64-v8a.apk"
+                            file.name.contains("armeabi-v7a") -> "$packageName-$version-debug-armeabi-v7a.apk"
+                            else -> "$packageName-$version-debug.apk"
+                        }
+                        val newFile = File(debugDir, newName)
+                        file.renameTo(newFile)
+                        println("Renamed: ${file.name} -> ${newName}")
+                    }
+                }
+            }
+            
+            // Rename ultraRelease APKs
+            val ultraReleaseDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease")
+            if (ultraReleaseDir.exists()) {
+                ultraReleaseDir.listFiles()?.forEach { file ->
+                    if (file.name.endsWith(".apk")) {
+                        val newName = when {
+                            file.name.contains("arm64-v8a") -> "$packageName-$version-ultraRelease-arm64-v8a.apk"
+                            file.name.contains("armeabi-v7a") -> "$packageName-$version-ultraRelease-armeabi-v7a.apk"
+                            else -> "$packageName-$version-ultraRelease.apk"
+                        }
+                        val newFile = File(ultraReleaseDir, newName)
+                        file.renameTo(newFile)
+                        println("Renamed: ${file.name} -> ${newName}")
+                    }
+                }
+            }
+        }
+    }
     
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -190,22 +186,61 @@ android {
         freeCompilerArgs += listOf(
             "-Xjsr305=strict",
             "-Xjvm-default=all",
-            "-Xuse-ir",
             "-Xbackend-threads=8",
-            "-Xopt-in=kotlin.RequiresOptIn",
-            "-Xopt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-Xopt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
             "-Xsuppress-version-warnings",
             "-Xno-param-assertions",
             "-Xno-call-assertions",
             "-Xno-receiver-assertions"
         )
-        
-        // Suppress all Kotlin compiler warnings
-        allWarningsAsErrors = false
-        suppressWarnings = true
     }
-    
+
+    buildTypes {
+        // 🚀 ULTRA RELEASE BUILD TYPE
+        // Command: ./gradlew assembleUltraRelease
+        // Purpose: Production-ready optimized build
+        create("ultraRelease") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
+            
+            // Aggressive optimization with ultra-secure ProGuard rules
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules-aggressive.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+            
+            // Performance and monitoring flags
+            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "false")
+            buildConfigField("boolean", "ENABLE_ANR_DETECTION", "true")
+            buildConfigField("boolean", "ENABLE_ANALYTICS", "false")
+            buildConfigField("boolean", "ENABLE_CRASH_REPORTING", "false")
+            buildConfigField("boolean", "ENABLE_LOGGING", "false")
+            
+            // Ultra-performance optimizations
+            isJniDebuggable = false
+            isRenderscriptDebuggable = false
+            renderscriptOptimLevel = 3
+            isPseudoLocalesEnabled = false
+        }
+        
+        debug {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "true")
+            buildConfigField("boolean", "ENABLE_ANR_DETECTION", "true")
+            buildConfigField("boolean", "ENABLE_ANALYTICS", "true")
+            buildConfigField("boolean", "ENABLE_CRASH_REPORTING", "true")
+            buildConfigField("boolean", "ENABLE_LOGGING", "true")
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -254,52 +289,190 @@ android {
     }
 }
 
-// Custom build tasks for performance analysis
+// ========================================
+// 📊 APK SIZE ANALYSIS TASK
+// Command: ./gradlew analyzeApkSize
+// Purpose: Check APK sizes without building
+// ========================================
 tasks.register("analyzeApkSize") {
     val buildDir = layout.buildDirectory
     doLast {
-        val apkDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease/")
-        if (apkDir.exists()) {
-            apkDir.listFiles()?.forEach { apkFile ->
+        val ultraReleaseDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease/")
+        val debugDir = buildDir.get().asFile.resolve("outputs/apk/debug/")
+        var foundApks = false
+        
+        // Check ultraRelease APKs
+        if (ultraReleaseDir.exists()) {
+            ultraReleaseDir.listFiles()?.forEach { apkFile ->
                 if (apkFile.name.endsWith(".apk")) {
+                    foundApks = true
                     val apkSize = apkFile.length()
                     val sizeMB = apkSize / 1024.0 / 1024.0
-                    println("📱 ${apkFile.name}: ${String.format("%.2f", sizeMB)} MB")
+                    println("📱 [UltraRelease] ${apkFile.name}: ${String.format("%.2f", sizeMB)} MB")
                     
-                    // Alert if APK too large
-                    if (apkSize > 15 * 1024 * 1024) { // 15MB limit
+                    if (apkSize > 15 * 1024 * 1024) {
                         println("⚠️  APK size exceeded 15MB limit: ${apkFile.name}")
                     }
                 }
             }
-        } else {
-            println("📍 APK directory not found: ${apkDir.absolutePath}")
+        }
+        
+        // Check debug APKs
+        if (debugDir.exists()) {
+            debugDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    foundApks = true
+                    val apkSize = apkFile.length()
+                    val sizeMB = apkSize / 1024.0 / 1024.0
+                    println("📱 [Debug] ${apkFile.name}: ${String.format("%.2f", sizeMB)} MB")
+                }
+            }
+        }
+        
+        if (!foundApks) {
+            println("⚠️  Sir, you don't have any APKs yet! Build them first with:")
+            println("   ./gradlew assembleDebug (for debug APKs)")
+            println("   ./gradlew assembleUltraRelease (for release APKs)")
         }
     }
 }
 
-// Performance benchmark task
-tasks.register("benchmarkBuild") {
+// ========================================
+// 🚀 BENCHMARK BUILD & CHECK TASK
+// Command: ./gradlew benchmark-build-check
+// Purpose: Build ultraRelease + performance analysis
+// ========================================
+tasks.register("benchmark-build-check") {
     dependsOn("assembleUltraRelease")
+    dependsOn("renameApks")
     val buildDir = layout.buildDirectory
     doLast {
-        println("🚀 Build completed with performance profiling")
+        println("🚀 UltraRelease build completed with performance profiling")
         println("📊 Performance metrics available for analysis")
         val profileDir = buildDir.get().asFile.resolve("reports/profile/")
         if (profileDir.exists()) {
             println("📍 Profile reports: ${profileDir.absolutePath}")
         }
+        
+        // Show APK info
+        val apkDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease/")
+        if (apkDir.exists()) {
+            apkDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    val sizeMB = apkFile.length() / 1024.0 / 1024.0
+                    println("📱 Generated: ${apkFile.name} (${String.format("%.2f", sizeMB)} MB)")
+                }
+            }
+        }
     }
 }
 
-// Ultra-performance build task
-tasks.register("buildUltraOptimized") {
-    dependsOn("assembleUltraRelease")
-    finalizedBy("analyzeApkSize")
-    
+// ========================================
+// 🔍 BUILD CHECK TASK (NO BUILDING)
+// Command: ./gradlew build-check
+// Purpose: Only check if APKs exist, no building
+// ========================================
+tasks.register("build-check") {
+    val buildDir = layout.buildDirectory
     doLast {
-        println("🔥 Ultra-optimized Kconvert APKs built successfully!")
+        val ultraReleaseDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease/")
+        val debugDir = buildDir.get().asFile.resolve("outputs/apk/debug/")
+        var foundApks = false
+        
+        println("🔍 Checking for existing APKs...")
+        
+        // Check ultraRelease APKs
+        if (ultraReleaseDir.exists()) {
+            ultraReleaseDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    foundApks = true
+                    val sizeMB = apkFile.length() / 1024.0 / 1024.0
+                    println("✅ [UltraRelease] ${apkFile.name} (${String.format("%.2f", sizeMB)} MB)")
+                }
+            }
+        }
+        
+        // Check debug APKs
+        if (debugDir.exists()) {
+            debugDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    foundApks = true
+                    val sizeMB = apkFile.length() / 1024.0 / 1024.0
+                    println("✅ [Debug] ${apkFile.name} (${String.format("%.2f", sizeMB)} MB)")
+                }
+            }
+        }
+        
+        if (!foundApks) {
+            println("⚠️  Sir, you don't have any APKs yet!")
+            println("   Use: ./gradlew assembleDebug (for debug)")
+            println("   Use: ./gradlew assembleUltraRelease (for release)")
+            println("   Use: ./gradlew benchmark-build-check (build + analyze)")
+        } else {
+            println("🎉 APK check completed successfully!")
+        }
         println("📍 Output: app/build/outputs/apk/ultraRelease/")
+    }
+}
+
+// ========================================
+// 🔬 FULL ANALYZE TASK
+// Command: ./gradlew full-analyze
+// Purpose: Complete analysis of existing APKs
+// ========================================
+tasks.register("full-analyze") {
+    dependsOn("analyzeApkSize")
+    val buildDir = layout.buildDirectory
+    doLast {
+        println("🔬 Starting full APK analysis...")
+        
+        val ultraReleaseDir = buildDir.get().asFile.resolve("outputs/apk/ultraRelease/")
+        val debugDir = buildDir.get().asFile.resolve("outputs/apk/debug/")
+        var totalApks = 0
+        var totalSize = 0L
+        
+        // Analyze ultraRelease APKs
+        if (ultraReleaseDir.exists()) {
+            ultraReleaseDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    totalApks++
+                    totalSize += apkFile.length()
+                    val sizeMB = apkFile.length() / 1024.0 / 1024.0
+                    println("📊 [UltraRelease] ${apkFile.name}")
+                    println("   Size: ${String.format("%.2f", sizeMB)} MB")
+                    println("   Path: ${apkFile.absolutePath}")
+                    println("   Modified: ${apkFile.lastModified()}")
+                }
+            }
+        }
+        
+        // Analyze debug APKs
+        if (debugDir.exists()) {
+            debugDir.listFiles()?.forEach { apkFile ->
+                if (apkFile.name.endsWith(".apk")) {
+                    totalApks++
+                    totalSize += apkFile.length()
+                    val sizeMB = apkFile.length() / 1024.0 / 1024.0
+                    println("📊 [Debug] ${apkFile.name}")
+                    println("   Size: ${String.format("%.2f", sizeMB)} MB")
+                    println("   Path: ${apkFile.absolutePath}")
+                    println("   Modified: ${apkFile.lastModified()}")
+                }
+            }
+        }
+        
+        if (totalApks > 0) {
+            val totalSizeMB = totalSize / 1024.0 / 1024.0
+            println("\n📈 ANALYSIS SUMMARY:")
+            println("   Total APKs: $totalApks")
+            println("   Total Size: ${String.format("%.2f", totalSizeMB)} MB")
+            println("   Average Size: ${String.format("%.2f", totalSizeMB / totalApks)} MB")
+        } else {
+            println("⚠️  Sir, you don't have any APKs to analyze!")
+            println("   Build some APKs first with:")
+            println("   ./gradlew assembleDebug")
+            println("   ./gradlew assembleUltraRelease")
+        }
     }
 }
 
@@ -310,6 +483,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material3:material3")
     
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")

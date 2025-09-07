@@ -5,6 +5,7 @@
 package com.oxyzenq.currencyconverter.presentation.screen
 
 import android.content.Context
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,11 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.oxyzenq.currencyconverter.data.model.Currency
 import com.oxyzenq.currencyconverter.presentation.components.ConfirmationDialog
 import com.oxyzenq.currencyconverter.presentation.components.CurrencyStrengthGauge
@@ -38,6 +44,67 @@ import com.oxyzenq.currencyconverter.presentation.components.FloatingNotificatio
 import com.oxyzenq.currencyconverter.presentation.viewmodel.ConfirmationType
 import com.oxyzenq.currencyconverter.presentation.viewmodel.KconvertViewModel
 import kotlinx.coroutines.launch
+
+/**
+ * Animated background component with smooth transitions
+ */
+@Composable
+fun AnimatedBackground() {
+    val infiniteTransition = rememberInfiniteTransition()
+    
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .scale(scale)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0F172A).copy(alpha = alpha),
+                        Color(0xFF1E293B).copy(alpha = alpha),
+                        Color(0xFF334155).copy(alpha = alpha)
+                    )
+                )
+            )
+    )
+}
+
+/**
+ * Glassmorphism container component
+ */
+@Composable
+fun GlassmorphismContainer(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .background(
+                Color.White.copy(alpha = 0.1f),
+                RoundedCornerShape(16.dp)
+            )
+            .blur(0.5.dp)
+    ) {
+        content()
+    }
+}
 
 /**
  * Main screen for Kconvert app with all 5 containers
@@ -71,40 +138,72 @@ fun KconvertMainScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F172A),
-                        Color(0xFF1E293B),
-                        Color(0xFF334155)
-                    )
-                )
-            )
     ) {
+        // Animated Background
+        AnimatedBackground()
+        
+        // Dark backdrop overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+        )
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header
+            // Header with Circle Logo
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                GlassmorphismContainer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
                 ) {
-                    Text(
-                        text = "Kconvert",
-                        style = MaterialTheme.typography.h4.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Circle Logo
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            Color(0xFF3B82F6),
+                                            Color(0xFF1E40AF)
+                                        )
+                                    ),
+                                    RoundedCornerShape(50)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "K",
+                                style = MaterialTheme.typography.h3.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = "Kconvert",
+                            style = MaterialTheme.typography.h4.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         )
-                    )
-                    Text(
-                        text = "Currency Converter",
-                        style = MaterialTheme.typography.subtitle1.copy(
-                            color = Color(0xFF94A3B8)
+                        Text(
+                            text = "Currency Converter",
+                            style = MaterialTheme.typography.subtitle1.copy(
+                                color = Color(0xFF94A3B8)
+                            )
                         )
-                    )
+                    }
                 }
             }
             
@@ -150,6 +249,76 @@ fun KconvertMainScreen(
             // Container 5: About
             item {
                 AboutContainer()
+            }
+            
+            // GitHub Footer
+            item {
+                GlassmorphismContainer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Open Source Project",
+                            style = MaterialTheme.typography.caption.copy(
+                                color = Color(0xFF94A3B8),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "com.oxyzenq.currencyconverter",
+                            style = MaterialTheme.typography.caption.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "⭐ Star on GitHub",
+                            style = MaterialTheme.typography.caption.copy(
+                                color = Color(0xFF3B82F6)
+                            )
+                        )
+                    }
+                }
+            }
+            
+            // Exit Button
+            item {
+                GlassmorphismContainer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .clickable {
+                            viewModel.showConfirmationDialog(ConfirmationType.EXIT_APP)
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Exit App",
+                            tint = Color(0xFFDC2626)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Exit Kconvert",
+                            style = MaterialTheme.typography.body1.copy(
+                                color = Color(0xFFDC2626),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+                }
             }
         }
         

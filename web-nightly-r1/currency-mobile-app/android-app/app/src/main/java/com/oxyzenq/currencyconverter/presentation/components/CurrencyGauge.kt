@@ -79,7 +79,7 @@ fun CurrencyStrengthGauge(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp)) // Increased from 16dp to 32dp (2rem)
             
             // Currency labels
             Row(
@@ -110,7 +110,7 @@ fun CurrencyStrengthGauge(
                 Canvas(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    drawGauge(0.5f) // Neutral position
+                    drawGauge(0.0f) // Default to 0 position instead of neutral
                 }
                 
                 Text(

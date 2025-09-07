@@ -190,8 +190,14 @@ class KconvertViewModel @Inject constructor(
                 val result = currencyRepository.fetchAndSaveCurrencyData(context)
                 
                 if (result.isSuccess) {
+                    // Force reload currencies and update UI state
+                    loadCurrencies()
+                    _uiState.value = _uiState.value.copy(
+                        isRefreshing = false,
+                        dataIndicator = "Data refreshed successfully at ${System.currentTimeMillis()}",
+                        error = null
+                    )
                     showNotification("Ultra-secure data refreshed successfully", NotificationType.SUCCESS)
-                    loadCurrencies() // Reload currencies after refresh
                 } else {
                     showNotification("Failed to refresh data: ${result.exceptionOrNull()?.message}", NotificationType.ERROR)
                     _uiState.value = _uiState.value.copy(
@@ -214,7 +220,7 @@ class KconvertViewModel @Inject constructor(
     private fun loadCurrencies() {
         viewModelScope.launch {
             try {
-                val currencies = currencyRepository.getAllCurrencies()
+                currencyRepository.getAllCurrencies()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isRefreshing = false,
@@ -239,7 +245,7 @@ class KconvertViewModel @Inject constructor(
                 val result = currencyRepository.deleteAllCurrencyData()
                 
                 result.fold(
-                    onSuccess = { message ->
+                    onSuccess = { _ ->
                         _uiState.value = _uiState.value.copy(
                             dataIndicator = "null, no data please click button 'refresh data of price' to update/fetching",
                             conversionResult = null,
@@ -313,20 +319,22 @@ class KconvertViewModel @Inject constructor(
      * Show confirmation dialog
      */
     fun showConfirmationDialog(type: ConfirmationType) {
+        val (title, _) = when (type) {
+            ConfirmationType.REFRESH_DATA -> "Refresh Data" to "Are you sure you want to refresh all currency data? This will fetch the latest exchange rates."
+            ConfirmationType.DELETE_DATA -> "Delete All Data" to "Are you sure you want to delete all stored currency data? This action cannot be undone."
+            ConfirmationType.EXIT_APP -> "Exit Kconvert" to "Are you sure you want to exit the application?"
+        }
         _uiState.value = _uiState.value.copy(
             confirmationDialog = ConfirmationDialogState(
                 isVisible = true,
                 type = type,
-                title = when (type) {
-                    ConfirmationType.REFRESH_DATA -> "Are you sure to update sir?"
-                    ConfirmationType.DELETE_DATA -> "Are you sure to delete the data of price sir? This can't be undone!"
-                }
+                title = title
             )
         )
     }
 
     /**
-     * Hide confirmation dialog
+     * Confirmation dialog state
      */
     fun hideConfirmationDialog() {
         _uiState.value = _uiState.value.copy(
@@ -338,13 +346,19 @@ class KconvertViewModel @Inject constructor(
      * Handle confirmation dialog result
      */
     fun onConfirmationResult(confirmed: Boolean, context: Context) {
-        val dialogType = _uiState.value.confirmationDialog.type
+        val currentDialog = _uiState.value.confirmationDialog
         hideConfirmationDialog()
         
         if (confirmed) {
-            when (dialogType) {
+            when (currentDialog.type) {
                 ConfirmationType.REFRESH_DATA -> refreshData(context)
                 ConfirmationType.DELETE_DATA -> deleteAllData()
+                ConfirmationType.EXIT_APP -> {
+                    // Exit the app
+                    if (context is android.app.Activity) {
+                        context.finishAffinity()
+                    }
+                }
             }
         }
     }
@@ -420,7 +434,8 @@ data class NotificationState(
  */
 enum class ConfirmationType {
     REFRESH_DATA,
-    DELETE_DATA
+    DELETE_DATA,
+    EXIT_APP
 }
 
 /**

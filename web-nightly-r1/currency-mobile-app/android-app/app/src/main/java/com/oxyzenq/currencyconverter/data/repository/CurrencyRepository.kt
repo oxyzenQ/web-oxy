@@ -123,7 +123,7 @@ class CurrencyRepository @Inject constructor(
         return try {
             val lastUpdateTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(lastUpdate.value)
             val currentTime = Date()
-            val diffInHours = (currentTime.time - lastUpdateTime.time) / (1000 * 60 * 60)
+            val diffInHours = (currentTime.time - lastUpdateTime?.time!!) / (1000 * 60 * 60)
             diffInHours >= 1 // Refresh if older than 1 hour
         } catch (e: Exception) {
             true // Refresh if parsing fails

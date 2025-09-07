@@ -30,7 +30,7 @@ class NetworkDataSource @Inject constructor(
         return try {
             // Ultra-security validation (skip if context is null)
             if (context != null) {
-                val securityStatus = raspSecurityManager.performSecurityAssessment(context)
+                raspSecurityManager.performSecurityAssessment(context)
                 if (!raspSecurityManager.isApiAccessAllowed()) {
                     return Result.failure(Exception("Security assessment failed - API access denied"))
                 }
@@ -71,7 +71,7 @@ class NetworkDataSource @Inject constructor(
     suspend fun fetchExchangeRates(context: android.content.Context, baseCurrency: String): Result<List<ExchangeRateEntity>> {
         return try {
             // Ultra-security validation
-            val securityStatus = raspSecurityManager.performSecurityAssessment(context)
+            raspSecurityManager.performSecurityAssessment(context)
             if (!raspSecurityManager.isApiAccessAllowed()) {
                 return Result.failure(Exception("Security assessment failed - API access denied"))
             }

@@ -108,6 +108,7 @@ fun ConfirmationDialog(
                                 backgroundColor = when (type) {
                                     ConfirmationType.DELETE_DATA -> Color(0xFFDC2626)
                                     ConfirmationType.REFRESH_DATA -> Color(0xFF059669)
+                                    ConfirmationType.EXIT_APP -> Color(0xFFDC2626)
                                 }
                             ),
                             shape = RoundedCornerShape(12.dp)

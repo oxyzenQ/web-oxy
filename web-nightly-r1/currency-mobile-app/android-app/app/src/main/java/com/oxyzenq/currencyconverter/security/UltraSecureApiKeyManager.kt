@@ -163,7 +163,7 @@ class UltraSecureApiKeyManager @Inject constructor() {
     /**
      * Hardware Security Module (Android Keystore) fragment decryption
      */
-    private suspend fun decryptHSMFragment(context: Context, fragmentIndex: Int): String? {
+    private suspend fun decryptHSMFragment(@Suppress("UNUSED_PARAMETER") context: Context, @Suppress("UNUSED_PARAMETER") fragmentIndex: Int): String? {
         return try {
             val hsmKey = getOrCreateHardwareBackedKey()
             val encryptedData = Base64.decode(ENCRYPTED_KEY_FRAGMENTS[fragmentIndex], Base64.DEFAULT)

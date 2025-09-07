@@ -126,7 +126,7 @@ class RASPSecurityManager @Inject constructor() {
     /**
      * Check if device is rooted
      */
-    private fun checkRootDetection(context: Context): SecurityCheckResult {
+    private fun checkRootDetection(@Suppress("UNUSED_PARAMETER") context: Context): SecurityCheckResult {
         val rootIndicators = arrayOf(
             // Common su binary locations
             "/system/app/Superuser.apk",
@@ -179,7 +179,7 @@ class RASPSecurityManager @Inject constructor() {
     /**
      * Detect hooking frameworks (Xposed, Frida, etc.)
      */
-    private fun checkHookDetection(context: Context): SecurityCheckResult {
+    private fun checkHookDetection(@Suppress("UNUSED_PARAMETER") context: Context): SecurityCheckResult {
         val threats = mutableListOf<String>()
         
         // Check for Xposed Framework
