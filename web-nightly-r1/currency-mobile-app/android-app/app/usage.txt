@@ -24259,6 +24259,7 @@ com.oxyzenq.kconvert.R$drawable:
     public static int background_stellar
     public static int hdr_stellar_background
     public static int ic_launcher_foreground
+    public static int ic_launcher_monochrome
     public static int kconvert_logo
     private void <init>()
 com.oxyzenq.kconvert.R$mipmap
