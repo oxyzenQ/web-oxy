@@ -2,15 +2,15 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.database
+package com.oxyzenq.kconvert.data.database
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
-import com.oxyzenq.currencyconverter.data.database.dao.CurrencyDao
-import com.oxyzenq.currencyconverter.data.database.entities.CurrencyEntity
-import com.oxyzenq.currencyconverter.data.database.entities.CurrencyRateEntity
+import com.oxyzenq.kconvert.data.database.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.database.entities.CurrencyEntity
+import com.oxyzenq.kconvert.data.database.entities.CurrencyRateEntity
 
 @Database(
     entities = [CurrencyEntity::class, CurrencyRateEntity::class],

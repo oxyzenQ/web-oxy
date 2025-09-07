@@ -2,12 +2,12 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.di
+package com.oxyzenq.kconvert.di
 
 import android.content.Context
 import androidx.room.Room
-import com.oxyzenq.currencyconverter.data.local.database.KconvertDatabase
-import com.oxyzenq.currencyconverter.data.local.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.local.database.KconvertDatabase
+import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

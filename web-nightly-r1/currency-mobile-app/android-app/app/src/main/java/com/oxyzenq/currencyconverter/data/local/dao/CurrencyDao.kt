@@ -2,12 +2,12 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.local.dao
+package com.oxyzenq.kconvert.data.local.dao
 
 import androidx.room.*
-import com.oxyzenq.currencyconverter.data.local.entity.CurrencyEntity
-import com.oxyzenq.currencyconverter.data.local.entity.ExchangeRateEntity
-import com.oxyzenq.currencyconverter.data.local.entity.AppMetadataEntity
+import com.oxyzenq.kconvert.data.local.entity.CurrencyEntity
+import com.oxyzenq.kconvert.data.local.entity.ExchangeRateEntity
+import com.oxyzenq.kconvert.data.local.entity.AppMetadataEntity
 import kotlinx.coroutines.flow.Flow
 
 /**

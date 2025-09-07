@@ -2,15 +2,15 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.presentation.viewmodel
+package com.oxyzenq.kconvert.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.oxyzenq.currencyconverter.data.preferences.AppPreferences
-import com.oxyzenq.currencyconverter.data.repository.CurrencyRepository
+import com.oxyzenq.kconvert.data.preferences.AppPreferences
+import com.oxyzenq.kconvert.data.repository.CurrencyRepository
 import android.content.Context
-import com.oxyzenq.currencyconverter.data.repository.ConversionResult
-import com.oxyzenq.currencyconverter.data.model.Currency
+import com.oxyzenq.kconvert.data.repository.ConversionResult
+import com.oxyzenq.kconvert.data.model.Currency
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

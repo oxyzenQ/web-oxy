@@ -2,10 +2,10 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.local
+package com.oxyzenq.kconvert.data.local
 
-import com.oxyzenq.currencyconverter.data.model.ConversionResponse
-import com.oxyzenq.currencyconverter.data.model.Currency
+import com.oxyzenq.kconvert.data.model.ConversionResponse
+import com.oxyzenq.kconvert.data.model.Currency
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton

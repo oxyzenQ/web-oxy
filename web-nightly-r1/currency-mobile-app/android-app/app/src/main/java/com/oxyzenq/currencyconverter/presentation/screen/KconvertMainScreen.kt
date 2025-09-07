@@ -2,10 +2,12 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.presentation.screen
+package com.oxyzenq.kconvert.presentation.screen
 
 import android.content.Context
 import androidx.compose.animation.core.*
+import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,13 +23,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -37,12 +42,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import com.oxyzenq.currencyconverter.data.model.Currency
-import com.oxyzenq.currencyconverter.presentation.components.ConfirmationDialog
-import com.oxyzenq.currencyconverter.presentation.components.CurrencyStrengthGauge
-import com.oxyzenq.currencyconverter.presentation.components.FloatingNotification
-import com.oxyzenq.currencyconverter.presentation.viewmodel.ConfirmationType
-import com.oxyzenq.currencyconverter.presentation.viewmodel.KconvertViewModel
+import com.oxyzenq.kconvert.R
+import com.oxyzenq.kconvert.data.model.Currency
+import com.oxyzenq.kconvert.presentation.components.ConfirmationDialog
+import com.oxyzenq.kconvert.presentation.components.CurrencyStrengthGauge
+import com.oxyzenq.kconvert.presentation.components.FloatingNotification
+import com.oxyzenq.kconvert.presentation.components.BottomSheetSettingsPanel
+import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
+import com.oxyzenq.kconvert.presentation.viewmodel.KconvertViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -74,16 +81,30 @@ fun AnimatedBackground() {
         modifier = Modifier
             .fillMaxSize()
             .scale(scale)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F172A).copy(alpha = alpha),
-                        Color(0xFF1E293B).copy(alpha = alpha),
-                        Color(0xFF334155).copy(alpha = alpha)
+    ) {
+        // Stellar HDR wallpaper as background
+        Image(
+            painter = painterResource(id = R.drawable.hdr_stellar_edition_v2),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // Subtle cool-toned gradient overlay to ensure contrast and harmony
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0F172A).copy(alpha = 0.30f), // slate-900 tint top
+                            Color(0xFF0B1220).copy(alpha = 0.46f), // deep space mid
+                            Color(0xFF0B1220).copy(alpha = 0.66f)  // deeper bottom for content contrast
+                        )
                     )
                 )
-            )
-    )
+        )
+    }
 }
 
 /**
@@ -94,13 +115,23 @@ fun GlassmorphismContainer(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val animatedAlpha by animateFloatAsState(
+        targetValue = 0.12f,
+        animationSpec = tween(durationMillis = 800, easing = EaseInOutCubic),
+        label = "glassmorphism_alpha"
+    )
+    
     Box(
         modifier = modifier
             .background(
-                Color.White.copy(alpha = 0.1f),
-                RoundedCornerShape(16.dp)
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = animatedAlpha),
+                        Color.White.copy(alpha = animatedAlpha * 0.6f)
+                    )
+                ),
+                RoundedCornerShape(18.dp)
             )
-            .blur(0.5.dp)
     ) {
         content()
     }
@@ -119,6 +150,9 @@ fun KconvertMainScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    
+    // Settings panel state
+    var showSettingsPanel by remember { mutableStateOf(false) }
     
     // Initialize app on first composition
     LaunchedEffect(Unit) {
@@ -142,11 +176,19 @@ fun KconvertMainScreen(
         // Animated Background
         AnimatedBackground()
         
-        // Dark backdrop overlay
+        // Enhanced backdrop with blur effect
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.15f),
+                            Color.Black.copy(alpha = 0.35f),
+                            Color.Black.copy(alpha = 0.55f)
+                        )
+                    )
+                )
         )
         LazyColumn(
             state = listState,
@@ -154,55 +196,75 @@ fun KconvertMainScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header with Circle Logo
+            // Header with Circle Logo and Settings Button
             item {
                 GlassmorphismContainer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Circle Logo
-                        Box(
+                        // Settings button (top-right)
+                        IconButton(
+                            onClick = { showSettingsPanel = true },
                             modifier = Modifier
-                                .size(80.dp)
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            Color(0xFF3B82F6),
-                                            Color(0xFF1E40AF)
-                                        )
-                                    ),
-                                    RoundedCornerShape(50)
-                                ),
-                            contentAlignment = Alignment.Center
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        
+                        // Center content
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Circle Logo with new centered Kconvert logo
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(
+                                        Brush.radialGradient(
+                                            colors = listOf(
+                                                Color(0xFF3B82F6),
+                                                Color(0xFF1E40AF)
+                                            )
+                                        ),
+                                        RoundedCornerShape(50)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.kconvert_logo_new),
+                                    contentDescription = "Kconvert Logo",
+                                    modifier = Modifier.size(56.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
                             Text(
-                                text = "K",
-                                style = MaterialTheme.typography.h3.copy(
+                                text = "Kconvert",
+                                style = MaterialTheme.typography.h4.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
                             )
+                            Text(
+                                text = "Currency Converter",
+                                style = MaterialTheme.typography.subtitle1.copy(
+                                    color = Color(0xFF94A3B8)
+                                )
+                            )
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = "Kconvert",
-                            style = MaterialTheme.typography.h4.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        )
-                        Text(
-                            text = "Currency Converter",
-                            style = MaterialTheme.typography.subtitle1.copy(
-                                color = Color(0xFF94A3B8)
-                            )
-                        )
                     }
                 }
             }
@@ -270,7 +332,7 @@ fun KconvertMainScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "com.oxyzenq.currencyconverter",
+                            text = "com.oxyzenq.kconvert",
                             style = MaterialTheme.typography.caption.copy(
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
@@ -350,6 +412,12 @@ fun KconvertMainScreen(
                 viewModel.clearError()
             }
         }
+        
+        // Settings Panel
+        BottomSheetSettingsPanel(
+            isVisible = showSettingsPanel,
+            onDismiss = { showSettingsPanel = false }
+        )
     }
 }
 
@@ -358,7 +426,7 @@ fun KconvertMainScreen(
  */
 @Composable
 private fun CalculatorConverterContainer(
-    uiState: com.oxyzenq.currencyconverter.presentation.viewmodel.KconvertUiState,
+    uiState: com.oxyzenq.kconvert.presentation.viewmodel.KconvertUiState,
     currencies: List<Currency>,
     onAmountChange: (String) -> Unit,
     onSourceCurrencySelect: (Currency) -> Unit,
@@ -734,7 +802,7 @@ private fun AboutContainer() {
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(
-                text = "Kconvert — version com.oxyzenq.currencyconverter",
+                text = "Kconvert — version com.oxyzenq.kconvert",
                 style = MaterialTheme.typography.body2.copy(
                     color = Color(0xFF94A3B8),
                     fontWeight = FontWeight.Medium

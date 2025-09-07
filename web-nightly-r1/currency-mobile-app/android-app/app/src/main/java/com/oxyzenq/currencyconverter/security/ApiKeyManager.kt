@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.security
+package com.oxyzenq.kconvert.security
 
 import android.content.Context
 import android.util.Base64

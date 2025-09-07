@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.presentation.components
+package com.oxyzenq.kconvert.presentation.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*

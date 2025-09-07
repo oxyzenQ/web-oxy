@@ -2,14 +2,14 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.repository
+package com.oxyzenq.kconvert.data.repository
 
-import com.oxyzenq.currencyconverter.data.local.dao.CurrencyDao
-import com.oxyzenq.currencyconverter.data.local.entity.CurrencyEntity
-import com.oxyzenq.currencyconverter.data.local.entity.ExchangeRateEntity
-import com.oxyzenq.currencyconverter.data.local.entity.AppMetadataEntity
-import com.oxyzenq.currencyconverter.data.model.Currency
-import com.oxyzenq.currencyconverter.data.network.NetworkDataSource
+import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.local.entity.CurrencyEntity
+import com.oxyzenq.kconvert.data.local.entity.ExchangeRateEntity
+import com.oxyzenq.kconvert.data.local.entity.AppMetadataEntity
+import com.oxyzenq.kconvert.data.model.Currency
+import com.oxyzenq.kconvert.data.network.NetworkDataSource
 import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

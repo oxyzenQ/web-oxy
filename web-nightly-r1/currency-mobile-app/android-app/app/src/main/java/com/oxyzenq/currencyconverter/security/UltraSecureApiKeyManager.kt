@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.security
+package com.oxyzenq.kconvert.security
 
 import android.content.Context
 import android.os.Build
@@ -364,7 +364,7 @@ class UltraSecureApiKeyManager @Inject constructor() {
             val signatures = packageInfo.signatures
             
             // Check if app is signed with expected signature
-            signatures.isNotEmpty() && signatures[0] != null
+            signatures?.isNotEmpty() == true && signatures[0] != null
         } catch (e: Exception) {
             false
         }

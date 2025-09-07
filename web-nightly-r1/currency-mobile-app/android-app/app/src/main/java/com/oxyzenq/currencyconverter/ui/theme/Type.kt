@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.ui.theme
+package com.oxyzenq.kconvert.ui.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

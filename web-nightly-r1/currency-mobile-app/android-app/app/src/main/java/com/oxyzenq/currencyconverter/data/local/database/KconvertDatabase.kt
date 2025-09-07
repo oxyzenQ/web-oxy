@@ -2,16 +2,16 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.local.database
+package com.oxyzenq.kconvert.data.local.database
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
-import com.oxyzenq.currencyconverter.data.local.dao.CurrencyDao
-import com.oxyzenq.currencyconverter.data.local.entity.CurrencyEntity
-import com.oxyzenq.currencyconverter.data.local.entity.ExchangeRateEntity
-import com.oxyzenq.currencyconverter.data.local.entity.AppMetadataEntity
+import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.local.entity.CurrencyEntity
+import com.oxyzenq.kconvert.data.local.entity.ExchangeRateEntity
+import com.oxyzenq.kconvert.data.local.entity.AppMetadataEntity
 
 /**
  * Room database for Kconvert app

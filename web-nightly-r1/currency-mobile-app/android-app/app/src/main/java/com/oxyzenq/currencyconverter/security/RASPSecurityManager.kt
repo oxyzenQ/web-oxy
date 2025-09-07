@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.security
+package com.oxyzenq.kconvert.security
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -270,7 +270,7 @@ class RASPSecurityManager @Inject constructor() {
             )
             
             val signatures = packageInfo.signatures
-            if (signatures.isEmpty()) {
+            if (signatures?.isEmpty() != false) {
                 return SecurityCheckResult(
                     false,
                     SecurityThreat("TAMPER_DETECTION", ThreatLevel.CRITICAL, "No app signature found")
@@ -278,7 +278,7 @@ class RASPSecurityManager @Inject constructor() {
             }
             
             // Calculate signature hash
-            val signature = signatures[0]
+            val signature = signatures!![0]
             val md = MessageDigest.getInstance("SHA-256")
             val hash = md.digest(signature.toByteArray())
             val hashString = "SHA256:" + hash.joinToString("") { "%02X".format(it) }

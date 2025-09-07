@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.presentation.components
+package com.oxyzenq.kconvert.presentation.components
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.oxyzenq.currencyconverter.presentation.viewmodel.ConfirmationType
-import com.oxyzenq.currencyconverter.presentation.viewmodel.NotificationType
+import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
+import com.oxyzenq.kconvert.presentation.viewmodel.NotificationType
 import kotlinx.coroutines.delay
 
 /**

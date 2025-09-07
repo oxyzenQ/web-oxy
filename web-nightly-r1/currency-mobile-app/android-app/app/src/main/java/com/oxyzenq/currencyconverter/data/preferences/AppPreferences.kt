@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.preferences
+package com.oxyzenq.kconvert.data.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore

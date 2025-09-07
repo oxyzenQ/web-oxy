@@ -2,13 +2,13 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.network
+package com.oxyzenq.kconvert.data.network
 
-import com.oxyzenq.currencyconverter.data.api.ExchangeRateApiService
-import com.oxyzenq.currencyconverter.data.local.entity.CurrencyEntity
-import com.oxyzenq.currencyconverter.data.local.entity.ExchangeRateEntity
-import com.oxyzenq.currencyconverter.security.UltraSecureApiKeyManager
-import com.oxyzenq.currencyconverter.security.RASPSecurityManager
+import com.oxyzenq.kconvert.data.api.ExchangeRateApiService
+import com.oxyzenq.kconvert.data.local.entity.CurrencyEntity
+import com.oxyzenq.kconvert.data.local.entity.ExchangeRateEntity
+import com.oxyzenq.kconvert.security.UltraSecureApiKeyManager
+import com.oxyzenq.kconvert.security.RASPSecurityManager
 import javax.inject.Inject
 import javax.inject.Singleton
 

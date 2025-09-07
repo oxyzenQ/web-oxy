@@ -2,7 +2,7 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.local.entity
+package com.oxyzenq.kconvert.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

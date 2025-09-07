@@ -2,9 +2,9 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.data.api
+package com.oxyzenq.kconvert.data.api
 
-import com.oxyzenq.currencyconverter.data.model.ExchangeRatesResponse
+import com.oxyzenq.kconvert.data.model.ExchangeRatesResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path

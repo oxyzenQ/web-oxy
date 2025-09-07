@@ -2,12 +2,12 @@
  * Creativity Authored by oxyzenq 2025
  */
 
-package com.oxyzenq.currencyconverter.di
+package com.oxyzenq.kconvert.di
 
 import android.content.Context
-import com.oxyzenq.currencyconverter.data.api.ExchangeRateApiService
-import com.oxyzenq.currencyconverter.data.preferences.AppPreferences
-import com.oxyzenq.currencyconverter.security.UltraSecureApiKeyManager
+import com.oxyzenq.kconvert.data.api.ExchangeRateApiService
+import com.oxyzenq.kconvert.data.preferences.AppPreferences
+import com.oxyzenq.kconvert.security.UltraSecureApiKeyManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
