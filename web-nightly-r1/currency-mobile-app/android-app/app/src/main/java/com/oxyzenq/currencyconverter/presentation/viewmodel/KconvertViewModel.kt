@@ -46,6 +46,14 @@ class KconvertViewModel @Inject constructor(
             initialValue = false
         )
 
+    // Haptics enabled setting
+    val hapticsEnabled: StateFlow<Boolean> = appPreferences.hapticsEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     init {
         // Initial setup - context will be provided via initializeApp()
     }
@@ -100,6 +108,21 @@ class KconvertViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "Failed to load initial data: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Set haptics enabled preference
+     */
+    fun setHapticsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                appPreferences.setHapticsEnabled(enabled)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to update haptics setting: ${e.message}"
                 )
             }
         }

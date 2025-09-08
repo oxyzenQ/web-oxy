@@ -85,6 +85,46 @@ class SecurityViewModel @Inject constructor(
     }
     
     /**
+     * Get detailed security log for export
+     */
+    fun getSecurityLog(): String {
+        val state = _securityState.value
+        val threats = raspSecurityManager.getDetectedThreats()
+        val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+            .format(java.util.Date(state.lastCheckTime))
+        
+        return buildString {
+            appendLine("=== KCONVERT SECURITY LOG ===")
+            appendLine("Generated: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}")
+            appendLine("Last Check: $timestamp")
+            appendLine("Status: ${if (state.isPassed) "PASSED" else "FAILED"}")
+            appendLine("Threats Detected: ${threats.size}")
+            appendLine()
+            
+            if (threats.isNotEmpty()) {
+                appendLine("=== THREAT DETAILS ===")
+                threats.forEachIndexed { index, threat ->
+                    appendLine("${index + 1}. ${threat.type}")
+                    appendLine("   Level: ${threat.level}")
+                    appendLine("   Description: ${threat.description}")
+                    appendLine("   Timestamp: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(threat.timestamp))}")
+                    appendLine()
+                }
+            } else {
+                appendLine("No threats detected.")
+            }
+            
+            appendLine("=== SYSTEM INFO ===")
+            appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            appendLine("Android: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
+            appendLine("Build Type: ${android.os.Build.TYPE}")
+            appendLine("Build Tags: ${android.os.Build.TAGS}")
+            appendLine()
+            appendLine("=== END LOG ===")
+        }
+    }
+    
+    /**
      * Check if security check is needed (every 5 minutes)
      */
     fun isSecurityCheckNeeded(): Boolean {

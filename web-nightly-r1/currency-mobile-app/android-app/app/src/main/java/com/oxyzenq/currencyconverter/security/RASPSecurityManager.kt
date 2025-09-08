@@ -260,7 +260,7 @@ class RASPSecurityManager @Inject constructor() {
     }
     
     /**
-     * Check for app tampering
+     * Check for app tampering (allows unlocked bootloader)
      */
     private fun checkTamperDetection(context: Context): SecurityCheckResult {
         return try {
@@ -283,15 +283,25 @@ class RASPSecurityManager @Inject constructor() {
             val hash = md.digest(signature.toByteArray())
             val hashString = "SHA256:" + hash.joinToString("") { "%02X".format(it) }
             
+            // Check for unlocked bootloader (allow it but log)
+            val bootloaderUnlocked = isBootloaderUnlocked()
+            
             // Compare with expected signature (in production, use your actual signature)
             val signatureValid = hashString == EXPECTED_SIGNATURE_HASH || 
                                 Build.TYPE == "eng" || // Allow debug builds
-                                Build.TYPE == "userdebug"
+                                Build.TYPE == "userdebug" ||
+                                bootloaderUnlocked // Allow unlocked bootloader devices
             
-            if (!signatureValid) {
+            if (!signatureValid && !bootloaderUnlocked) {
                 SecurityCheckResult(
                     false,
                     SecurityThreat("TAMPER_DETECTION", ThreatLevel.CRITICAL, "App signature mismatch")
+                )
+            } else if (bootloaderUnlocked) {
+                // Pass but note unlocked bootloader
+                SecurityCheckResult(
+                    true, 
+                    SecurityThreat("BOOTLOADER_UNLOCKED", ThreatLevel.LOW, "Device has unlocked bootloader (allowed)")
                 )
             } else {
                 SecurityCheckResult(true, null)
@@ -301,6 +311,35 @@ class RASPSecurityManager @Inject constructor() {
                 false,
                 SecurityThreat("TAMPER_DETECTION", ThreatLevel.HIGH, "Signature verification failed: ${e.message}")
             )
+        }
+    }
+    
+    /**
+     * Check if bootloader is unlocked
+     */
+    private fun isBootloaderUnlocked(): Boolean {
+        return try {
+            // Check various bootloader unlock indicators
+            val unlockIndicators = listOf(
+                Build.TAGS?.contains("dev-keys") == true,
+                Build.TYPE == "userdebug",
+                Build.TYPE == "eng",
+                File("/system/recovery-from-boot.p").exists(),
+                File("/system/etc/recovery-resource.dat").exists()
+            )
+            
+            // Check system properties (requires root or system access)
+            val bootloaderStatus = try {
+                val process = Runtime.getRuntime().exec("getprop ro.boot.verifiedbootstate")
+                val result = process.inputStream.bufferedReader().readText().trim()
+                result == "orange" || result == "red"
+            } catch (e: Exception) {
+                false
+            }
+            
+            unlockIndicators.any { it } || bootloaderStatus
+        } catch (e: Exception) {
+            false
         }
     }
     

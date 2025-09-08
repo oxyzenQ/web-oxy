@@ -31,8 +31,8 @@ android {
         applicationId = "com.oxyzenq.kconvert"
         minSdk = 26  // Android 8.0 (API level 26)
         targetSdk = 35
-        versionCode = 1
-        versionName = "Kconvert.1.rc3"
+        versionCode = 2
+        versionName = "2.dev-3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -480,7 +480,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material3:material3")
     
     // Core Android - Updated versions
@@ -520,6 +521,14 @@ dependencies {
     
     // Preferences - Updated
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Jetpack Graphics (lightweight rendering utilities)
+    implementation("androidx.graphics:graphics-core:1.0.1")
+    implementation("androidx.graphics:graphics-path:1.0.1")
+    implementation("androidx.graphics:graphics-shapes:1.0.1")
+
+    // Profile Installer (precompiled runtime profiles for faster startup & smoothness)
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
     
     // Charts for gauge
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
