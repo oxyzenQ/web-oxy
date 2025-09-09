@@ -174,9 +174,8 @@ private fun KconvertLogoImage(
     contentDescription: String?,
     modifier: Modifier = Modifier
 ) {
-    // Try to load the new orig logo from drawable; if it doesn't exist, fallback
-    val painter = runCatching { painterResource(id = R.drawable.kconvert_logo_orig) }
-        .getOrElse { painterResource(id = R.drawable.kconvert_logo_new) }
+    // Load the official orig logo (old assets removed)
+    val painter = painterResource(id = R.drawable.kconvert_logo_orig)
     Image(
         painter = painter,
         contentDescription = contentDescription,
