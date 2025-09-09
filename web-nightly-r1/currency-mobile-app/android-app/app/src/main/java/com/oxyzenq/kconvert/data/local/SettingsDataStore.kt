@@ -3,6 +3,9 @@ package com.oxyzenq.kconvert.data.local
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +20,9 @@ object SettingsKeys {
     val HAPTICS_ENABLED: Preferences.Key<Boolean> = booleanPreferencesKey("haptics_enabled")
     val AUTO_UPDATE: Preferences.Key<Boolean> = booleanPreferencesKey("auto_update")
     val DARK_MODE: Preferences.Key<Boolean> = booleanPreferencesKey("dark_mode")
+    val DARK_LEVEL: Preferences.Key<Int> = intPreferencesKey("dark_level")
+    val CACHE_SIZE: Preferences.Key<Long> = longPreferencesKey("cache_size")
+    val CACHE_LAST_SCAN: Preferences.Key<String> = stringPreferencesKey("cache_last_scan")
 }
 
 class SettingsDataStore(private val context: Context) {
@@ -40,6 +46,21 @@ class SettingsDataStore(private val context: Context) {
             prefs[SettingsKeys.DARK_MODE] ?: true
         }
 
+    val cacheSizeFlow: Flow<Long> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[SettingsKeys.CACHE_SIZE] ?: 0L
+        }
+
+    val darkLevelFlow: Flow<Int> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[SettingsKeys.DARK_LEVEL] ?: 0
+        }
+
+    val cacheLastScanFlow: Flow<String> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[SettingsKeys.CACHE_LAST_SCAN] ?: ""
+        }
+
     suspend fun setFullScreen(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.FULL_SCREEN] = enabled
@@ -61,6 +82,24 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setDarkMode(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.DARK_MODE] = enabled
+        }
+    }
+
+    suspend fun setCacheSize(size: Long) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.CACHE_SIZE] = size
+        }
+    }
+
+    suspend fun setDarkLevel(level: Int) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.DARK_LEVEL] = level
+        }
+    }
+
+    suspend fun setCacheLastScan(timestamp: String) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.CACHE_LAST_SCAN] = timestamp
         }
     }
 }

@@ -22,6 +22,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.oxyzenq.kconvert.R
@@ -97,7 +99,7 @@ fun SplashScreen(navController: NavController) {
             ) {
                 // App Logo (2x bigger)
                 Image(
-                    painter = painterResource(id = R.drawable.kconvert_logo_new),
+                    painter = painterResource(id = R.drawable.kconvert_logo_orig),
                     contentDescription = "Kconvert Logo",
                     modifier = Modifier
                         .size(240.dp)
@@ -118,12 +120,23 @@ fun SplashScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Loading text using Inter font
+                // Loading text using Inter font with blue-light plasma gradient
                 val inter = FontFamily(Font(R.font.inter))
+                val loadingBrush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF93C5FD), // blue-300
+                        Color(0xFF81D4FA), // light blue
+                        Color(0xFFC4B5FD)  // violet-300
+                    )
+                )
+                val loadingText = buildAnnotatedString {
+                    pushStyle(SpanStyle(brush = loadingBrush))
+                    append("Loading....")
+                    pop()
+                }
                 Text(
-                    text = "Loading....",
+                    text = loadingText,
                     style = MaterialTheme.typography.body2.copy(
-                        color = Color(0xFF9CA3AF),
                         fontFamily = inter
                     )
                 )

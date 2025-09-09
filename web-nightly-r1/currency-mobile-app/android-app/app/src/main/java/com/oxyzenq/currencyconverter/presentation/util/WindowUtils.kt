@@ -10,15 +10,31 @@ import androidx.core.view.WindowInsetsControllerCompat
 
 fun setImmersiveMode(activity: Activity, enabled: Boolean) {
     val window = activity.window
-    // When immersive is enabled, we do NOT fit system windows so content goes edge to edge
-    WindowCompat.setDecorFitsSystemWindows(window, !enabled)
+    // Always draw edge-to-edge so the wallpaper can extend behind system bars
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    // Allow content into display cutout (notch) areas
+    @Suppress("DEPRECATION")
+    window.attributes = window.attributes.apply {
+        layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    }
 
     val controller = WindowInsetsControllerCompat(window, window.decorView)
     if (enabled) {
+        // Full immersive - hide status and nav bars
         controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
         controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        // Keep bar surfaces transparent so when they transiently appear, wallpaper still shows
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
     } else {
+        // Show bars but keep them transparent so the background remains visible
         controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        // Optional: ensure icons are legible on dark wallpaper (light status bar icons)
+        // You can adjust this based on theme if desired
+        controller.isAppearanceLightStatusBars = false
+        controller.isAppearanceLightNavigationBars = false
     }
 }

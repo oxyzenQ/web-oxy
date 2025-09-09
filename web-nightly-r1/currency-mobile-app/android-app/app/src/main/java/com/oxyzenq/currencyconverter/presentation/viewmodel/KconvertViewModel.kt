@@ -345,7 +345,7 @@ class KconvertViewModel @Inject constructor(
         val (title, _) = when (type) {
             ConfirmationType.REFRESH_DATA -> "Refresh Data" to "Are you sure you want to refresh all currency data? This will fetch the latest exchange rates."
             ConfirmationType.DELETE_DATA -> "Delete All Data" to "Are you sure you want to delete all stored currency data? This action cannot be undone."
-            ConfirmationType.EXIT_APP -> "Exit Kconvert" to "Are you sure you want to exit the application?"
+            ConfirmationType.EXIT_APP -> "Exit App Kconvert?" to "Are you sure you want to exit the application?"
         }
         _uiState.value = _uiState.value.copy(
             confirmationDialog = ConfirmationDialogState(

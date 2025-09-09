@@ -15,9 +15,23 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Brightness6
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,9 +76,12 @@ import androidx.compose.foundation.layout.ColumnScope
 fun BottomSheetSettingsPanel(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    hapticsEnabled: Boolean = true,
-    onToggleHaptics: (Boolean) -> Unit = {},
+    hapticsEnabled: Boolean,
+    onToggleHaptics: (Boolean) -> Unit,
+    isFullscreenMode: Boolean = true,
+    onToggleFullscreen: (Boolean) -> Unit = {},
+    darkLevel: Int = 0,
+    onDarkLevelChange: (Int) -> Unit = {},
     securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -113,7 +130,7 @@ fun BottomSheetSettingsPanel(
     
     if (isVisible) {
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .zIndex(10f)
         ) {
@@ -261,7 +278,22 @@ fun BottomSheetSettingsPanel(
                         // Extra breathing room below fixed title
                         item { Spacer(modifier = Modifier.height(8.dp)) }
                         
-                        // Security Check Section
+                        // Box 1 : App Settings Section
+                        item {
+                            AppSettingsSection(
+                                autoUpdateEnabledDefault = true,
+                                darkModeEnabledDefault = true,
+                                hapticsEnabledDefault = hapticsEnabled,
+                                onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
+                                onAnyToggle = { if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                isFullscreenMode = isFullscreenMode,
+                                onToggleFullscreen = onToggleFullscreen,
+                                darkLevel = darkLevel,
+                                onDarkLevelChange = onDarkLevelChange
+                            )
+                        }
+                        
+                        // Box 2 : Security Check Section
                         item {
                             SecurityCheckSection(
                                 securityState = securityState,
@@ -273,12 +305,12 @@ fun BottomSheetSettingsPanel(
                             )
                         }
                         
-                        // About Section
+                        // Box 3 : About Section
                         item {
                             AboutSection()
                         }
                         
-                        // Maintenance Section
+                        // Box 4 : Maintenance Section
                         item {
                             MaintenanceSection(
                                 onClearCache = {
@@ -289,17 +321,6 @@ fun BottomSheetSettingsPanel(
                                     if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     // TODO implement reset settings
                                 }
-                            )
-                        }
-                        
-                        // App Settings Section
-                        item {
-                            AppSettingsSection(
-                                autoUpdateEnabledDefault = true,
-                                darkModeEnabledDefault = true,
-                                hapticsEnabledDefault = hapticsEnabled,
-                                onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
-                                onAnyToggle = { if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
                             )
                         }
                         
@@ -656,7 +677,11 @@ private fun AppSettingsSection(
     darkModeEnabledDefault: Boolean,
     hapticsEnabledDefault: Boolean,
     onToggleHaptics: (Boolean) -> Unit,
-    onAnyToggle: () -> Unit
+    onAnyToggle: () -> Unit,
+    isFullscreenMode: Boolean = true,
+    onToggleFullscreen: (Boolean) -> Unit = {},
+    darkLevel: Int = 0,
+    onDarkLevelChange: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsStore = remember { SettingsDataStore(context) }
@@ -711,9 +736,64 @@ private fun AppSettingsSection(
                     scope.launch {
                         settingsStore.setFullScreen(enabled)
                     }
+                    onToggleFullscreen(enabled)
                     onAnyToggle()
                 }
             )
+
+            // Background dark level slider (0..100)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Adjust background darkness",
+                style = MaterialTheme.typography.subtitle2.copy(color = Color(0xFFCBD5E1))
+            )
+            val levelState = remember(darkLevel) { mutableStateOf(darkLevel) }
+            
+            // Custom slider with brightness icon indicator
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Slider(
+                    value = levelState.value.toFloat(),
+                    onValueChange = { v ->
+                        levelState.value = v.toInt().coerceIn(0, 100)
+                        onDarkLevelChange(levelState.value)
+                        // Persist to DataStore
+                        scope.launch {
+                            settingsStore.setDarkLevel(levelState.value)
+                        }
+                    },
+                    valueRange = 0f..100f,
+                    steps = 0,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                // Brightness icon indicator
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF059669))
+                        .border(2.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Brightness6,
+                        contentDescription = "Brightness Level: ${levelState.value}",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Low", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
+                Text("Medium", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
+                Text("Max", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
+            }
 
             SettingToggleRow(
                 title = "Haptic Feedback",
@@ -739,62 +819,123 @@ private fun AppSettingsSection(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            // Cache size indicator (real-time on launch)
-            var cacheInfoText by remember { mutableStateOf("") }
-            var isScanningCache by remember { mutableStateOf(false) }
+            // Cache size indicator (from stored data)
             val cacheContext = LocalContext.current
-
-            // One-time scan on composition
-            LaunchedEffect(Unit) {
-                isScanningCache = true
-                android.widget.Toast.makeText(cacheContext, "scanning the cache apps", android.widget.Toast.LENGTH_SHORT).show()
-                val size = StorageUtils.getCacheSize(cacheContext)
-                val mb = size / 1048576.0
-                cacheInfoText = if (size > 0L) String.format("%.1f MB for cache", mb) else ""
-                isScanningCache = false
-                android.widget.Toast.makeText(cacheContext, "scanning cache apps done", android.widget.Toast.LENGTH_SHORT).show()
+            val cacheSettingsStore = remember { SettingsDataStore(cacheContext) }
+            val storedCacheSize by cacheSettingsStore.cacheSizeFlow.collectAsState(initial = 0L)
+            val storedLastScan by cacheSettingsStore.cacheLastScanFlow.collectAsState(initial = "")
+            
+            val cacheInfoText = remember(storedCacheSize) {
+                if (storedCacheSize > 0L) {
+                    val mb = storedCacheSize / 1048576.0
+                    String.format("%.1f MB", mb)
+                } else {
+                    "0.0 MB"
+                }
+            }
+            
+            val lastScanText = remember(storedLastScan) {
+                if (storedLastScan.isNotEmpty()) {
+                    "Last scan: $storedLastScan"
+                } else {
+                    "Not scanned yet"
+                }
             }
 
             InfoRow("Storage used", cacheInfoText)
+            InfoRow("Cache status", lastScanText)
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Clear Cache Button (moved below storage indicator)
+            // Cache action buttons row
             val context = LocalContext.current
             var showClearCacheDialog by remember { mutableStateOf(false) }
+            var isRefreshingCache by remember { mutableStateOf(false) }
             
-            Button(
-                onClick = {
-                    val currentCacheSize = StorageUtils.getCacheSize(context)
-                    if (currentCacheSize > 0) {
-                        showClearCacheDialog = true
-                    } else {
-                        // Show "cache has been clearing" message
-                        android.widget.Toast.makeText(context, "Cache has been clearing", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF374151),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(6.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Clear Cache",
-                    style = MaterialTheme.typography.button.copy(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
+                // Refresh Cache Button
+                Button(
+                    onClick = {
+                        if (!isRefreshingCache) {
+                            scope.launch {
+                                isRefreshingCache = true
+                                android.widget.Toast.makeText(context, "Refreshing cache data...", android.widget.Toast.LENGTH_SHORT).show()
+                                
+                                try {
+                                    val newCacheSize = StorageUtils.getCacheSize(context)
+                                    val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                                    
+                                    cacheSettingsStore.setCacheSize(newCacheSize)
+                                    cacheSettingsStore.setCacheLastScan(timestamp)
+                                    
+                                    android.widget.Toast.makeText(context, "Cache data refreshed", android.widget.Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "Failed to refresh cache", android.widget.Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isRefreshingCache = false
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF3B82F6),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(6.dp),
+                    enabled = !isRefreshingCache
+                ) {
+                    if (isRefreshingCache) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isRefreshingCache) "Refreshing..." else "Refresh",
+                        fontSize = 12.sp
                     )
-                )
+                }
+                
+                // Clear Cache Button
+                Button(
+                    onClick = {
+                        val currentCacheSize = StorageUtils.getCacheSize(context)
+                        if (currentCacheSize > 0) {
+                            showClearCacheDialog = true
+                        } else {
+                            android.widget.Toast.makeText(context, "Cache is already empty", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF374151),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Clear",
+                        fontSize = 12.sp
+                    )
+                }
             }
             
             // Clear Cache Confirmation Dialog
@@ -825,10 +966,12 @@ private fun AppSettingsSection(
                                     val success = StorageUtils.clearCache(context)
                                     if (success) {
                                         android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
-                                        // Refresh cache indicator after clearing
-                                        val size = StorageUtils.getCacheSize(context)
-                                        val mb = size / 1048576.0
-                                        cacheInfoText = if (size > 0L) String.format("%.1f MB for cache", mb) else ""
+                                        // Update stored cache data after clearing
+                                        val newCacheSize = StorageUtils.getCacheSize(context)
+                                        val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                                        
+                                        cacheSettingsStore.setCacheSize(newCacheSize)
+                                        cacheSettingsStore.setCacheLastScan(timestamp)
                                     } else {
                                         android.widget.Toast.makeText(context, "Failed to clear cache", android.widget.Toast.LENGTH_SHORT).show()
                                     }

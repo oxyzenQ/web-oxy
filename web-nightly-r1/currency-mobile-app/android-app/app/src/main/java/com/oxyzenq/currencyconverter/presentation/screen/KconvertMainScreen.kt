@@ -9,12 +9,13 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -82,13 +85,126 @@ import com.oxyzenq.kconvert.presentation.components.FloatingNotification
 import com.oxyzenq.kconvert.presentation.components.BottomSheetSettingsPanel
 import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
 import com.oxyzenq.kconvert.presentation.viewmodel.KconvertViewModel
+import com.oxyzenq.kconvert.data.local.SettingsDataStore
+import com.oxyzenq.kconvert.utils.StorageUtils
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.rotate as modifierRotate
+import androidx.compose.ui.graphics.drawscope.rotate as drawRotate
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.ui.res.painterResource
+
+/**
+ * Feature highlight component for the header card
+ */
+@Composable
+private fun FeatureHighlight(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF93C5FD).copy(alpha = 0.3f),
+                            Color(0xFFC4B5FD).copy(alpha = 0.2f)
+                        )
+                    )
+                )
+                .border(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF93C5FD).copy(alpha = 0.5f),
+                            Color(0xFFC4B5FD).copy(alpha = 0.5f)
+                        )
+                    ),
+                    RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = Color(0xFF93C5FD),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        val textBrush = Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFF93C5FD).copy(alpha = 0.9f),
+                Color(0xFFC4B5FD).copy(alpha = 0.9f)
+            )
+        )
+        Text(
+            text = buildAnnotatedString {
+                pushStyle(SpanStyle(brush = textBrush, fontWeight = FontWeight.Medium))
+                append(text)
+                pop()
+            },
+            style = MaterialTheme.typography.caption.copy(
+                fontSize = 11.sp
+            ),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Kconvert logo painter helper: use kconvert_logo_orig when available, otherwise fallback
+ * to the previous kconvert_logo_new resource.
+ */
+@Composable
+private fun KconvertLogoImage(
+    contentDescription: String?,
+    modifier: Modifier = Modifier
+) {
+    // Try to load the new orig logo from drawable; if it doesn't exist, fallback
+    val painter = runCatching { painterResource(id = R.drawable.kconvert_logo_orig) }
+        .getOrElse { painterResource(id = R.drawable.kconvert_logo_new) }
+    Image(
+        painter = painter,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
+}
+
+/**
+ * Bouncy press effect modifier: shrinks on press, overshoots slightly on release, then settles.
+ */
+@Composable
+private fun bouncyPress(interactionSource: MutableInteractionSource, pressedScale: Float = 0.94f): Modifier {
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) pressedScale else 1f,
+        animationSpec = if (pressed) tween(durationMillis = 110, easing = FastOutLinearInEasing)
+        else spring(dampingRatio = 0.35f, stiffness = Spring.StiffnessMediumLow),
+        label = "bouncy_press_scale"
+    )
+    return Modifier.scale(scale)
+}
 
 /**
  * Animated background component with smooth transitions and particle effects
  */
 @Composable
-fun AnimatedBackground(isScrolling: Boolean) {
+fun AnimatedBackground(isScrolling: Boolean, isFullscreen: Boolean = true, darkLevel: Int = 0) {
     var screenWidth by remember { mutableStateOf(0f) }
     var screenHeight by remember { mutableStateOf(0f) }
 
@@ -163,15 +279,31 @@ fun AnimatedBackground(isScrolling: Boolean) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background wallpaper with scaling
+        // Background wallpaper with scaling and darkening
         Image(
             painter = painterResource(id = R.drawable.hdr_stellar_edition_v2),
             contentDescription = "HDR Stellar Background",
             modifier = Modifier
                 .fillMaxSize()
                 .scale(scale),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            colorFilter = if (isFullscreen) {
+                ColorFilter.tint(
+                    Color.Black.copy(alpha = 0.18f),
+                    blendMode = BlendMode.Darken
+                )
+            } else null
         )
+
+        // Extra adjustable dark overlay from Settings (0..100 => 0..0.5 alpha)
+        val adjustableAlpha = (darkLevel.coerceIn(0, 100) / 100f) * 0.5f
+        if (adjustableAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = adjustableAlpha))
+            )
+        }
 
         // Particle overlay
         Canvas(
@@ -218,16 +350,18 @@ fun AnimatedBackground(isScrolling: Boolean) {
             }
         }
 
-        // Subtle overlay gradient
+        // Subtle overlay gradient: no top darkening in either mode; just a soft bottom vignette
+        val topAlpha = 0.0f
+        val bottomAlpha = if (isFullscreen) 0.24f else 0.16f
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.Black.copy(alpha = 0.3f),
+                            Color.Black.copy(alpha = topAlpha),
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.5f)
+                            Color.Black.copy(alpha = bottomAlpha)
                         )
                     )
                 )
@@ -248,8 +382,8 @@ private fun ElegantInfoCard(
     val inter = FontFamily(Font(R.font.inter))
     val cardBg = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF0B1530),
-            Color(0xFF0F1F3F)
+            Color(0xFF0B1530).copy(alpha = 0.7f),
+            Color(0xFF0F1F3F).copy(alpha = 0.8f)
         )
     )
     val titleBrush = Brush.horizontalGradient(
@@ -351,14 +485,37 @@ fun KconvertMainScreen(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    
     // Settings panel state
     var showSettingsPanel by remember { mutableStateOf(false) }
+    var isFullscreenMode by remember { mutableStateOf(true) }
+    var darkLevel by rememberSaveable { mutableStateOf(0) }
+    val settingsStore = remember { SettingsDataStore(context) }
+    
+    LaunchedEffect(Unit) {
+        settingsStore.darkLevelFlow.collect { persistedLevel ->
+            darkLevel = persistedLevel
+        }
+    }
     // hapticsEnabled persisted in DataStore via ViewModel; no local state needed
     
     // Initialize app on first composition
     LaunchedEffect(Unit) {
         viewModel.initializeApp(context)
+        
+        // Perform cache scan once on app startup
+        val settingsStore = SettingsDataStore(context)
+        try {
+            val cacheSize = StorageUtils.getCacheSize(context)
+            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            
+            // Store cache data in DataStore
+            settingsStore.setCacheSize(cacheSize)
+            settingsStore.setCacheLastScan(timestamp)
+            
+            android.widget.Toast.makeText(context, "Cache scan completed", android.widget.Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(context, "Cache scan failed", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
     
     // Handle scroll to top
@@ -377,86 +534,164 @@ fun KconvertMainScreen(
     ) {
         // Animated Background
         val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
-        AnimatedBackground(isScrolling = isScrolling)
+        AnimatedBackground(isScrolling = isScrolling, isFullscreen = isFullscreenMode, darkLevel = darkLevel)
         
         // Removed duplicate backdrop overlay to reduce overdraw (AnimatedBackground already overlays a gradient)
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding(),
-            contentPadding = PaddingValues(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .then(
+                    if (isFullscreenMode) Modifier
+                    else Modifier.statusBarsPadding()
+                ),
+            contentPadding = PaddingValues(
+                top = if (isFullscreenMode) 40.dp else 20.dp, 
+                start = 16.dp, 
+                end = 16.dp, 
+                bottom = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Container 0 : Header with Circle Logo and Settings Title
+            // Container 0 : Header with Circle Logo and Currency Converter Branding
             item(key = "header", contentType = "header") {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 20.dp)
+                        .padding(horizontal = 16.dp, vertical = 20.dp)
                 ) {
-                    // Semi-dark backdrop panel behind header to dim wallpaper
+                    // Semi-dark backdrop behind container 0 to match other containers
                     Box(
                         modifier = Modifier
-                            .align(Alignment.Center)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color.Black.copy(alpha = 0.28f))
-                            .padding(vertical = 16.dp, horizontal = 12.dp)
+                            .padding(8.dp)
                     ) {
-                        // Center content
-                        Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
                         ) {
-                        // Animated Circle Logo
-                        AnimatedLogo(
-                            painter = painterResource(id = R.drawable.kconvert_logo_new),
-                            size = 84.dp,
-                            contentDescription = "Kconvert Logo"
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Gradient title using Inter font
-                        val inter = FontFamily(Font(R.font.inter))
-                        val titleGradient = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF60A5FA), // blue-400
-                                Color(0xFFA78BFA), // violet-400
-                                Color(0xFFF472B6)  // pink-400
+                            // Outer glow
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.Black.copy(alpha = 0.18f))
+                                    .blur(40.dp)
                             )
-                        )
-                        Text(
-                            text = buildAnnotatedString {
-                                pushStyle(SpanStyle(brush = titleGradient, fontWeight = FontWeight.ExtraBold))
-                                append("Kconvert")
-                                pop()
-                            },
-                            style = MaterialTheme.typography.h4.copy(
-                                fontFamily = inter
-                            ),
-                            textAlign = TextAlign.Center
-                        )
+                            // Main card with ElegantInfoCard background
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF0B1530).copy(alpha = 0.7f),
+                                                Color(0xFF0F1F3F).copy(alpha = 0.8f)
+                                            )
+                                        )
+                                    )
+                                    .border(
+                                        1.dp,
+                                        Color.White.copy(alpha = 0.06f),
+                                        RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(32.dp)
+                            ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(24.dp)
+                            ) {
+                                // Circular app icon with animated stroke
+                                Box(
+                                    modifier = Modifier.size(140.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AnimatedCircularStroke(
+                                        modifier = Modifier.size(140.dp)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(120.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black)
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        KconvertLogoImage(
+                                            contentDescription = "Kconvert Logo",
+                                            modifier = Modifier.size(104.dp)
+                                        )
+                                    }
+                                }
 
-                        // Subtext with subtle gradient and Inter
-                        val subtitleGradient = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF93C5FD), // blue-300
-                                Color(0xFFC4B5FD)  // violet-300
-                            )
-                        )
-                        Text(
-                            text = buildAnnotatedString {
-                                pushStyle(SpanStyle(brush = subtitleGradient, fontWeight = FontWeight.Medium))
-                                append("Currency Converter")
-                                pop()
-                            },
-                            style = MaterialTheme.typography.subtitle1.copy(
-                                fontFamily = inter
-                            ),
-                            textAlign = TextAlign.Center
-                        )
+                                // Main title with gradient
+                                val inter = FontFamily(Font(R.font.inter))
+                                val titleBrush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF93C5FD), // blue-300
+                                        Color(0xFFC4B5FD)  // violet-300
+                                    )
+                                )
+                                Text(
+                                    text = buildAnnotatedString {
+                                        pushStyle(SpanStyle(brush = titleBrush, fontWeight = FontWeight.Bold))
+                                        append("Kconvert")
+                                        pop()
+                                    },
+                                    style = MaterialTheme.typography.h3.copy(
+                                        fontFamily = inter
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+
+                                // Subtitle description with gradient
+                                val subtitleBrush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF93C5FD).copy(alpha = 0.8f), // blue-300
+                                        Color(0xFFC4B5FD).copy(alpha = 0.8f)  // violet-300
+                                    )
+                                )
+                                Text(
+                                    text = "Exchange rates across the globe — discover your financial balance under the stars.",
+                                    style = MaterialTheme.typography.body1.copy(
+                                        fontFamily = inter,
+                                        textAlign = TextAlign.Center,
+                                        lineHeight = 24.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+
+                                // Feature highlights row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    FeatureHighlight(
+                                        icon = Icons.Default.Calculate,
+                                        text = "Real-time Rates"
+                                    )
+                                    FeatureHighlight(
+                                        icon = Icons.Default.ShowChart,
+                                        text = "Market Insights"
+                                    )
+                                    FeatureHighlight(
+                                        icon = Icons.Default.Verified,
+                                        text = "Secure Exchange"
+                                    )
+                                }
+
+                                // Version text
+                                Text(
+                                    text = "Stellar Edition v${BuildConfig.VERSION_NAME}",
+                                    style = MaterialTheme.typography.caption.copy(
+                                        fontFamily = inter,
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                )
+                            }
+                            }
                         }
                     }
                 }
@@ -469,7 +704,6 @@ fun KconvertMainScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color.Black.copy(alpha = 0.22f))
                         .padding(8.dp)
                 ) {
                     ElegantInfoCard(
@@ -500,7 +734,6 @@ fun KconvertMainScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color.Black.copy(alpha = 0.22f))
                         .padding(8.dp)
                 ) {
                     ElegantInfoCard(
@@ -591,22 +824,22 @@ fun KconvertMainScreen(
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Settings, contentDescription = null, tint = Color(0xFF93C5FD))
+                            Icon(imageVector = Icons.Default.Archive, contentDescription = null, tint = Color(0xFF32EF12))
                             Spacer(Modifier.width(8.dp))
                             Text("Version: ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB), fontFamily = inter))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Code, contentDescription = null, tint = Color(0xFF93C5FD))
+                            Icon(imageVector = Icons.Default.Build, contentDescription = null, tint = Color(0xFF32EF12))
                             Spacer(Modifier.width(8.dp))
                             Text("Type: Open Source Project", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB), fontFamily = inter))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Verified, contentDescription = null, tint = Color(0xFF93C5FD))
+                            Icon(imageVector = Icons.Default.Verified, contentDescription = null, tint = Color(0xFF32EF12))
                             Spacer(Modifier.width(8.dp))
                             Text("Status: Maintenance", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB), fontFamily = inter))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = Color(0xFF93C5FD))
+                            Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = Color(0xFF32EF12))
                             Spacer(Modifier.width(8.dp))
                             Text("License: MIT", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB), fontFamily = inter))
                         }
@@ -614,50 +847,93 @@ fun KconvertMainScreen(
                 }
             }
             
-            // Container 6: Exit Button
+            // Container 6: Exit Button (compact glassmorphism)
             item(key = "exit_btn", contentType = "footer") {
-                ElegantInfoCard(
-                    title = "Exit App",
-                    titleIcon = {
-                        Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null, tint = Color(0xFFDC2626))
-                    },
-                    modifier = Modifier.clickable {
-                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.showConfirmationDialog(ConfirmationType.EXIT_APP)
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Tap to safely exit the application",
-                        style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB)),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                    val glassBrush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0x66FFFFFF).copy(alpha = 0.06f),
+                            Color(0x66FFFFFF).copy(alpha = 0.03f)
+                        )
                     )
+                    val exitInteraction = remember { MutableInteractionSource() }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(glassBrush)
+                            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(24.dp))
+                            .padding(horizontal = 16.dp, vertical = 10.dp)
+                            .then(bouncyPress(exitInteraction))
+                            .clickable(
+                                interactionSource = exitInteraction,
+                                indication = rememberRipple(bounded = true, radius = 28.dp)
+                            ) {
+                                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.showConfirmationDialog(ConfirmationType.EXIT_APP)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Exit App",
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Exit App",
+                            style = MaterialTheme.typography.body2.copy(
+                                color = Color(0xFFE5E7EB),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
                 }
             }
         }
         
-        // Global Top-Right Settings button (overlay, notch-safe) with haptic + circular bg
+        // Global Top-Right Settings button (overlay, notch-safe) with subtle spacing and slow spin
+        // Remove background/shadow to avoid visual conflict with Container 0 and keep it lightweight
+        val gearSpin by rememberInfiniteTransition(label = "gear_spin").animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 24000, easing = LinearEasing), // slow, smooth spin
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "gear_spin_angle"
+        )
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
+                // Always respect status bar insets to avoid overlapping phone indicators
                 .statusBarsPadding()
-                .padding(12.dp)
-                .size(44.dp)
-                .background(Color.Black.copy(alpha = 0.24f), shape = CircleShape),
+                // Extra spacing from the corner for better reach and separation from indicators
+                .padding(top = 32.dp, end = 32.dp),
             contentAlignment = Alignment.Center
         ) {
+            val gearInteraction = remember { MutableInteractionSource() }
             IconButton(
                 onClick = {
                     if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     showSettingsPanel = true
                 },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier
+                    .size(44.dp)
+                    .then(bouncyPress(gearInteraction)),
+                interactionSource = gearInteraction
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Settings",
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .modifierRotate(gearSpin)
                 )
             }
         }
@@ -696,8 +972,82 @@ fun KconvertMainScreen(
             isVisible = showSettingsPanel,
             onDismiss = { showSettingsPanel = false },
             hapticsEnabled = hapticsEnabled,
-            onToggleHaptics = { enabled -> viewModel.setHapticsEnabled(enabled) }
+            onToggleHaptics = { enabled -> viewModel.setHapticsEnabled(enabled) },
+            isFullscreenMode = isFullscreenMode,
+            onToggleFullscreen = { enabled -> isFullscreenMode = enabled },
+            darkLevel = darkLevel,
+            onDarkLevelChange = { level -> darkLevel = level }
         )
+    }
+}
+
+/**
+ * Animated circular stroke component with gradient and glow effect
+ */
+@Composable
+fun AnimatedCircularStroke(
+    modifier: Modifier = Modifier,
+    strokeWidth: Dp = 4.dp,
+    sweepAngle: Float = 60f
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "circular_stroke")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "stroke_rotation"
+    )
+
+    Canvas(modifier = modifier) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = (size.minDimension / 2f) - strokeWidth.toPx() / 2f
+        val strokeWidthPx = strokeWidth.toPx()
+
+        // Main blue plasma stroke brushes (no glow)
+        val mainBrush = Brush.sweepGradient(
+            0f to Color(0xFF42A5F5), // Blue
+            0.4f to Color(0xFF26C6DA), // Cyan
+            0.8f to Color(0xFFE0F7FA), // Very light cyan
+            1f to Color(0xFFFFFFFF),   // White tip
+            center = center
+        )
+        val secondBrush = Brush.sweepGradient(
+            0f to Color(0xFF80DEEA), // Light cyan
+            0.5f to Color(0xFFB3E5FC), // Pale blue
+            1f to Color.White.copy(alpha = 0.6f),
+            center = center
+        )
+
+        // Draw first snake by rotating canvas so gradient stays aligned to head (no glow)
+        drawRotate(degrees = rotation) {
+            // Main stroke
+            drawArc(
+                brush = mainBrush,
+                startAngle = 0f,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2f, radius * 2f),
+                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+            )
+        }
+
+        // Second lighter snake with phase offset and thinner stroke
+        val offsetRotation = (rotation + 160f) % 360f
+        drawRotate(degrees = offsetRotation) {
+            drawArc(
+                brush = secondBrush,
+                startAngle = 0f,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2f, radius * 2f),
+                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+            )
+        }
     }
 }
 
@@ -781,9 +1131,10 @@ private fun ElegantButton(
     enabled: Boolean = true,
     isLoading: Boolean = false
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.then(bouncyPress(interaction)),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = backgroundColor.copy(alpha = if (enabled) 0.9f else 0.5f),
             contentColor = contentColor
@@ -796,7 +1147,8 @@ private fun ElegantButton(
             disabledElevation = 0.dp
         ),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        interactionSource = interaction
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -842,10 +1194,16 @@ private fun CalculatorConverterContent(
     Column {
             
             // Amount input
+            // Display empty when underlying value is "0" so placeholder shows
+            val displayAmount = if (uiState.amount == "0") "" else uiState.amount
             OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = onAmountChange,
+                value = displayAmount,
+                onValueChange = { newValue ->
+                    // If user clears, propagate empty; ViewModel can treat empty as zero lazily
+                    onAmountChange(newValue)
+                },
                 label = { Text("Amount", color = Color(0xFF94A3B8)) },
+                placeholder = { Text("fill here e.g 1", color = Color(0xFF64748B)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
