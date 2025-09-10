@@ -15,13 +15,13 @@ import androidx.compose.ui.res.painterResource
 import com.oxyzenq.kconvert.R
 
 /**
- * Static background component without animations
+ * Animated background component with meteor shower effects
  */
 @Composable
 fun AnimatedBackground(isScrolling: Boolean, isFullscreen: Boolean = true, darkLevel: Int = 0) {
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Static background wallpaper without animations
+        // Static background wallpaper
         Image(
             painter = painterResource(id = R.drawable.hdr_stellar_edition_v2),
             contentDescription = "HDR Stellar Background",
@@ -33,6 +33,25 @@ fun AnimatedBackground(isScrolling: Boolean, isFullscreen: Boolean = true, darkL
                     blendMode = BlendMode.Darken
                 )
             } else null
+        )
+        
+        // Premium Meteor Shower Animation
+        PremiumMeteorShower(
+            modifier = Modifier.fillMaxSize(),
+            config = MeteorConfig(
+                maxMeteors = 12,
+                minSpeed = 3f,
+                maxSpeed = 7f,
+                minHeadSize = 10f,
+                maxHeadSize = 16f,
+                minTailLength = 4,
+                maxTailLength = 6,
+                spawnIntervalMin = 200L,
+                spawnIntervalMax = 400L,
+                enableShimmer = true,
+                enableParallax = true
+            ),
+            isActive = true
         )
 
         // Extra adjustable dark overlay from Settings (0..100 => 0..0.5 alpha)
