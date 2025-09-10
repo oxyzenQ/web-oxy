@@ -57,9 +57,8 @@ class UpdateRepository @Inject constructor(
                 val allReleasesDeferred = async { gitHubApiService.getAllReleases(OWNER, REPO) }
                 
                 // Await all results
-                val results = awaitAll(latestDeferred, allReleasesDeferred)
-                val latestResponse = results[0]
-                val allReleasesResponse = results[1] as retrofit2.Response<List<GitHubRelease>>
+                val latestResponse = latestDeferred.await()
+                val allReleasesResponse = allReleasesDeferred.await()
                 
                 when {
                     allReleasesResponse.isSuccessful && allReleasesResponse.body() != null -> {

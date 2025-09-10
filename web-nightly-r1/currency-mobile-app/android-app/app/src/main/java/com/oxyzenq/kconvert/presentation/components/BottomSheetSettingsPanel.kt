@@ -111,9 +111,12 @@ fun BottomSheetSettingsPanel(
     // Security state
     val securityState by securityViewModel.securityState.collectAsState()
     
+    // FIXED: Enhanced drag state management
+    var panelHeight by remember { mutableStateOf(0.5f) }
+    
     // FIXED: Improved animation timing for smoother transitions
     val animatedOffset by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 1f,
+        targetValue = if (panelHeight > 0f) 0f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMediumLow
@@ -121,7 +124,7 @@ fun BottomSheetSettingsPanel(
     )
     
     val animatedAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
+        targetValue = if (panelHeight > 0f) 1f else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium
@@ -129,15 +132,12 @@ fun BottomSheetSettingsPanel(
     )
     
     val backgroundBlur by animateFloatAsState(
-        targetValue = if (isVisible) 6f else 0f,
+        targetValue = if (panelHeight > 0f) 6f else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium
         ), label = "background_blur"
     )
-    
-    // FIXED: Enhanced drag state management
-    var panelHeight by remember { mutableStateOf(0.5f) }
     var isDragging by remember { mutableStateOf(false) }
     var dragStartY by remember { mutableStateOf(0f) }
     var dragVelocity by remember { mutableStateOf(0f) }
@@ -162,14 +162,12 @@ fun BottomSheetSettingsPanel(
     
     val panelHeightForLayout = if (isDragging) panelHeight else animatedPanelHeight
     
-    LaunchedEffect(isVisible) {
-        if (isVisible) {
-            panelHeight = 0.5f
-            securityViewModel.performSecurityCheck(context)
-        }
+    LaunchedEffect(Unit) {
+        panelHeight = 0.5f
+        securityViewModel.performSecurityCheck(context)
     }
     
-    if (isVisible) {
+    if (panelHeight > 0f) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -194,14 +192,14 @@ fun BottomSheetSettingsPanel(
             
             // FIXED: Bottom Sheet Panel with improved calculations
             val cfgForSlide = LocalConfiguration.current
-            val slideDistancePx = with(density) { cfgForSlide.screenHeightDp.dp.toPx() * panelHeightForLayout }
+            val slideDistancePx = with(LocalDensity.current) { cfgForSlide.screenHeightDp.dp.toPx() * panelHeightForLayout }
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(panelHeightForLayout)
                     .align(Alignment.BottomCenter)
-                    .offset { IntOffset(0, (animatedOffset * slideDistancePx).roundToInt()) }
+                    .offset { IntOffset(0, (animatedOffset * slideDistancePx.toFloat()).roundToInt()) }
                     .graphicsLayer { alpha = animatedAlpha },
                 backgroundColor = Color.Transparent,
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -244,7 +242,7 @@ fun BottomSheetSettingsPanel(
                         // FIXED: Enhanced drag handle with better gesture detection
                         if (panelHeight < 0.95f) {
                             val configuration = LocalConfiguration.current
-                            val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+                            val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
                             
                             Box(
                                 modifier = Modifier
@@ -266,7 +264,7 @@ fun BottomSheetSettingsPanel(
                                             },
                                             onDragEnd = {
                                                 isDragging = false
-                                                coroutineScope.launch {
+                                                scope.launch {
                                                     // FIXED: Improved snap logic with elastic zones
                                                     val target = when {
                                                         panelHeight < 0.25f -> {
@@ -317,7 +315,7 @@ fun BottomSheetSettingsPanel(
                                             }
                                         ) { _, dragAmount ->
                                             // FIXED: Improved drag calculation with velocity tracking
-                                            val delta = dragAmount.y / screenHeightPx
+                                            val delta = dragAmount.y / screenHeightPx.toFloat()
                                             val previousHeight = panelHeight
                                             var newHeight = panelHeight - delta
                                             
@@ -431,7 +429,7 @@ fun BottomSheetSettingsPanel(
                                 
                                 // Box 4 : Maintenance Section
                                 item {
-                                    MaintenanceSection()
+                                    MaintenanceSection(updateRepository)
                                 }
                                 
                                 // Footer spacing
@@ -806,7 +804,9 @@ private fun AboutSection() {
 }
 
 @Composable
-private fun MaintenanceSection() {
+private fun MaintenanceSection(
+    updateRepository: UpdateRepository
+) {
     SettingsCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically

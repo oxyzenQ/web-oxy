@@ -370,7 +370,6 @@ fun KconvertMainScreen(
         
         // Settings Panel
         BottomSheetSettingsPanel(
-            isVisible = showSettingsPanel,
             onDismiss = { showSettingsPanel = false },
             hapticsEnabled = hapticsEnabled,
             onToggleHaptics = { enabled -> viewModel.setHapticsEnabled(enabled) },

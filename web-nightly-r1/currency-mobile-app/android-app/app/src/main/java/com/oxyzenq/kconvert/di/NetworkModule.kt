@@ -11,6 +11,7 @@ import com.oxyzenq.kconvert.security.UltraSecureApiKeyManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import javax.inject.Named
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
@@ -29,22 +30,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-        
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @Named("exchangeRate")
+    fun provideExchangeRateRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://v6.exchangerate-api.com/v6/") 
             .client(okHttpClient)
@@ -54,7 +41,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideExchangeRateApiService(retrofit: Retrofit): ExchangeRateApiService {
+    fun provideExchangeRateApiService(@Named("exchangeRate") retrofit: Retrofit): ExchangeRateApiService {
         return retrofit.create(ExchangeRateApiService::class.java)
     }
 
