@@ -99,6 +99,22 @@ android {
         // Purpose: Development and testing
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        
+        // 🚀 ULTRA RELEASE BUILD TYPE
+        // Command: ./gradlew assembleUltraRelease
+        // Purpose: Production optimized builds
+        create("ultraRelease") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -199,47 +215,6 @@ android {
     }
 
     buildTypes {
-        // 🚀 ULTRA RELEASE BUILD TYPE
-        // Command: ./gradlew assembleUltraRelease
-        // Purpose: Production-ready optimized build
-        create("ultraRelease") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            isDebuggable = false
-            
-            // Aggressive optimization with ultra-secure ProGuard rules
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules-aggressive.pro"
-            )
-            signingConfig = signingConfigs.getByName("release")
-            
-            // Performance and monitoring flags
-            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "false")
-            buildConfigField("boolean", "ENABLE_ANR_DETECTION", "true")
-            buildConfigField("boolean", "ENABLE_ANALYTICS", "false")
-            buildConfigField("boolean", "ENABLE_CRASH_REPORTING", "false")
-            buildConfigField("boolean", "ENABLE_LOGGING", "false")
-            
-            // Ultra-performance optimizations
-            isJniDebuggable = false
-            isRenderscriptDebuggable = false
-            renderscriptOptimLevel = 3
-            isPseudoLocalesEnabled = false
-        }
-        
-        debug {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            buildConfigField("boolean", "ENABLE_PERFORMANCE_MONITORING", "true")
-            buildConfigField("boolean", "ENABLE_ANR_DETECTION", "true")
-            buildConfigField("boolean", "ENABLE_ANALYTICS", "true")
-            buildConfigField("boolean", "ENABLE_CRASH_REPORTING", "true")
-            buildConfigField("boolean", "ENABLE_LOGGING", "true")
-        }
     }
 
     buildFeatures {

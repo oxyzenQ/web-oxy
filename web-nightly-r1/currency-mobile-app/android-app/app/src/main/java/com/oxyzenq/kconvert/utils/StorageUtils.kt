@@ -11,30 +11,31 @@ import kotlin.math.pow
 object StorageUtils {
     
     /**
-     * Calculate total cache size for the app (fast scan)
+     * Get cache size in bytes
      */
     fun getCacheSize(context: Context): Long {
-        return try {
-            var totalSize = 0L
-            
-            // Internal cache directory (most important)
-            context.cacheDir?.let { cacheDir ->
-                if (cacheDir.exists()) {
-                    totalSize += getFolderSizeFast(cacheDir)
-                }
+        return getDirSize(context.cacheDir)
+    }
+    
+    /**
+     * Calculate directory size recursively
+     */
+    fun getDirSize(dir: File): Long {
+        var size: Long = 0
+        if (dir.exists()) {
+            val files = dir.listFiles()
+            files?.forEach {
+                size += if (it.isDirectory) getDirSize(it) else it.length()
             }
-            
-            // External cache directory (if available)
-            context.externalCacheDir?.let { externalCacheDir ->
-                if (externalCacheDir.exists()) {
-                    totalSize += getFolderSizeFast(externalCacheDir)
-                }
-            }
-            
-            totalSize
-        } catch (e: Exception) {
-            0L // Return 0 if any error occurs
         }
+        return size
+    }
+    
+    /**
+     * Clear cache
+     */
+    fun clearCache(context: Context) {
+        context.cacheDir.deleteRecursively()
     }
     
     /**
@@ -79,7 +80,7 @@ object StorageUtils {
     }
     
     /**
-     * Fast folder size calculation (non-recursive for speed)
+     * Fast folder size calculation (recursive for accurate cache measurement)
      */
     private fun getFolderSizeFast(folder: File): Long {
         return try {
@@ -87,7 +88,13 @@ object StorageUtils {
             
             var size = 0L
             folder.listFiles()?.forEach { file ->
-                size += if (file.isFile) file.length() else 0L
+                size += if (file.isFile) {
+                    file.length()
+                } else if (file.isDirectory) {
+                    getFolderSizeFast(file) // Recursive for subdirectories
+                } else {
+                    0L
+                }
             }
             size
         } catch (e: Exception) {
@@ -135,57 +142,4 @@ object StorageUtils {
         return String.format("%.1f %s", size, units[digitGroups])
     }
     
-    /**
-     * Clear app cache
-     */
-    fun clearCache(context: Context): Boolean {
-        return try {
-            var cleared = true
-            
-            // Clear internal cache
-            context.cacheDir?.let { cacheDir ->
-                cleared = cleared && deleteRecursively(cacheDir)
-            }
-            
-            // Clear external cache
-            context.externalCacheDir?.let { externalCacheDir ->
-                cleared = cleared && deleteRecursively(externalCacheDir)
-            }
-            
-            // Clear code cache
-            try {
-                context.codeCacheDir?.let { codeCacheDir ->
-                    cleared = cleared && deleteRecursively(codeCacheDir)
-                }
-            } catch (e: Exception) {
-                // Ignore if not available
-            }
-            
-            cleared
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    /**
-     * Delete directory contents recursively
-     */
-    private fun deleteRecursively(file: File): Boolean {
-        return try {
-            if (file.isDirectory) {
-                file.listFiles()?.forEach { child ->
-                    deleteRecursively(child)
-                }
-            }
-            // Don't delete the cache directory itself, just its contents
-            if (file.name == "cache" || file.name == "code_cache") {
-                file.listFiles()?.forEach { it.delete() }
-                true
-            } else {
-                file.delete()
-            }
-        } catch (e: Exception) {
-            false
-        }
-    }
 }

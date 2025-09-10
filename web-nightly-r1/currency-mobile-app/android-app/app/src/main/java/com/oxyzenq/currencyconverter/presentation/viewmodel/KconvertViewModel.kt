@@ -414,6 +414,17 @@ class KconvertViewModel @Inject constructor(
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
+
+    /**
+     * Reset app to default state (fresh/clean state)
+     */
+    fun resetAppToDefault() {
+        _uiState.value = KconvertUiState(
+            dataIndicator = _uiState.value.dataIndicator, // Keep data indicator
+            shouldScrollToTop = true
+        )
+        showNotification("App refresh successfully", NotificationType.SUCCESS)
+    }
 }
 
 /**

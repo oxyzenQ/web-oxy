@@ -1,15 +1,18 @@
 package com.oxyzenq.kconvert.data.local
 
 import android.content.Context
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private const val DATASTORE_NAME = "kconvert_settings"
 
@@ -23,6 +26,7 @@ object SettingsKeys {
     val DARK_LEVEL: Preferences.Key<Int> = intPreferencesKey("dark_level")
     val CACHE_SIZE: Preferences.Key<Long> = longPreferencesKey("cache_size")
     val CACHE_LAST_SCAN: Preferences.Key<String> = stringPreferencesKey("cache_last_scan")
+    val NAVBAR_AUTO_HIDE: Preferences.Key<Boolean> = booleanPreferencesKey("navbar_auto_hide")
 }
 
 class SettingsDataStore(private val context: Context) {
@@ -60,6 +64,12 @@ class SettingsDataStore(private val context: Context) {
         context.settingsDataStore.data.map { prefs ->
             prefs[SettingsKeys.CACHE_LAST_SCAN] ?: ""
         }
+
+    val navbarAutoHideFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[SettingsKeys.NAVBAR_AUTO_HIDE] ?: true
+        }
+
 
     suspend fun setFullScreen(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
@@ -102,4 +112,11 @@ class SettingsDataStore(private val context: Context) {
             prefs[SettingsKeys.CACHE_LAST_SCAN] = timestamp
         }
     }
+
+    suspend fun setNavbarAutoHide(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.NAVBAR_AUTO_HIDE] = enabled
+        }
+    }
+
 }

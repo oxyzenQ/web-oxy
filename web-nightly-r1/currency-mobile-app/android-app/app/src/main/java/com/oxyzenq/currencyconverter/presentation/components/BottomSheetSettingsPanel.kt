@@ -4,8 +4,8 @@
 
 package com.oxyzenq.kconvert.presentation.components
 
-import android.content.Context
 import android.app.Activity
+import android.content.Context
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,54 +14,59 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Brightness6
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.oxyzenq.kconvert.BuildConfig
 import com.oxyzenq.kconvert.data.local.SettingsDataStore
-import com.oxyzenq.kconvert.utils.StorageUtils
-import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
 import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
+import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
+import com.oxyzenq.kconvert.utils.StorageUtils
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.ColumnScope
+import kotlin.math.roundToInt
+
+/**
+ * Format file size dynamically based on size (B/KB/MB/GB)
+ */
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes == 0L -> "0 B"
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
+        bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+        else -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+    }
+}
 
 /**
  * Expandable Bottom Sheet Settings Panel for Kconvert
@@ -82,6 +87,8 @@ fun BottomSheetSettingsPanel(
     onToggleFullscreen: (Boolean) -> Unit = {},
     darkLevel: Int = 0,
     onDarkLevelChange: (Int) -> Unit = {},
+    navbarAutoHideEnabled: Boolean = true,
+    onToggleNavbarAutoHide: (Boolean) -> Unit = {},
     securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -174,12 +181,19 @@ fun BottomSheetSettingsPanel(
                     val bgModifier = Modifier
                         .matchParentSize()
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    // Outer glow
+                    Box(
+                        modifier = bgModifier
+                            .background(Color.Black.copy(alpha = 0.25f))
+                            .blur(20.dp)
+                    )
+                    // Main background with navbar style
                     Box(
                         modifier = bgModifier.background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF1E3A8A), // blue-800
-                                    Color(0xFF0B1020)  // deep black-blue
+                                    Color(0xFF0B1530).copy(alpha = 0.8f),
+                                    Color(0xFF0F1F3F).copy(alpha = 0.9f)
                                 )
                             )
                         )
@@ -281,15 +295,17 @@ fun BottomSheetSettingsPanel(
                         // Box 1 : App Settings Section
                         item {
                             AppSettingsSection(
-                                autoUpdateEnabledDefault = true,
-                                darkModeEnabledDefault = true,
+                                autoUpdateEnabledDefault = false,
+                                darkModeEnabledDefault = false,
                                 hapticsEnabledDefault = hapticsEnabled,
                                 onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
                                 onAnyToggle = { if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                                 isFullscreenMode = isFullscreenMode,
                                 onToggleFullscreen = onToggleFullscreen,
                                 darkLevel = darkLevel,
-                                onDarkLevelChange = onDarkLevelChange
+                                onDarkLevelChange = onDarkLevelChange,
+                                navbarAutoHideEnabled = navbarAutoHideEnabled,
+                                onToggleNavbarAutoHide = onToggleNavbarAutoHide
                             )
                         }
                         
@@ -312,16 +328,7 @@ fun BottomSheetSettingsPanel(
                         
                         // Box 4 : Maintenance Section
                         item {
-                            MaintenanceSection(
-                                onClearCache = {
-                                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    // TODO implement clear cache
-                                },
-                                onResetSettings = {
-                                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    // TODO implement reset settings
-                                }
-                            )
+                            MaintenanceSection()
                         }
                         
                         // Footer spacing
@@ -633,10 +640,7 @@ private fun AboutSection() {
 }
 
 @Composable
-private fun MaintenanceSection(
-    onClearCache: () -> Unit,
-    onResetSettings: () -> Unit
-) {
+private fun MaintenanceSection() {
     SettingsCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -663,10 +667,26 @@ private fun MaintenanceSection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             InfoRow("Status", "All systems operational")
-            InfoRow("Last updated", "7 Sep 2025")
+            
+            // Real app version installation/update date
+            val context = LocalContext.current
+            val appLastUpdated = remember {
+                try {
+                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    val lastUpdateTime = packageInfo.lastUpdateTime
+                    val formatter = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm:ss", java.util.Locale.getDefault())
+                    formatter.format(java.util.Date(lastUpdateTime))
+                } catch (e: Exception) {
+                    "Unknown"
+                }
+            }
+            
+            InfoRow("Last updated", appLastUpdated)
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Update Checker Button with glassmorphism iOS style
+            UpdateCheckerButton()
         }
     }
 }
@@ -681,7 +701,9 @@ private fun AppSettingsSection(
     isFullscreenMode: Boolean = true,
     onToggleFullscreen: (Boolean) -> Unit = {},
     darkLevel: Int = 0,
-    onDarkLevelChange: (Int) -> Unit = {}
+    onDarkLevelChange: (Int) -> Unit = {},
+    navbarAutoHideEnabled: Boolean = true,
+    onToggleNavbarAutoHide: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsStore = remember { SettingsDataStore(context) }
@@ -737,6 +759,19 @@ private fun AppSettingsSection(
                         settingsStore.setFullScreen(enabled)
                     }
                     onToggleFullscreen(enabled)
+                    onAnyToggle()
+                }
+            )
+            
+            SettingToggleRow(
+                title = "Auto-Hide Bottom Navbar",
+                isEnabled = navbarAutoHideEnabled,
+                onToggle = { enabled ->
+                    // Persist to DataStore
+                    scope.launch {
+                        settingsStore.setNavbarAutoHide(enabled)
+                    }
+                    onToggleNavbarAutoHide(enabled)
                     onAnyToggle()
                 }
             )
@@ -819,132 +854,97 @@ private fun AppSettingsSection(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            // Cache size indicator (from stored data)
+            // Cache size indicator with proper state management
             val cacheContext = LocalContext.current
             val cacheSettingsStore = remember { SettingsDataStore(cacheContext) }
-            val storedCacheSize by cacheSettingsStore.cacheSizeFlow.collectAsState(initial = 0L)
-            val storedLastScan by cacheSettingsStore.cacheLastScanFlow.collectAsState(initial = "")
+            var cacheSize by remember { mutableStateOf(0L) }
+            var lastScanTime by remember { mutableStateOf("") }
             
-            val cacheInfoText = remember(storedCacheSize) {
-                if (storedCacheSize > 0L) {
-                    val mb = storedCacheSize / 1048576.0
-                    String.format("%.1f MB", mb)
-                } else {
-                    "0.0 MB"
+            // Initial cache scan on first load
+            LaunchedEffect(Unit) {
+                try {
+                    cacheSize = StorageUtils.getCacheSize(cacheContext)
+                    val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                    lastScanTime = timestamp
+                    
+                    // Save to persistent storage
+                    cacheSettingsStore.setCacheSize(cacheSize)
+                    cacheSettingsStore.setCacheLastScan(timestamp)
+                } catch (e: Exception) {
+                    cacheSize = 0L
                 }
             }
             
-            val lastScanText = remember(storedLastScan) {
-                if (storedLastScan.isNotEmpty()) {
-                    "Last scan: $storedLastScan"
+            val cacheInfoText = remember(cacheSize) {
+                formatFileSize(cacheSize)
+            }
+            
+            val lastScanText = remember(lastScanTime) {
+                if (lastScanTime.isNotEmpty()) {
+                    "Last scan: $lastScanTime"
                 } else {
                     "Not scanned yet"
                 }
             }
 
-            InfoRow("Storage used", cacheInfoText)
+            InfoRow("Storage Cache used", cacheInfoText)
             InfoRow("Cache status", lastScanText)
+            
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Cache action buttons row
+            // Cache management button
             val context = LocalContext.current
-            var showClearCacheDialog by remember { mutableStateOf(false) }
-            var isRefreshingCache by remember { mutableStateOf(false) }
+            var showCacheActionDialog by remember { mutableStateOf(false) }
+            var isProcessingCache by remember { mutableStateOf(false) }
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Single unified cache management button
+            Button(
+                onClick = {
+                    showCacheActionDialog = true
+                },
+                modifier = Modifier.fillMaxWidth().height(40.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF059669),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp),
+                enabled = !isProcessingCache
             ) {
-                // Refresh Cache Button
-                Button(
-                    onClick = {
-                        if (!isRefreshingCache) {
-                            scope.launch {
-                                isRefreshingCache = true
-                                android.widget.Toast.makeText(context, "Refreshing cache data...", android.widget.Toast.LENGTH_SHORT).show()
-                                
-                                try {
-                                    val newCacheSize = StorageUtils.getCacheSize(context)
-                                    val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                                    
-                                    cacheSettingsStore.setCacheSize(newCacheSize)
-                                    cacheSettingsStore.setCacheLastScan(timestamp)
-                                    
-                                    android.widget.Toast.makeText(context, "Cache data refreshed", android.widget.Toast.LENGTH_SHORT).show()
-                                } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "Failed to refresh cache", android.widget.Toast.LENGTH_SHORT).show()
-                                } finally {
-                                    isRefreshingCache = false
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f).height(36.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFF3B82F6),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(6.dp),
-                    enabled = !isRefreshingCache
-                ) {
-                    if (isRefreshingCache) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (isRefreshingCache) "Refreshing..." else "Refresh",
-                        fontSize = 12.sp
+                if (isProcessingCache) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
                     )
-                }
-                
-                // Clear Cache Button
-                Button(
-                    onClick = {
-                        val currentCacheSize = StorageUtils.getCacheSize(context)
-                        if (currentCacheSize > 0) {
-                            showClearCacheDialog = true
-                        } else {
-                            android.widget.Toast.makeText(context, "Cache is already empty", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier.weight(1f).height(36.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFF374151),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Processing...",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                } else {
                     Icon(
-                        imageVector = Icons.Default.Delete,
+                        imageVector = Icons.Default.Storage,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Clear",
-                        fontSize = 12.sp
+                        text = "Manage Cache Storage",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
             
-            // Clear Cache Confirmation Dialog
-            if (showClearCacheDialog) {
+            // Cache Action Dialog
+            if (showCacheActionDialog) {
                 AlertDialog(
-                    onDismissRequest = { showClearCacheDialog = false },
+                    onDismissRequest = { showCacheActionDialog = false },
                     title = {
                         Text(
-                            text = "Clear Cache",
+                            text = "Cache Management",
                             style = MaterialTheme.typography.h6.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -952,39 +952,95 @@ private fun AppSettingsSection(
                         )
                     },
                     text = {
-                        Text(
-                            text = "Remove the cache also remove the data currency on offline storage, continue?",
-                            style = MaterialTheme.typography.body2.copy(
-                                color = Color(0xFFE5E7EB)
+                        Column {
+                            Text(
+                                text = "Current cache size: ${formatFileSize(cacheSize)}",
+                                style = MaterialTheme.typography.body2.copy(
+                                    color = Color(0xFFE5E7EB)
+                                )
                             )
-                        )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Choose an action:",
+                                style = MaterialTheme.typography.body2.copy(
+                                    color = Color(0xFF94A3B8)
+                                )
+                            )
+                        }
                     },
                     confirmButton = {
-                        TextButton(
-                            onClick = {
-                                scope.launch {
-                                    val success = StorageUtils.clearCache(context)
-                                    if (success) {
-                                        android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
-                                        // Update stored cache data after clearing
-                                        val newCacheSize = StorageUtils.getCacheSize(context)
-                                        val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                                        
-                                        cacheSettingsStore.setCacheSize(newCacheSize)
-                                        cacheSettingsStore.setCacheLastScan(timestamp)
-                                    } else {
-                                        android.widget.Toast.makeText(context, "Failed to clear cache", android.widget.Toast.LENGTH_SHORT).show()
-                                    }
-                                    showClearCacheDialog = false
-                                }
-                            }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Confirm")
+                            // Scan/Refresh Button
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        isProcessingCache = true
+                                        showCacheActionDialog = false
+                                        android.widget.Toast.makeText(context, "Scanning cache...", android.widget.Toast.LENGTH_SHORT).show()
+                                        
+                                        try {
+                                            val newCacheSize = StorageUtils.getCacheSize(context)
+                                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                                            
+                                            // Update state for immediate UI refresh
+                                            cacheSize = newCacheSize
+                                            lastScanTime = timestamp
+                                            
+                                            // Save to persistent storage
+                                            cacheSettingsStore.setCacheSize(newCacheSize)
+                                            cacheSettingsStore.setCacheLastScan(timestamp)
+                                            
+                                            android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        } finally {
+                                            isProcessingCache = false
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text("Scan Cache", color = Color(0xFF3B82F6))
+                            }
+                            
+                            // Clear Button
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        isProcessingCache = true
+                                        showCacheActionDialog = false
+                                        android.widget.Toast.makeText(context, "Clearing cache...", android.widget.Toast.LENGTH_SHORT).show()
+                                        
+                                        try {
+                                            StorageUtils.clearCache(context)
+                                            
+                                            // Update state immediately for UI refresh
+                                            cacheSize = 0L
+                                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                                            lastScanTime = timestamp
+                                            
+                                            // Save to persistent storage
+                                            cacheSettingsStore.setCacheSize(0L)
+                                            cacheSettingsStore.setCacheLastScan(timestamp)
+                                            
+                                            android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            android.widget.Toast.makeText(context, "Clear failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        } finally {
+                                            isProcessingCache = false
+                                        }
+                                    }
+                                },
+                                enabled = cacheSize > 0
+                            ) {
+                                Text("Clear Cache", color = if (cacheSize > 0) Color(0xFFEF4444) else Color(0xFF6B7280))
+                            }
                         }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = { showClearCacheDialog = false }
+                            onClick = { showCacheActionDialog = false }
                         ) {
                             Text("Cancel", color = Color(0xFF9CA3AF))
                         }
@@ -1051,4 +1107,295 @@ private fun SettingToggleRow(
             )
         )
     }
+}
+
+/**
+ * Update Checker Button with glassmorphism iOS style
+ * Checks for latest version and shows floating window notification
+ */
+@Composable
+private fun UpdateCheckerButton() {
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var isChecking by remember { mutableStateOf(false) }
+    var updateStatus by remember { mutableStateOf<UpdateStatus>(UpdateStatus.Unknown) }
+    
+    // Current version from BuildConfig
+    val currentVersion = BuildConfig.VERSION_NAME
+    val latestVersion = "2.1.0" // This would normally come from GitHub API
+    
+    // Update button with navbar style background
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        // Outer glow
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.25f))
+                .blur(20.dp)
+        )
+        // Main background with navbar style
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0B1530).copy(alpha = 0.8f),
+                            Color(0xFF0F1F3F).copy(alpha = 0.9f)
+                        )
+                    )
+                )
+                .border(
+                    0.5.dp,
+                    Color.White.copy(alpha = 0.08f),
+                    RoundedCornerShape(16.dp)
+                )
+        )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+            .clickable {
+                isChecking = true
+                // Simulate version check
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    updateStatus = if (currentVersion < latestVersion) {
+                        UpdateStatus.UpdateAvailable(latestVersion)
+                    } else {
+                        UpdateStatus.UpToDate(currentVersion)
+                    }
+                    isChecking = false
+                    showUpdateDialog = true
+                }, 1500)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (isChecking) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color(0xFF60A5FA), // blue-400
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Checking for updates...",
+                    style = MaterialTheme.typography.body1.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.SystemUpdate,
+                    contentDescription = "Check Updates",
+                    tint = Color(0xFF60A5FA), // blue-400
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Check for Updates",
+                    style = MaterialTheme.typography.body1.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+        }
+    }
+    
+    // Floating window dialog for update notifications
+    if (showUpdateDialog) {
+        UpdateNotificationDialog(
+            updateStatus = updateStatus,
+            onDismiss = { showUpdateDialog = false },
+            onDownload = {
+                uriHandler.openUri("https://github.com/oxyzenq/web-oxy")
+                showUpdateDialog = false
+            }
+        )
+    }
+}
+
+}
+
+/**
+ * Update status sealed class
+ */
+private sealed class UpdateStatus {
+    object Unknown : UpdateStatus()
+    data class UpToDate(val version: String) : UpdateStatus()
+    data class UpdateAvailable(val latestVersion: String) : UpdateStatus()
+}
+
+/**
+ * Floating window dialog for update notifications with glassmorphism styling
+ */
+@Composable
+private fun UpdateNotificationDialog(
+    updateStatus: UpdateStatus,
+    onDismiss: () -> Unit,
+    onDownload: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .clip(RoundedCornerShape(20.dp))
+        ) {
+            // Outer glow
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f))
+                    .blur(20.dp)
+            )
+            // Main background with navbar style
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0B1530).copy(alpha = 0.8f),
+                                Color(0xFF0F1F3F).copy(alpha = 0.9f)
+                            )
+                        )
+                    )
+                    .border(
+                        0.5.dp,
+                        Color.White.copy(alpha = 0.08f),
+                        RoundedCornerShape(20.dp)
+                    )
+                    .padding(24.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                when (updateStatus) {
+                    is UpdateStatus.UpToDate -> {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Up to date",
+                            tint = Color(0xFF10B981), // green-500
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Using the latest version",
+                            style = MaterialTheme.typography.h6.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Version ${updateStatus.version}",
+                            style = MaterialTheme.typography.body2.copy(
+                                color = Color(0xFF9CA3AF)
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    is UpdateStatus.UpdateAvailable -> {
+                        Icon(
+                            imageVector = Icons.Default.GetApp,
+                            contentDescription = "Update available",
+                            tint = Color(0xFF3B82F6), // blue-500
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Update Available",
+                            style = MaterialTheme.typography.h6.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Latest version ${updateStatus.latestVersion} available",
+                            style = MaterialTheme.typography.body1.copy(
+                                color = Color(0xFF9CA3AF)
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Tap here to download from GitHub",
+                            style = MaterialTheme.typography.body2.copy(
+                                color = Color(0xFF60A5FA)
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // GitHub download button
+                        Button(
+                            onClick = onDownload,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFF3B82F6)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.OpenInBrowser,
+                                contentDescription = "GitHub",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Download from GitHub",
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        
+                        // GitHub link text
+                        Text(
+                            text = "https://github.com/oxyzenq/web-oxy",
+                            style = MaterialTheme.typography.caption.copy(
+                                color = Color(0xFF6B7280)
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    UpdateStatus.Unknown -> {
+                        // This shouldn't happen in normal flow
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Close button
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Close",
+                        color = Color(0xFF9CA3AF)
+                    )
+                }
+            }
+        }
+    }
+}
 }

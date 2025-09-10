@@ -17,16 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.oxyzenq.kconvert.R
@@ -60,8 +57,8 @@ fun SplashScreen(navController: NavController) {
         // Start fade-in animation immediately
         isVisible = true
         
-        // Wait for 2 seconds total splash duration
-        delay(2000)
+        // Wait for 6 seconds total splash duration
+        delay(6000)
         
         // Start fade-out and navigate
         isVisible = false
@@ -110,39 +107,16 @@ fun SplashScreen(navController: NavController) {
                     contentScale = ContentScale.Fit
                 )
                 
-                // Rotating Gear Icon with blue-light plasma gradient
-                val gearPainter = painterResource(id = R.drawable.ic_gear)
-                Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(
-                        modifier = Modifier
-                            .size(48.dp)
-                    ) {
-                        val gearBrush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF93C5FD), // blue-300
-                                Color(0xFF81D4FA), // light blue  
-                                Color(0xFFC4B5FD)  // violet-300
-                            ),
-                            center = center,
-                            radius = size.minDimension / 2f
-                        )
-                        
-                        rotate(gearRotation) {
-                            // Draw gear monochrome base
-                            with(gearPainter) {
-                                draw(size, alpha = 1f, colorFilter = ColorFilter.tint(Color.White))
-                            }
-                            // Apply gradient overlay with SrcIn blend mode
-                            drawRect(
-                                brush = gearBrush,
-                                blendMode = BlendMode.SrcIn
-                            )
-                        }
-                    }
-                }
+                // Rotating Gear Icon with gradient tint
+                Image(
+                    painter = painterResource(id = R.drawable.ic_gear),
+                    contentDescription = "Loading Gear",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .rotate(gearRotation),
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(Color(0xFF93C5FD))
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
