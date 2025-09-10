@@ -5,7 +5,7 @@
  * Example implementation showing how to use the meteor shower animation
  */
 
-package com.oxyzenq.currencyconverter.presentation.components
+package com.oxyzenq.kconvert.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

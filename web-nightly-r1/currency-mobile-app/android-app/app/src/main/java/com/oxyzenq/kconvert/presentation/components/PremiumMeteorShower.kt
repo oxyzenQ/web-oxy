@@ -6,7 +6,7 @@
  * Optimized for smooth rendering and minimal resource usage
  */
 
-package com.oxyzenq.currencyconverter.presentation.components
+package com.oxyzenq.kconvert.presentation.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

@@ -6,7 +6,7 @@
  * Interactive playground for testing and customization
  */
 
-package com.oxyzenq.currencyconverter.presentation.animation
+package com.oxyzenq.kconvert.presentation.animation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

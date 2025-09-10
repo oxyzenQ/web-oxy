@@ -5,7 +5,7 @@
  * Centralized icon management for easy maintenance and consistency
  */
 
-package com.oxyzenq.currencyconverter.presentation.theme
+package com.oxyzenq.kconvert.presentation.theme
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*

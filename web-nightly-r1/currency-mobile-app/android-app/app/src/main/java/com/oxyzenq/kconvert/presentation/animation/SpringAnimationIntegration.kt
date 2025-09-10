@@ -6,7 +6,7 @@
  * Step-by-step implementation for premium bouncy interactions
  */
 
-package com.oxyzenq.currencyconverter.presentation.animation
+package com.oxyzenq.kconvert.presentation.animation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

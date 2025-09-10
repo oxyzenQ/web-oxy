@@ -6,7 +6,7 @@
  * Auto-applied spring animations with performance optimization
  */
 
-package com.oxyzenq.currencyconverter.presentation.animation
+package com.oxyzenq.kconvert.presentation.animation
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable

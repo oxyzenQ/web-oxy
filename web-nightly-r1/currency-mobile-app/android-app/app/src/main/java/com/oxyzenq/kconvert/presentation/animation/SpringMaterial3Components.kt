@@ -6,7 +6,7 @@
  * Drop-in replacements with premium bouncy interactions
  */
 
-package com.oxyzenq.currencyconverter.presentation.animation
+package com.oxyzenq.kconvert.presentation.animation
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*

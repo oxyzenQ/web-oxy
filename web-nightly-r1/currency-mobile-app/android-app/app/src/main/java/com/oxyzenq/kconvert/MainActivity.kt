@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.oxyzenq.kconvert.presentation.navigation.KconvertNavigation
 import com.oxyzenq.kconvert.presentation.screen.KconvertMainScreen
-import com.oxyzenq.currencyconverter.ui.theme.CurrencyConverterTheme
+import com.oxyzenq.kconvert.ui.theme.CurrencyConverterTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

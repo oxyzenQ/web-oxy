@@ -6,7 +6,7 @@
  * for easy maintenance and consistent application throughout the project.
  */
 
-package com.oxyzenq.currencyconverter.presentation.theme
+package com.oxyzenq.kconvert.presentation.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

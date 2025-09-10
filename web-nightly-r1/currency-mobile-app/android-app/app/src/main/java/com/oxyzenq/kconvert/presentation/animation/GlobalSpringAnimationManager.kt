@@ -6,7 +6,7 @@
  * Performance-optimized with 60 FPS guarantee
  */
 
-package com.oxyzenq.currencyconverter.presentation.animation
+package com.oxyzenq.kconvert.presentation.animation
 
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
