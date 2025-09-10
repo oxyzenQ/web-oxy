@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.room.Room
 import com.oxyzenq.kconvert.data.local.database.KconvertDatabase
 import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.local.dao.UserPreferencesDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,15 +26,16 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideKconvertDatabase(@ApplicationContext context: Context): KconvertDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            KconvertDatabase::class.java,
-            "kconvert_database"
-        ).build()
+        return KconvertDatabase.getDatabase(context)
     }
 
     @Provides
     fun provideCurrencyDao(database: KconvertDatabase): CurrencyDao {
         return database.currencyDao()
+    }
+
+    @Provides
+    fun provideUserPreferencesDao(database: KconvertDatabase): UserPreferencesDao {
+        return database.userPreferencesDao()
     }
 }

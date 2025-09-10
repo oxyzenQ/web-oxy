@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -36,8 +37,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -162,6 +165,7 @@ fun KconvertMainScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
     ) {
         // Animated Background
         val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
@@ -516,7 +520,7 @@ private fun CalculatorConverterContent(
     
     Column {
             
-            // Amount input
+            // Amount input with iOS-like design
             // Display empty when underlying value is "0" so placeholder shows
             val displayAmount = if (uiState.amount == "0") "" else uiState.amount
             OutlinedTextField(
@@ -525,29 +529,30 @@ private fun CalculatorConverterContent(
                     // If user clears, propagate empty; ViewModel can treat empty as zero lazily
                     onAmountChange(newValue)
                 },
-                label = { Text("Amount", color = Color(0xFF94A3B8)) },
-                placeholder = { Text("fill here e.g 1", color = Color(0xFF64748B)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                placeholder = { Text("Enter amount first", color = Color(0xFF64748B)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        // Hide keyboard when Done is pressed
+                        // Note: KeyboardController access moved to remember block
+                    }
+                ),
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        width = 2.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF1E40AF), // Deep blue
-                                Color(0xFF3B82F6), // Blue
-                                Color(0xFF06B6D4), // Cyan
-                                Color(0xFF8B5CF6), // Purple
-                                Color(0xFF1E293B)  // Dark slate
-                            )
-                        ),
-                        shape = RoundedCornerShape(4.dp)
-                    ),
+                    .imePadding()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     textColor = Color.White,
                     cursorColor = Color(0xFF06B6D4),
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
+                    focusedBorderColor = Color(0xFF334155).copy(alpha = 0.6f),
+                    unfocusedBorderColor = Color(0xFF475569).copy(alpha = 0.4f),
+                    backgroundColor = Color(0xFF1E293B).copy(alpha = 0.3f)
                 )
             )
             
@@ -575,31 +580,44 @@ private fun CalculatorConverterContent(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Convert button
-            ElegantButton(
-                text = "Convert",
+            // Convert button with iOS-like design
+            Button(
                 onClick = onConvert,
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color.Transparent,
-                backgroundBrush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF1E40AF), // Deep blue
-                        Color(0xFF3B82F6), // Blue
-                        Color(0xFF06B6D4), // Cyan
-                        Color(0xFF8B5CF6), // Purple
-                        Color(0xFF1E293B)  // Dark slate
-                    )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3B82F6).copy(alpha = 0.8f),
+                    contentColor = Color.White
                 ),
-                isLoading = uiState.isConverting,
-                icon = {
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 2.dp
+                )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Default.Calculate,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = Color.White
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Convert",
+                        style = MaterialTheme.typography.button.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        ),
+                        color = Color.White
+                    )
                 }
-            )
+            }
             
             // Conversion result
             uiState.conversionResult?.let { result ->
@@ -701,41 +719,94 @@ private fun FullControlPanelContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Refresh data button
-        ElegantButton(
-            text = "Refresh Data of Price",
+        // Refresh data button with iOS-like design
+        Button(
             onClick = onRefreshData,
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFF059669),
-            enabled = !isRefreshing,
-            isLoading = isRefreshing,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFF059669).copy(alpha = 0.8f),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.elevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp
+            ),
+            enabled = !isRefreshing
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Refresh Data of Price",
+                    style = MaterialTheme.typography.button.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    ),
+                    color = Color.White
                 )
             }
-        )
+        }
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Delete data button
-        ElegantButton(
-            text = "Clear All Data",
+        // Delete data button with iOS-like design
+        Button(
             onClick = onDeleteData,
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFFDC2626),
-            icon = {
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.elevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp
+            )
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(20.dp),
                     tint = Color.White
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Clear All Data",
+                    style = MaterialTheme.typography.button.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    ),
+                    color = Color.White
+                )
             }
-        )
+        }
     }
 }
 

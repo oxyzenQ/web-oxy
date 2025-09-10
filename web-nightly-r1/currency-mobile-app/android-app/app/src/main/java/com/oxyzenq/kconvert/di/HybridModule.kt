@@ -6,8 +6,8 @@ package com.oxyzenq.kconvert.di
 
 import android.content.Context
 import com.oxyzenq.kconvert.data.api.CurrencyApi
-import com.oxyzenq.kconvert.data.database.CurrencyDatabase
-import com.oxyzenq.kconvert.data.database.dao.CurrencyDao
+import com.oxyzenq.kconvert.data.local.database.KconvertDatabase
+import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
 import com.oxyzenq.kconvert.data.repository.HybridCurrencyRepository
 import dagger.Module
 import dagger.Provides
@@ -33,17 +33,7 @@ object HybridModule {
         return retrofit.create(CurrencyApi::class.java)
     }
 
-    @Provides
-    @Singleton
-    fun provideCurrencyDatabase(@ApplicationContext context: Context): CurrencyDatabase {
-        return CurrencyDatabase.getDatabase(context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideCurrencyDao(database: CurrencyDatabase): CurrencyDao {
-        return database.currencyDao()
-    }
+    // Database providers moved to DatabaseModule to avoid conflicts
 
     @Provides
     @Singleton

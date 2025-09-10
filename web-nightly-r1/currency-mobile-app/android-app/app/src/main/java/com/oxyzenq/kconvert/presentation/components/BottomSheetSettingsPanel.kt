@@ -1,5 +1,6 @@
 /*
  * Creativity Authored by oxyzenq 2025
+ * Fixed version with smooth scrolling and elastic drag behavior
  */
 
 package com.oxyzenq.kconvert.presentation.components
@@ -7,6 +8,8 @@ package com.oxyzenq.kconvert.presentation.components
 import android.app.Activity
 import android.content.Context
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +55,16 @@ import com.oxyzenq.kconvert.BuildConfig
 import com.oxyzenq.kconvert.data.local.SettingsDataStore
 import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
 import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
+import com.oxyzenq.kconvert.presentation.viewmodel.SettingsViewModel
 import com.oxyzenq.kconvert.utils.StorageUtils
+import com.oxyzenq.kconvert.data.repository.UpdateRepository
+import com.oxyzenq.kconvert.data.repository.VersionComparison
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
 /**
@@ -69,19 +81,18 @@ private fun formatFileSize(bytes: Long): String {
 }
 
 /**
- * Expandable Bottom Sheet Settings Panel for Kconvert
- * Features:
- * - Drag handle for smooth expansion/collapse
- * - Background blur effect
- * - Security status display
- * - App settings and maintenance options
+ * FIXED: Expandable Bottom Sheet Settings Panel for Kconvert
+ * Improvements:
+ * - Fixed overscroll lag/vibration with LocalOverscrollConfiguration
+ * - Smooth elastic drag behavior (50% → 95% follows user, >95% snaps to full)
+ * - Improved animation timing and easing
+ * - Better drag threshold handling
  */
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BottomSheetSettingsPanel(
-    isVisible: Boolean,
     onDismiss: () -> Unit,
-    hapticsEnabled: Boolean,
+    hapticsEnabled: Boolean = true,
     onToggleHaptics: (Boolean) -> Unit,
     isFullscreenMode: Boolean = true,
     onToggleFullscreen: (Boolean) -> Unit = {},
@@ -92,44 +103,67 @@ fun BottomSheetSettingsPanel(
     securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
-    val coroutineScope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val hapticFeedback = LocalHapticFeedback.current
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val updateRepository = settingsViewModel.updateRepository
     
     // Security state
     val securityState by securityViewModel.securityState.collectAsState()
     
-    // Animation states
+    // FIXED: Improved animation timing for smoother transitions
     val animatedOffset by animateFloatAsState(
         targetValue = if (isVisible) 0f else 1f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ), label = "sheet_offset"
     )
+    
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
+        ), label = "sheet_alpha"
     )
     
     val backgroundBlur by animateFloatAsState(
         targetValue = if (isVisible) 6f else 0f,
-        animationSpec = tween(180, easing = LinearOutSlowInEasing)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
+        ), label = "background_blur"
     )
     
-    // Drag state for handle
-    var dragOffset by remember { mutableStateOf(0f) }
+    // FIXED: Enhanced drag state management
+    var panelHeight by remember { mutableStateOf(0.5f) }
     var isDragging by remember { mutableStateOf(false) }
+    var dragStartY by remember { mutableStateOf(0f) }
+    var dragVelocity by remember { mutableStateOf(0f) }
     
-    // Panel height states
-    var panelHeight by remember { mutableStateOf(0.5f) } // 0.5 = half screen, 1.0 = full screen
-    // Smooth any changes to panelHeight (snapping/entrance) for nicer motion
+    // FIXED: Smooth panel height animation with proper spring physics
     val animatedPanelHeight by animateFloatAsState(
         targetValue = panelHeight,
-        animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)
+        animationSpec = if (isDragging) {
+            // Immediate response during drag
+            spring(
+                dampingRatio = Spring.DampingRatioHighBouncy,
+                stiffness = Spring.StiffnessHigh
+            )
+        } else {
+            // Smooth settling after drag
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        }, label = "panel_height"
     )
+    
     val panelHeightForLayout = if (isDragging) panelHeight else animatedPanelHeight
     
     LaunchedEffect(isVisible) {
         if (isVisible) {
-            // Always start at half when opened
             panelHeight = 0.5f
             securityViewModel.performSecurityCheck(context)
         }
@@ -152,14 +186,13 @@ fun BottomSheetSettingsPanel(
                         indication = null
                     ) {
                         if (panelHeight < 0.7f) {
-                            if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (hapticsEnabled) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             onDismiss()
                         }
                     }
             )
             
-            // Bottom Sheet Panel
-            // Compute slide distance equal to the current panel height fraction of the screen height
+            // FIXED: Bottom Sheet Panel with improved calculations
             val cfgForSlide = LocalConfiguration.current
             val slideDistancePx = with(density) { cfgForSlide.screenHeightDp.dp.toPx() * panelHeightForLayout }
 
@@ -177,17 +210,19 @@ fun BottomSheetSettingsPanel(
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // Background layer: always show gradient (prevents black flicker while dragging)
+                    // Background layers remain the same
                     val bgModifier = Modifier
                         .matchParentSize()
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    
                     // Outer glow
                     Box(
                         modifier = bgModifier
                             .background(Color.Black.copy(alpha = 0.25f))
                             .blur(20.dp)
                     )
-                    // Main background with navbar style
+                    
+                    // Main background
                     Box(
                         modifier = bgModifier.background(
                             brush = Brush.verticalGradient(
@@ -198,67 +233,130 @@ fun BottomSheetSettingsPanel(
                             )
                         )
                     )
-                    // Main content column (drag handle + list)
+                    
+                    // Main content column
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .then(if (panelHeight >= 0.95f) Modifier.statusBarsPadding() else Modifier)
                             .padding(top = if (panelHeight >= 0.95f) 20.dp else 0.dp)
                     ) {
-                        // Drag Handle (visible at half and intermediate; hidden at full)
+                        // FIXED: Enhanced drag handle with better gesture detection
                         if (panelHeight < 0.95f) {
                             val configuration = LocalConfiguration.current
                             val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+                            
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 10.dp)
-                                    // Make the whole top zone easy to grab for dragging
                                     .heightIn(min = 56.dp)
                                     .pointerInput(Unit) {
                                         detectDragGestures(
-                                            onDragStart = { isDragging = true },
-                                            onDragCancel = { isDragging = false },
+                                            onDragStart = { offset ->
+                                                isDragging = true
+                                                dragStartY = offset.y
+                                                if (hapticsEnabled) {
+                                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                }
+                                            },
+                                            onDragCancel = { 
+                                                isDragging = false
+                                                dragVelocity = 0f
+                                            },
                                             onDragEnd = {
                                                 isDragging = false
                                                 coroutineScope.launch {
+                                                    // FIXED: Improved snap logic with elastic zones
                                                     val target = when {
-                                                        panelHeight < 0.20f -> 0.0f // close
-                                                        panelHeight < 0.80f -> 0.5f // half
-                                                        else -> 1.0f // full
+                                                        panelHeight < 0.25f -> {
+                                                            // Close threshold
+                                                            if (hapticsEnabled) {
+                                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            }
+                                                            0.0f
+                                                        }
+                                                        panelHeight < 0.75f -> {
+                                                            // Stay at half
+                                                            if (hapticsEnabled) {
+                                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                            }
+                                                            0.5f
+                                                        }
+                                                        panelHeight >= 0.95f -> {
+                                                            // Full screen snap
+                                                            if (hapticsEnabled) {
+                                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            }
+                                                            1.0f
+                                                        }
+                                                        else -> {
+                                                            // FIXED: Elastic zone - follow user intention
+                                                            // If user is dragging up with momentum, lean toward full
+                                                            // If dragging down or slow, lean toward half
+                                                            if (dragVelocity < -50f) { // Fast upward
+                                                                1.0f
+                                                            } else if (dragVelocity > 50f) { // Fast downward
+                                                                0.5f
+                                                            } else {
+                                                                // Gentle movement - stay where user left it
+                                                                panelHeight.coerceIn(0.5f, 0.95f)
+                                                            }
+                                                        }
                                                     }
+                                                    
                                                     if (target == 0.0f) {
                                                         panelHeight = 0.0f
-                                                        // give time for height tween before dismiss
-                                                        kotlinx.coroutines.delay(180)
+                                                        kotlinx.coroutines.delay(200)
                                                         onDismiss()
                                                     } else {
                                                         panelHeight = target
                                                     }
+                                                    dragVelocity = 0f
                                                 }
                                             }
                                         ) { _, dragAmount ->
+                                            // FIXED: Improved drag calculation with velocity tracking
                                             val delta = dragAmount.y / screenHeightPx
+                                            val previousHeight = panelHeight
                                             var newHeight = panelHeight - delta
-                                            // Immediate snap-to-full threshold when dragging upward past 0.92
-                                            if (newHeight >= 0.92f) newHeight = 1.0f
-                                            panelHeight = newHeight.coerceIn(0.0f, 1.0f)
+                                            
+                                            // Track velocity for better snap decisions
+                                            dragVelocity = (previousHeight - newHeight) * 1000f
+                                            
+                                            // FIXED: Only auto-snap to full at 97% to give more control
+                                            newHeight = if (newHeight >= 0.97f) {
+                                                1.0f
+                                            } else {
+                                                newHeight.coerceIn(0.0f, 1.0f)
+                                            }
+                                            
+                                            panelHeight = newHeight
                                         }
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                // Visible handle pill
+                                // Enhanced handle with visual feedback
                                 Box(
                                     modifier = Modifier
-                                        .width(64.dp)
-                                        .height(8.dp)
+                                        .width(if (isDragging) 72.dp else 64.dp)
+                                        .height(if (isDragging) 10.dp else 8.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(Color(0xFF4B5563))
+                                        .background(
+                                            if (isDragging) 
+                                                Color(0xFF6B7280) 
+                                            else 
+                                                Color(0xFF4B5563)
+                                        )
+                                        .graphicsLayer {
+                                            scaleX = if (isDragging) 1.05f else 1.0f
+                                            scaleY = if (isDragging) 1.1f else 1.0f
+                                        }
                                 )
                             }
                         }
 
-                        // Fixed centered title (does not scroll)
+                        // Fixed centered title (same as before)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -267,9 +365,9 @@ fun BottomSheetSettingsPanel(
                         ) {
                             val cfg = LocalConfiguration.current
                             val titleSp = when {
-                                cfg.screenWidthDp < 360 -> 32.sp  // was 48
-                                cfg.screenWidthDp < 412 -> 37.sp  // was 56
-                                else -> 40.sp                      // was 60
+                                cfg.screenWidthDp < 360 -> 32.sp
+                                cfg.screenWidthDp < 412 -> 37.sp
+                                else -> 40.sp
                             }
                             Text(
                                 text = "Settings",
@@ -282,62 +380,69 @@ fun BottomSheetSettingsPanel(
                             )
                         }
 
-                        // Panel Content (scrollable)
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        // FIXED: Panel Content with overscroll prevention
+                        CompositionLocalProvider(
+                            LocalOverscrollConfiguration provides null // This prevents the jumping/vibration
                         ) {
-                        // Extra breathing room below fixed title
-                        item { Spacer(modifier = Modifier.height(8.dp)) }
-                        
-                        // Box 1 : App Settings Section
-                        item {
-                            AppSettingsSection(
-                                autoUpdateEnabledDefault = false,
-                                darkModeEnabledDefault = false,
-                                hapticsEnabledDefault = hapticsEnabled,
-                                onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
-                                onAnyToggle = { if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                                isFullscreenMode = isFullscreenMode,
-                                onToggleFullscreen = onToggleFullscreen,
-                                darkLevel = darkLevel,
-                                onDarkLevelChange = onDarkLevelChange,
-                                navbarAutoHideEnabled = navbarAutoHideEnabled,
-                                onToggleNavbarAutoHide = onToggleNavbarAutoHide
-                            )
-                        }
-                        
-                        // Box 2 : Security Check Section
-                        item {
-                            SecurityCheckSection(
-                                securityState = securityState,
-                                securityViewModel = securityViewModel,
-                                onRunManualCheck = {
-                                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    securityViewModel.performSecurityCheck(context)
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                // FIXED: Disable overscroll effects completely
+                                userScrollEnabled = true
+                            ) {
+                                // Extra breathing room below fixed title
+                                item { Spacer(modifier = Modifier.height(8.dp)) }
+                                
+                                // Box 1 : App Settings Section
+                                item {
+                                    AppSettingsSection(
+                                        autoUpdateEnabledDefault = false,
+                                        darkModeEnabledDefault = false,
+                                        hapticsEnabledDefault = hapticsEnabled,
+                                        onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
+                                        onAnyToggle = { if (hapticsEnabled) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                        isFullscreenMode = isFullscreenMode,
+                                        onToggleFullscreen = onToggleFullscreen,
+                                        darkLevel = darkLevel,
+                                        onDarkLevelChange = onDarkLevelChange,
+                                        navbarAutoHideEnabled = navbarAutoHideEnabled,
+                                        onToggleNavbarAutoHide = onToggleNavbarAutoHide
+                                    )
                                 }
-                            )
-                        }
-                        
-                        // Box 3 : About Section
-                        item {
-                            AboutSection()
-                        }
-                        
-                        // Box 4 : Maintenance Section
-                        item {
-                            MaintenanceSection()
-                        }
-                        
-                        // Footer spacing
-                        item {
-                            Spacer(modifier = Modifier.height(32.dp))
-                        }
+                                
+                                // Box 2 : Security Check Section
+                                item {
+                                    SecurityCheckSection(
+                                        securityState = securityState,
+                                        securityViewModel = securityViewModel,
+                                        onRunManualCheck = {
+                                            if (hapticsEnabled) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            securityViewModel.performSecurityCheck(context)
+                                        }
+                                    )
+                                }
+                                
+                                // Box 3 : About Section
+                                item {
+                                    AboutSection()
+                                }
+                                
+                                // Box 4 : Maintenance Section
+                                item {
+                                    MaintenanceSection()
+                                }
+                                
+                                // Footer spacing
+                                item {
+                                    Spacer(modifier = Modifier.height(32.dp))
+                                }
+                            }
                         }
                     }
-                    // Overlay action: only at full show ArrowDown to go back to half
+                    
+                    // FIXED: Enhanced overlay action with smooth animation
                     if (panelHeight >= 0.95f) {
                         Box(
                             modifier = Modifier
@@ -347,12 +452,18 @@ fun BottomSheetSettingsPanel(
                                 .size(48.dp)
                                 .clip(RoundedCornerShape(24.dp))
                                 .background(Color.Black.copy(alpha = 0.20f))
-                                .zIndex(2f),
+                                .zIndex(2f)
+                                .graphicsLayer {
+                                    // Smooth fade in animation
+                                    alpha = ((panelHeight - 0.90f) / 0.05f).coerceIn(0f, 1f)
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             IconButton(
                                 onClick = {
-                                    // From full to half
+                                    if (hapticsEnabled) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
                                     panelHeight = 0.5f
                                 },
                                 modifier = Modifier.size(48.dp)
@@ -465,24 +576,49 @@ private fun SecurityCheckSection(
                 securityViewModel.performSecurityCheck(context)
                 onRunManualCheck()
             },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF3B82F6)),
-            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFF3B82F6).copy(alpha = 0.8f),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.elevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp
+            ),
             enabled = !securityState.isLoading
         ) {
-            if (securityState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
-                )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (securityState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Security,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (securityState.isLoading) "Checking..." else "Run Manual Check",
+                    style = MaterialTheme.typography.button.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    ),
+                    color = Color.White
+                )
             }
-            Text(
-                text = if (securityState.isLoading) "Checking..." else "Run Manual Check",
-                color = Color.White,
-                fontSize = 14.sp
-            )
         }
 
         // Toast on completion based on result
@@ -502,7 +638,7 @@ private fun SecurityCheckSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Copy Log Button
+            // Copy Log Button with iOS style
             Button(
                 onClick = {
                     val log = securityViewModel.getSecurityLog()
@@ -511,31 +647,46 @@ private fun SecurityCheckSection(
                     clipboard.setPrimaryClip(clip)
                     android.widget.Toast.makeText(context, "Log security has copy to your clipboard", android.widget.Toast.LENGTH_SHORT).show()
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = when {
-                        securityState.isPassed -> Color(0xFF10B981) // Green for passed
-                        securityState.threatDetails.isNotEmpty() -> Color(0xFFEF4444) // Red for failed
-                        else -> Color(0xFFF59E0B) // Yellow for unknown/warning
-                    }
+                        securityState.isPassed -> Color(0xFF10B981).copy(alpha = 0.8f)
+                        securityState.threatDetails.isNotEmpty() -> Color(0xFFEF4444).copy(alpha = 0.8f)
+                        else -> Color(0xFFF59E0B).copy(alpha = 0.8f)
+                    },
+                    contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(6.dp)
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 2.dp
+                )
             ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Copy Log",
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Copy Log",
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy Log",
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Copy Log",
+                        style = MaterialTheme.typography.button.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        ),
+                        color = Color.White
+                    )
+                }
             }
             
-            // Save Log Button
+            // Save Log Button with iOS style
             Button(
                 onClick = {
                     val log = securityViewModel.getSecurityLog()
@@ -556,28 +707,43 @@ private fun SecurityCheckSection(
                         android.widget.Toast.makeText(context, "Log security has copy to your clipboard", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = when {
-                        securityState.isPassed -> Color(0xFF10B981) // Green for passed
-                        securityState.threatDetails.isNotEmpty() -> Color(0xFFEF4444) // Red for failed
-                        else -> Color(0xFFF59E0B) // Yellow for unknown/warning
-                    }
+                        securityState.isPassed -> Color(0xFF10B981).copy(alpha = 0.8f)
+                        securityState.threatDetails.isNotEmpty() -> Color(0xFFEF4444).copy(alpha = 0.8f)
+                        else -> Color(0xFFF59E0B).copy(alpha = 0.8f)
+                    },
+                    contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(6.dp)
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 2.dp
+                )
             ) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = "Save Log",
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Save Log",
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = "Save Log",
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Save Log",
+                        style = MaterialTheme.typography.button.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        ),
+                        color = Color.White
+                    )
+                }
             }
         }
     }
@@ -670,6 +836,14 @@ private fun MaintenanceSection() {
             
             // Real app version installation/update date
             val context = LocalContext.current
+            val uriHandler = LocalUriHandler.current
+            val scope = rememberCoroutineScope()
+            
+            var showUpdateDialog by remember { mutableStateOf(false) }
+            var updateChecking by remember { mutableStateOf(false) }
+            var isOutdated by remember { mutableStateOf(false) }
+            var latestVersion by remember { mutableStateOf("") }
+            var updateMessage by remember { mutableStateOf("") }
             val appLastUpdated = remember {
                 try {
                     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -683,10 +857,319 @@ private fun MaintenanceSection() {
             
             InfoRow("Last updated", appLastUpdated)
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Check for updates action
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    if (updateChecking) return@Button
+                    updateChecking = true
+                    scope.launch {
+                        try {
+                            val result = updateRepository.getLatestRelease()
+                            result.fold(
+                                onSuccess = { release: com.oxyzenq.kconvert.data.remote.GitHubRelease ->
+                                    latestVersion = release.tag_name
+                                    val current = BuildConfig.VERSION_NAME
+                                    
+                                    val comparison = updateRepository.compareVersions(latestVersion, current)
+                                    isOutdated = comparison == VersionComparison.NEWER_AVAILABLE
+                                    
+                                    updateMessage = when (comparison) {
+                                        VersionComparison.NEWER_AVAILABLE -> "Latest version $latestVersion available"
+                                        VersionComparison.UP_TO_DATE -> "Using the latest version $latestVersion"
+                                        VersionComparison.CURRENT_IS_NEWER -> "Using development version $current"
+                                        else -> "Version comparison failed"
+                                    }
+                                    showUpdateDialog = true
+                                },
+                                onFailure = { exception ->
+                                    updateMessage = when {
+                                        exception.message?.contains("timeout", ignoreCase = true) == true -> "Connection timeout. Please check your internet connection."
+                                        exception.message?.contains("UnknownHost", ignoreCase = true) == true -> "Unable to reach GitHub. Please check your internet connection."
+                                        exception.message?.contains("403", ignoreCase = true) == true -> "GitHub API rate limit exceeded. Please try again later."
+                                        exception.message?.contains("404", ignoreCase = true) == true -> "Repository not found. Please check manually on GitHub."
+                                        else -> "Unable to check for updates. Please visit GitHub manually."
+                                    }
+                                    isOutdated = false
+                                    latestVersion = ""
+                                    showUpdateDialog = true
+                                }
+                            )
+                        } finally {
+                            updateChecking = false
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3B82F6).copy(alpha = 0.85f),
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 2.dp
+                ),
+                enabled = !updateChecking
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (updateChecking) {
+                        // Animated spinning refresh icon
+                        val infiniteTransition = rememberInfiniteTransition(label = "spin")
+                        val angle by infiniteTransition.animateFloat(
+                            initialValue = 0F,
+                            targetValue = 360F,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart
+                            ), label = "spin_angle"
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .graphicsLayer { rotationZ = angle },
+                            tint = Color.White
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.SystemUpdate,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (updateChecking) "Checking for updates..." else "Check for Updates",
+                        style = MaterialTheme.typography.button.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        ),
+                        color = Color.White
+                    )
+                }
+            }
 
-            // Update Checker Button with glassmorphism iOS style
-            UpdateCheckerButton()
+            // Update result dialog (only shows after check completes)
+            if (showUpdateDialog && !updateChecking) {
+                Dialog(
+                    onDismissRequest = { showUpdateDialog = false },
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true
+                    )
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .wrapContentHeight(),
+                        shape = RoundedCornerShape(20.dp),
+                        backgroundColor = Color.Transparent,
+                        elevation = 16.dp
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0xFF1E293B).copy(alpha = 0.95f),
+                                            Color(0xFF0F172A).copy(alpha = 0.98f)
+                                        )
+                                    )
+                                )
+                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
+                                .padding(16.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                // Icon with glow
+                                Box(
+                                    modifier = Modifier.size(64.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (updateChecking) Icons.Default.Refresh 
+                                                     else if (isOutdated) Icons.Default.SystemUpdate 
+                                                     else Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = if (updateChecking) Color(0xFF93C5FD)
+                                               else if (isOutdated) Color(0xFF60A5FA) 
+                                               else Color(0xFF10B981),
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = updateMessage,
+                                    style = MaterialTheme.typography.h6.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+
+                                if (updateChecking) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color(0xFF93C5FD),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    if (!isOutdated && latestVersion.isNotEmpty()) {
+                                        Text(
+                                            text = "Current version: ${BuildConfig.VERSION_NAME}",
+                                            style = MaterialTheme.typography.body2.copy(
+                                                color = Color(0xFFCBD5E1),
+                                                fontSize = 14.sp
+                                            ),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+
+                                    if (isOutdated) {
+                                        // GitHub button for updates
+                                        Button(
+                                            onClick = {
+                                                uriHandler.openUri("https://github.com/oxyzenq/web-oxy/releases/latest")
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                backgroundColor = Color(0xFF3B82F6),
+                                                contentColor = Color.White
+                                            ),
+                                            elevation = ButtonDefaults.elevation(
+                                                defaultElevation = 0.dp,
+                                                pressedElevation = 2.dp
+                                            )
+                                        ) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                                    contentDescription = "Open GitHub",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = "Get Update on GitHub",
+                                                    style = MaterialTheme.typography.button.copy(
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        fontSize = 16.sp
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    } else if (latestVersion.isEmpty()) {
+                                        // Error case - show "Visit GitHub" button
+                                        Button(
+                                            onClick = {
+                                                uriHandler.openUri("https://github.com/oxyzenq/web-oxy/releases")
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                backgroundColor = Color(0xFFF59E0B), // Amber for fallback action
+                                                contentColor = Color.White
+                                            ),
+                                            elevation = ButtonDefaults.elevation(
+                                                defaultElevation = 0.dp,
+                                                pressedElevation = 2.dp
+                                            )
+                                        ) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Launch,
+                                                    contentDescription = "Visit GitHub",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = "Visit GitHub Releases",
+                                                    style = MaterialTheme.typography.button.copy(
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        fontSize = 16.sp
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Close button with iOS-style red gradient
+                                    Button(
+                                        onClick = { showUpdateDialog = false },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            backgroundColor = Color.Transparent,
+                                            contentColor = Color.White
+                                        ),
+                                        elevation = ButtonDefaults.elevation(
+                                            defaultElevation = 0.dp,
+                                            pressedElevation = 2.dp
+                                        )
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(
+                                                    brush = Brush.horizontalGradient(
+                                                        colors = listOf(
+                                                            Color(0xFFEF4444), // Red-500
+                                                            Color(0xFFDC2626), // Red-600
+                                                            Color(0xFFB91C1C)  // Red-700
+                                                        )
+                                                    ),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                .border(
+                                                    1.dp,
+                                                    Color.White.copy(alpha = 0.1f),
+                                                    RoundedCornerShape(12.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Close",
+                                                style = MaterialTheme.typography.button.copy(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 16.sp
+                                                ),
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
 }
@@ -896,159 +1379,365 @@ private fun AppSettingsSection(
             // Cache management button
             val context = LocalContext.current
             var showCacheActionDialog by remember { mutableStateOf(false) }
+            var showDeleteConfirmDialog by remember { mutableStateOf(false) }
             var isProcessingCache by remember { mutableStateOf(false) }
+            var isScanningCache by remember { mutableStateOf(false) }
+            var isClearingCache by remember { mutableStateOf(false) }
             
-            // Single unified cache management button
+            // Single unified cache management button with iOS style
             Button(
                 onClick = {
                     showCacheActionDialog = true
                 },
-                modifier = Modifier.fillMaxWidth().height(40.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF059669),
+                    backgroundColor = Color(0xFF059669).copy(alpha = 0.8f),
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 2.dp
+                ),
                 enabled = !isProcessingCache
             ) {
-                if (isProcessingCache) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isProcessingCache) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Processing...",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Storage,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Manage Cache Storage",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        text = if (isProcessingCache) "Processing..." else "Manage Cache Storage",
+                        style = MaterialTheme.typography.button.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        ),
+                        color = Color.White
                     )
                 }
             }
             
-            // Cache Action Dialog
+            // Cache Action Dialog with glassmorphism style
             if (showCacheActionDialog) {
-                AlertDialog(
+                Dialog(
                     onDismissRequest = { showCacheActionDialog = false },
-                    title = {
-                        Text(
-                            text = "Cache Management",
-                            style = MaterialTheme.typography.h6.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .heightIn(min = 180.dp, max = 320.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                    ) {
+                        // Outer glow effect
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f))
+                                .blur(24.dp)
                         )
-                    },
-                    text = {
-                        Column {
-                            Text(
-                                text = "Current cache size: ${formatFileSize(cacheSize)}",
-                                style = MaterialTheme.typography.body2.copy(
-                                    color = Color(0xFFE5E7EB)
+                        
+                        // Main glassmorphism background
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0xFF1E293B).copy(alpha = 0.95f),
+                                            Color(0xFF0F172A).copy(alpha = 0.98f)
+                                        )
+                                    )
                                 )
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Choose an action:",
-                                style = MaterialTheme.typography.body2.copy(
-                                    color = Color(0xFF94A3B8)
+                                .border(
+                                    1.dp,
+                                    Color.White.copy(alpha = 0.1f),
+                                    RoundedCornerShape(20.dp)
                                 )
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                .padding(20.dp)
                         ) {
-                            // Scan/Refresh Button
-                            TextButton(
-                                onClick = {
-                                    scope.launch {
-                                        isProcessingCache = true
-                                        showCacheActionDialog = false
-                                        android.widget.Toast.makeText(context, "Scanning cache...", android.widget.Toast.LENGTH_SHORT).show()
-                                        
-                                        try {
-                                            val newCacheSize = StorageUtils.getCacheSize(context)
-                                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                                            
-                                            // Update state for immediate UI refresh
-                                            cacheSize = newCacheSize
-                                            lastScanTime = timestamp
-                                            
-                                            // Save to persistent storage
-                                            cacheSettingsStore.setCacheSize(newCacheSize)
-                                            cacheSettingsStore.setCacheLastScan(timestamp)
-                                            
-                                            android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
-                                        } catch (e: Exception) {
-                                            android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                        } finally {
-                                            isProcessingCache = false
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                // Compact header with icon and title in row
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Storage,
+                                        contentDescription = "Cache Management",
+                                        tint = Color(0xFF059669),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Cache Management",
+                                        style = MaterialTheme.typography.h6.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp
+                                        )
+                                    )
+                                }
+                                
+                                Text(
+                                    text = "Current cache size: ${formatFileSize(cacheSize)}",
+                                    style = MaterialTheme.typography.body2.copy(
+                                        color = Color(0xFFCBD5E1),
+                                        fontSize = 12.sp
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+                                
+                                // Compact action buttons
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Scan button with progress indicator
+                                    Button(
+                                        onClick = {
+                                            scope.launch {
+                                                isScanningCache = true
+                                                isProcessingCache = true
+                                                
+                                                try {
+                                                    // Add timeout for large cache scans (30 seconds max)
+                                                    val newCacheSize = withContext(Dispatchers.IO) {
+                                                        withTimeout(30000) {
+                                                            StorageUtils.getCacheSize(context)
+                                                        }
+                                                    }
+                                                    
+                                                    // Check if cache size is extremely large (>5GB)
+                                                    if (newCacheSize > 5L * 1024 * 1024 * 1024) {
+                                                        android.widget.Toast.makeText(
+                                                            context, 
+                                                            "Warning: Cache size is very large (${formatFileSize(newCacheSize)}). Consider clearing it.", 
+                                                            android.widget.Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }
+                                                    
+                                                    val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                                                    
+                                                    cacheSize = newCacheSize
+                                                    lastScanTime = timestamp
+                                                    
+                                                    cacheSettingsStore.setCacheSize(newCacheSize)
+                                                    cacheSettingsStore.setCacheLastScan(timestamp)
+                                                    
+                                                    android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
+                                                } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                                                    android.widget.Toast.makeText(context, "Scan timeout: Cache too large to scan quickly", android.widget.Toast.LENGTH_LONG).show()
+                                                } catch (e: Exception) {
+                                                    android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                                } finally {
+                                                    isScanningCache = false
+                                                    isProcessingCache = false
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            backgroundColor = Color(0xFF3B82F6).copy(alpha = 0.9f),
+                                            contentColor = Color.White
+                                        ),
+                                        elevation = ButtonDefaults.elevation(
+                                            defaultElevation = 0.dp,
+                                            pressedElevation = 1.dp
+                                        ),
+                                        enabled = !isScanningCache && !isClearingCache
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (isScanningCache) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    color = Color.White,
+                                                    strokeWidth = 2.dp
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+                                            Text(
+                                                text = if (isScanningCache) "Scanning..." else "Scan",
+                                                style = MaterialTheme.typography.button.copy(
+                                                    fontWeight = FontWeight.Medium,
+                                                    fontSize = 14.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                    
+                                    // Clear button with progress indicator
+                                    Button(
+                                        onClick = {
+                                            if (cacheSize > 1L * 1024 * 1024 * 1024) { // >1GB
+                                                // Show warning for large cache
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    "Large cache detected (${formatFileSize(cacheSize)}). This may take a while.",
+                                                    android.widget.Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                            showCacheActionDialog = false
+                                            showDeleteConfirmDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(38.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            backgroundColor = if (cacheSize > 0) Color(0xFFEF4444).copy(alpha = 0.9f) else Color(0xFF6B7280).copy(alpha = 0.9f),
+                                            contentColor = Color.White
+                                        ),
+                                        elevation = ButtonDefaults.elevation(
+                                            defaultElevation = 0.dp,
+                                            pressedElevation = 1.dp
+                                        ),
+                                        enabled = cacheSize > 0 && !isScanningCache && !isClearingCache
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (isClearingCache) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    color = Color.White,
+                                                    strokeWidth = 2.dp
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+                                            Text(
+                                                text = if (isClearingCache) "Clearing..." else "Clear",
+                                                style = MaterialTheme.typography.button.copy(
+                                                    fontWeight = FontWeight.Medium,
+                                                    fontSize = 14.sp
+                                                )
+                                            )
                                         }
                                     }
                                 }
-                            ) {
-                                Text("Scan Cache", color = Color(0xFF3B82F6))
+                                
+                                // iOS-style red gradient close button
+                                Button(
+                                    onClick = { showCacheActionDialog = false },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(38.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = Color.Transparent,
+                                        contentColor = Color.White
+                                    ),
+                                    elevation = ButtonDefaults.elevation(
+                                        defaultElevation = 0.dp,
+                                        pressedElevation = 1.dp
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                brush = Brush.horizontalGradient(
+                                                    colors = listOf(
+                                                        Color(0xFFEF4444), // Red-500
+                                                        Color(0xFFDC2626), // Red-600
+                                                        Color(0xFFB91C1C)  // Red-700
+                                                    )
+                                                ),
+                                                shape = RoundedCornerShape(10.dp)
+                                            )
+                                            .border(
+                                                1.dp,
+                                                Color.White.copy(alpha = 0.1f),
+                                                RoundedCornerShape(10.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Cancel",
+                                            style = MaterialTheme.typography.button.copy(
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 13.sp
+                                            ),
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Beautiful floating confirmation dialog for cache clearing
+            ClearCacheConfirmationDialog(
+                isVisible = showDeleteConfirmDialog,
+                cacheSize = formatFileSize(cacheSize),
+                onConfirm = {
+                    scope.launch {
+                        isClearingCache = true
+                        isProcessingCache = true
+                        showDeleteConfirmDialog = false
+                        
+                        try {
+                            // Add timeout for large cache clearing (60 seconds max)
+                            withContext(Dispatchers.IO) {
+                                withTimeout(60000) {
+                                    StorageUtils.clearCache(context)
+                                }
                             }
                             
-                            // Clear Button
-                            TextButton(
-                                onClick = {
-                                    scope.launch {
-                                        isProcessingCache = true
-                                        showCacheActionDialog = false
-                                        android.widget.Toast.makeText(context, "Clearing cache...", android.widget.Toast.LENGTH_SHORT).show()
-                                        
-                                        try {
-                                            StorageUtils.clearCache(context)
-                                            
-                                            // Update state immediately for UI refresh
-                                            cacheSize = 0L
-                                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                                            lastScanTime = timestamp
-                                            
-                                            // Save to persistent storage
-                                            cacheSettingsStore.setCacheSize(0L)
-                                            cacheSettingsStore.setCacheLastScan(timestamp)
-                                            
-                                            android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
-                                        } catch (e: Exception) {
-                                            android.widget.Toast.makeText(context, "Clear failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                        } finally {
-                                            isProcessingCache = false
-                                        }
-                                    }
-                                },
-                                enabled = cacheSize > 0
-                            ) {
-                                Text("Clear Cache", color = if (cacheSize > 0) Color(0xFFEF4444) else Color(0xFF6B7280))
-                            }
+                            cacheSize = 0L
+                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                            lastScanTime = timestamp
+                            
+                            cacheSettingsStore.setCacheSize(0L)
+                            cacheSettingsStore.setCacheLastScan(timestamp)
+                            
+                            android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
+                        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                            android.widget.Toast.makeText(context, "Clear timeout: Cache too large to clear quickly", android.widget.Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Clear failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isClearingCache = false
+                            isProcessingCache = false
                         }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = { showCacheActionDialog = false }
-                        ) {
-                            Text("Cancel", color = Color(0xFF9CA3AF))
-                        }
-                    },
-                    backgroundColor = Color(0xFF1F2937),
-                    contentColor = Color.White
-                )
-            }
+                    }
+                },
+                onDismiss = { showDeleteConfirmDialog = false },
+                hapticsEnabled = hapticsEnabled
+            )
         }
     }
 }
@@ -1109,293 +1798,6 @@ private fun SettingToggleRow(
     }
 }
 
-/**
- * Update Checker Button with glassmorphism iOS style
- * Checks for latest version and shows floating window notification
- */
-@Composable
-private fun UpdateCheckerButton() {
-    val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    var isChecking by remember { mutableStateOf(false) }
-    var updateStatus by remember { mutableStateOf<UpdateStatus>(UpdateStatus.Unknown) }
-    
-    // Current version from BuildConfig
-    val currentVersion = BuildConfig.VERSION_NAME
-    val latestVersion = "2.1.0" // This would normally come from GitHub API
-    
-    // Update button with navbar style background
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        // Outer glow
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.25f))
-                .blur(20.dp)
-        )
-        // Main background with navbar style
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0B1530).copy(alpha = 0.8f),
-                            Color(0xFF0F1F3F).copy(alpha = 0.9f)
-                        )
-                    )
-                )
-                .border(
-                    0.5.dp,
-                    Color.White.copy(alpha = 0.08f),
-                    RoundedCornerShape(16.dp)
-                )
-        )
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-            .clickable {
-                isChecking = true
-                // Simulate version check
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    updateStatus = if (currentVersion < latestVersion) {
-                        UpdateStatus.UpdateAvailable(latestVersion)
-                    } else {
-                        UpdateStatus.UpToDate(currentVersion)
-                    }
-                    isChecking = false
-                    showUpdateDialog = true
-                }, 1500)
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (isChecking) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = Color(0xFF60A5FA), // blue-400
-                    strokeWidth = 2.dp
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Checking for updates...",
-                    style = MaterialTheme.typography.body1.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.SystemUpdate,
-                    contentDescription = "Check Updates",
-                    tint = Color(0xFF60A5FA), // blue-400
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Check for Updates",
-                    style = MaterialTheme.typography.body1.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
-            }
-        }
-    }
-    
-    // Floating window dialog for update notifications
-    if (showUpdateDialog) {
-        UpdateNotificationDialog(
-            updateStatus = updateStatus,
-            onDismiss = { showUpdateDialog = false },
-            onDownload = {
-                uriHandler.openUri("https://github.com/oxyzenq/web-oxy")
-                showUpdateDialog = false
-            }
-        )
-    }
-}
 
-}
 
-/**
- * Update status sealed class
- */
-private sealed class UpdateStatus {
-    object Unknown : UpdateStatus()
-    data class UpToDate(val version: String) : UpdateStatus()
-    data class UpdateAvailable(val latestVersion: String) : UpdateStatus()
-}
 
-/**
- * Floating window dialog for update notifications with glassmorphism styling
- */
-@Composable
-private fun UpdateNotificationDialog(
-    updateStatus: UpdateStatus,
-    onDismiss: () -> Unit,
-    onDownload: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .clip(RoundedCornerShape(20.dp))
-        ) {
-            // Outer glow
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.25f))
-                    .blur(20.dp)
-            )
-            // Main background with navbar style
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF0B1530).copy(alpha = 0.8f),
-                                Color(0xFF0F1F3F).copy(alpha = 0.9f)
-                            )
-                        )
-                    )
-                    .border(
-                        0.5.dp,
-                        Color.White.copy(alpha = 0.08f),
-                        RoundedCornerShape(20.dp)
-                    )
-                    .padding(24.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                when (updateStatus) {
-                    is UpdateStatus.UpToDate -> {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Up to date",
-                            tint = Color(0xFF10B981), // green-500
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "Using the latest version",
-                            style = MaterialTheme.typography.h6.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Version ${updateStatus.version}",
-                            style = MaterialTheme.typography.body2.copy(
-                                color = Color(0xFF9CA3AF)
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    is UpdateStatus.UpdateAvailable -> {
-                        Icon(
-                            imageVector = Icons.Default.GetApp,
-                            contentDescription = "Update available",
-                            tint = Color(0xFF3B82F6), // blue-500
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "Update Available",
-                            style = MaterialTheme.typography.h6.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Latest version ${updateStatus.latestVersion} available",
-                            style = MaterialTheme.typography.body1.copy(
-                                color = Color(0xFF9CA3AF)
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Tap here to download from GitHub",
-                            style = MaterialTheme.typography.body2.copy(
-                                color = Color(0xFF60A5FA)
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // GitHub download button
-                        Button(
-                            onClick = onDownload,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFF3B82F6)
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.OpenInBrowser,
-                                contentDescription = "GitHub",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Download from GitHub",
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        
-                        // GitHub link text
-                        Text(
-                            text = "https://github.com/oxyzenq/web-oxy",
-                            style = MaterialTheme.typography.caption.copy(
-                                color = Color(0xFF6B7280)
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    UpdateStatus.Unknown -> {
-                        // This shouldn't happen in normal flow
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Close button
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Close",
-                        color = Color(0xFF9CA3AF)
-                    )
-                }
-            }
-        }
-    }
-}
-}

@@ -98,8 +98,8 @@ android {
         // Command: ./gradlew assembleDebug
         // Purpose: Development and testing
         debug {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             isDebuggable = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -472,11 +472,17 @@ dependencies {
     // Navigation - Updated
     implementation("androidx.navigation:navigation-compose:2.7.7")
     
-    // Networking - Updated to latest stable versions
+    // Networking - Updated to latest stable versions with security & caching
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    
+    // Security & Certificate Pinning
+    implementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
+    
+    // Coroutines adapter for Retrofit
+    implementation("com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2")
     
     // Room Database - Updated
     implementation("androidx.room:room-runtime:2.6.1")
