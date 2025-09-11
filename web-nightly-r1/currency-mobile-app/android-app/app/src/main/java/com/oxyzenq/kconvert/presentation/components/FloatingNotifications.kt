@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
 import com.oxyzenq.kconvert.presentation.viewmodel.NotificationType
 import kotlinx.coroutines.delay
@@ -139,35 +138,34 @@ fun FloatingNotification(
                             RoundedCornerShape(12.dp)
                         )
                 ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = when (type) {
-                            NotificationType.SUCCESS -> Icons.Default.Check
-                            NotificationType.WARNING, NotificationType.ERROR -> Icons.Default.Warning
-                        },
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.body1.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White
-                        ),
-                        textAlign = TextAlign.Center
-                    )
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = when (type) {
+                                NotificationType.SUCCESS -> Icons.Default.Check
+                                NotificationType.WARNING, NotificationType.ERROR -> Icons.Default.Warning
+                            },
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.body1.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
     }
-}
-}
 }

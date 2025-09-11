@@ -177,10 +177,10 @@ fun SpringCurrencyConverterScreen() {
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Converted Amount",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.8f)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 0.5.dp,
+                    color = Color.White.copy(alpha = 0.1f)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -367,7 +367,7 @@ fun SpringSettingsScreen() {
                     )
                 }
                 
-                Divider(color = Color.White.copy(alpha = 0.1f))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                 
                 // Dark mode toggle
                 Row(
@@ -397,7 +397,7 @@ fun SpringSettingsScreen() {
                     )
                 }
                 
-                Divider(color = Color.White.copy(alpha = 0.1f))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                 
                 // Animation intensity selector
                 Column {

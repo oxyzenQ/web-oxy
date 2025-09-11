@@ -54,7 +54,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.oxyzenq.kconvert.BuildConfig
+import com.oxyzenq.kconvert.AppVersion
 import com.oxyzenq.kconvert.data.local.SettingsDataStore
 import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
 import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
@@ -766,7 +766,7 @@ private fun AboutSection() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             InfoRow("App name", "Kconvert")
-            InfoRow("Version", BuildConfig.VERSION_NAME)
+            InfoRow("Version", AppVersion.VERSION_NAME)
             InfoRow("License", "MIT")
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -836,6 +836,10 @@ private fun MaintenanceSection(
             var latestVersion by remember { mutableStateOf("") }
             var updateMessage by remember { mutableStateOf("") }
             var updateError by remember { mutableStateOf(false) }
+            var updateTitle by remember { mutableStateOf("") }
+            var isWarning by remember { mutableStateOf(false) }
+            var showGitHubLink by remember { mutableStateOf(true) }
+            var uiState by remember { mutableStateOf(com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE) }
             val appLastUpdated = remember {
                 try {
                     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -861,18 +865,18 @@ private fun MaintenanceSection(
                             result.fold(
                                 onSuccess = { release: com.oxyzenq.kconvert.data.remote.GitHubRelease ->
                                     latestVersion = release.tag_name
-                                    val current = BuildConfig.VERSION_NAME
+                                    val current = AppVersion.VERSION_NAME
                                     
                                     val comparison = updateRepository.compareVersions(latestVersion, current)
+                                    val updateMsg = updateRepository.generateUpdateMessage(latestVersion, current, comparison)
+                                    
                                     isOutdated = comparison == VersionComparison.NEWER_AVAILABLE
                                     updateError = false
-                                    
-                                    updateMessage = when (comparison) {
-                                        VersionComparison.NEWER_AVAILABLE -> "Latest version $latestVersion available"
-                                        VersionComparison.UP_TO_DATE -> "Using the latest version $latestVersion"
-                                        VersionComparison.CURRENT_IS_NEWER -> "Using development version $current"
-                                        else -> "Version comparison failed"
-                                    }
+                                    updateMessage = updateMsg.message
+                                    updateTitle = updateMsg.title
+                                    isWarning = updateMsg.isWarning
+                                    showGitHubLink = updateMsg.showGitHubLink
+                                    uiState = updateMsg.uiState
                                     showUpdateDialog = true
                                 },
                                 onFailure = { exception ->
@@ -959,10 +963,14 @@ private fun MaintenanceSection(
                 isOutdated = isOutdated,
                 latestVersion = latestVersion,
                 updateMessage = updateMessage,
-                currentVersion = BuildConfig.VERSION_NAME,
+                currentVersion = AppVersion.VERSION_NAME,
                 onDismiss = { showUpdateDialog = false },
                 onOpenLatest = { uriHandler.openUri("https://github.com/oxyzenQ/web-oxy/releases/latest") },
-                onOpenReleases = { uriHandler.openUri("https://github.com/oxyzenQ/web-oxy/releases") }
+                onOpenReleases = { uriHandler.openUri("https://github.com/oxyzenQ/web-oxy/releases") },
+                isWarning = isWarning,
+                showGitHubLink = showGitHubLink,
+                updateTitle = updateTitle,
+                uiState = uiState
             )
 
         }
@@ -1376,7 +1384,3 @@ private fun SettingToggleRow(
         )
     }
 }
-
-
-
-

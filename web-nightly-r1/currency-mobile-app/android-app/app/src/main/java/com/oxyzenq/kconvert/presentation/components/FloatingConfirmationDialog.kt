@@ -13,7 +13,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -160,7 +160,7 @@ fun LogoutConfirmationDialog(
         isVisible = isVisible,
         title = "Sign Out",
         message = "Are you sure you want to sign out of your account?",
-        icon = Icons.Default.ExitToApp,
+        icon = Icons.AutoMirrored.Filled.ExitToApp,
         iconColor = Color(0xFF3B82F6), // Blue
         confirmText = "Sign Out",
         dismissText = "Cancel",

@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.oxyzenq.kconvert.BuildConfig
+import com.oxyzenq.kconvert.AppVersion
 import com.oxyzenq.kconvert.R
 import com.oxyzenq.kconvert.data.local.SettingsDataStore
 import com.oxyzenq.kconvert.data.model.Currency
@@ -298,7 +298,7 @@ fun KconvertMainScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(imageVector = Icons.Default.Archive, contentDescription = null, tint = Color(0xFF32EF12))
                             Spacer(Modifier.width(8.dp))
-                            Text("Version: ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB)))
+                            Text("Version: ${AppVersion.VERSION_NAME}", style = MaterialTheme.typography.body2.copy(color = Color(0xFFE5E7EB)))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(imageVector = Icons.Default.Build, contentDescription = null, tint = Color(0xFF32EF12))

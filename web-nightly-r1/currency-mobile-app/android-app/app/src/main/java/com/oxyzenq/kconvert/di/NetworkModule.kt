@@ -19,6 +19,7 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.tls.HandshakeCertificates
+import com.oxyzenq.kconvert.AppVersion
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
@@ -35,9 +36,9 @@ object NetworkModule {
     private const val GITHUB_BASE_URL = "https://api.github.com/"
     private const val EXCHANGE_RATE_BASE_URL = "https://v6.exchangerate-api.com/v6/"
     private const val CACHE_SIZE = 10 * 1024 * 1024L // 10MB cache
-    private const val CONNECT_TIMEOUT = 15L
-    private const val READ_TIMEOUT = 30L
-    private const val WRITE_TIMEOUT = 30L
+    private const val CONNECT_TIMEOUT = 5L      // Ultra-fast connection
+    private const val READ_TIMEOUT = 10L       // Quick read for low latency
+    private const val WRITE_TIMEOUT = 10L      // Quick write for speed
 
     /**
      * Provides HTTP cache for network requests
@@ -66,6 +67,9 @@ object NetworkModule {
             .retryOnConnectionFailure(true)
             .followRedirects(true)
             .followSslRedirects(true)
+            // Ultra-fast performance optimizations
+            .connectionPool(ConnectionPool(16, 5, TimeUnit.MINUTES))  // More connections, faster reuse
+            .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))    // HTTP/2 for multiplexing
 
         // Add logging interceptor for debug builds
         if (BuildConfig.DEBUG) {
@@ -161,14 +165,21 @@ private class CacheControlInterceptor : Interceptor {
         val request = chain.request()
         val response = chain.proceed(request)
 
-        // Cache successful responses for 5 minutes
-        return if (response.isSuccessful) {
-            response.newBuilder()
-                .header("Cache-Control", "public, max-age=300")
-                .build()
-        } else {
-            response
+        // If caller explicitly asks no-cache, do not override
+        val hasNoCache = request.header("Cache-Control")?.contains("no-cache", ignoreCase = true) == true
+        val isGitHub = request.url.host.equals("api.github.com", ignoreCase = true)
+
+        if (!response.isSuccessful) return response
+
+        // Respect no-cache and GitHub real-time checks: do not add caching headers
+        if (hasNoCache || isGitHub) {
+            return response
         }
+
+        // Default: cache successful responses for 5 minutes
+        return response.newBuilder()
+            .header("Cache-Control", "public, max-age=300")
+            .build()
     }
 }
 
@@ -177,9 +188,17 @@ private class CacheControlInterceptor : Interceptor {
  */
 private class NetworkCacheInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val response = chain.proceed(chain.request())
-        
-        // Cache successful responses for offline access (1 day)
+        val request = chain.request()
+        val response = chain.proceed(request)
+
+        // Respect no-cache and GitHub API: do not force long-lived cache on network responses
+        val hasNoCache = request.header("Cache-Control")?.contains("no-cache", ignoreCase = true) == true
+        val isGitHub = request.url.host.equals("api.github.com", ignoreCase = true)
+        if (hasNoCache || isGitHub) {
+            return response
+        }
+
+        // Otherwise, allow offline cache for 1 day
         return response.newBuilder()
             .header("Cache-Control", "public, max-age=86400")
             .build()
@@ -192,7 +211,7 @@ private class NetworkCacheInterceptor : Interceptor {
 private class UserAgentInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
-            .header("User-Agent", "Kconvert/${BuildConfig.VERSION_NAME} (Android)")
+            .header("User-Agent", AppVersion.USER_AGENT)
             .build()
         return chain.proceed(request)
     }

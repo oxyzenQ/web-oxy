@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.oxyzenq.kconvert.presentation.theme.KconvertIcons
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.oxyzenq.kconvert.BuildConfig
+import com.oxyzenq.kconvert.AppVersion
 import com.oxyzenq.kconvert.R
 import com.oxyzenq.kconvert.presentation.theme.body2Centered
 
@@ -164,7 +164,7 @@ fun HeaderContainer() {
 
                         // Version text
                         Text(
-                            text = "Stellar Edition v${BuildConfig.VERSION_NAME}",
+                            text = "Stellar Edition v${AppVersion.VERSION_NAME}",
                             style = MaterialTheme.typography.caption.copy(
                                 fontFamily = inter,
                                 color = Color.White.copy(alpha = 0.6f)
@@ -312,7 +312,7 @@ fun AboutContainer() {
                 )
                 
                 Text(
-                    text = "Version: ${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                    text = "Version: ${AppVersion.VERSION_NAME} (Build ${AppVersion.VERSION_CODE})",
                     style = MaterialTheme.typography.body2.copy(
                         color = Color.White
                     )

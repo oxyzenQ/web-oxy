@@ -9,6 +9,7 @@ package com.oxyzenq.kconvert.presentation.theme
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -19,7 +20,7 @@ object KconvertIcons {
     
     // Navigation & UI Icons
     val ArrowDropDown: ImageVector = Icons.Default.ArrowDropDown
-    val ArrowBack: ImageVector = Icons.Default.ArrowBack
+    val ArrowBack = Icons.AutoMirrored.Filled.ArrowBack
     val Menu: ImageVector = Icons.Default.Menu
     val Close: ImageVector = Icons.Default.Close
     val MoreVert: ImageVector = Icons.Default.MoreVert
@@ -41,8 +42,8 @@ object KconvertIcons {
     
     // Information & Help Icons
     val Info: ImageVector = Icons.Default.Info
-    val Help: ImageVector = Icons.Default.Help
-    val HelpOutline: ImageVector = Icons.Default.HelpOutline
+    val Help: ImageVector = Icons.AutoMirrored.Filled.Help
+    val HelpOutline: ImageVector = Icons.AutoMirrored.Filled.HelpOutline
     val Star: ImageVector = Icons.Default.Star
     val Favorite: ImageVector = Icons.Default.Favorite
     
@@ -62,8 +63,8 @@ object KconvertIcons {
     // Currency & Finance Icons
     val AttachMoney: ImageVector = Icons.Default.AttachMoney
     val MonetizationOn: ImageVector = Icons.Default.MonetizationOn
-    val TrendingUp: ImageVector = Icons.Default.TrendingUp
-    val TrendingDown: ImageVector = Icons.Default.TrendingDown
+    val TrendingUp: ImageVector = Icons.AutoMirrored.Filled.TrendingUp
+    val TrendingDown: ImageVector = Icons.AutoMirrored.Filled.TrendingDown
     val AccountBalance: ImageVector = Icons.Default.AccountBalance
     val CurrencyExchange: ImageVector = Icons.Default.CurrencyExchange
     val TimerArrowUp: ImageVector = Icons.Default.Schedule // Using Schedule as placeholder for timer_arrow_up_24
@@ -92,14 +93,14 @@ object KconvertIcons {
     // Data & Storage Icons
     val Storage: ImageVector = Icons.Default.Storage
     val Folder: ImageVector = Icons.Default.Folder
-    val InsertDriveFile: ImageVector = Icons.Default.InsertDriveFile
+    val InsertDriveFile: ImageVector = Icons.AutoMirrored.Filled.InsertDriveFile
     val CloudUpload: ImageVector = Icons.Default.CloudUpload
     
     // Communication Icons
     val Email: ImageVector = Icons.Default.Email
     val Phone: ImageVector = Icons.Default.Phone
-    val Message: ImageVector = Icons.Default.Message
-    val Send: ImageVector = Icons.Default.Send
+    val Message: ImageVector = Icons.AutoMirrored.Filled.Message
+    val Send: ImageVector = Icons.AutoMirrored.Filled.Send
 }
 
 /**

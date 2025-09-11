@@ -13,6 +13,25 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Function to extract version from AppVersion.kt
+fun getAppVersion(): String {
+    val appVersionFile = file("src/main/java/com/oxyzenq/kconvert/AppVersion.kt")
+    val content = appVersionFile.readText()
+    val versionRegex = Regex("""const val VERSION_NAME = "([^"]+)"""")
+    val match = versionRegex.find(content)
+    return match?.groupValues?.get(1) ?: "Stellar-1.4"
+}
+
+// Function to generate version code from Stellar version
+fun getVersionCode(versionName: String): Int {
+    val stellarRegex = Regex("^Stellar-(\\d+)\\.(\\d+)(\\.dev)?$")
+    val match = stellarRegex.find(versionName)
+    val major = match?.groupValues?.get(1)?.toIntOrNull() ?: 1
+    val minor = match?.groupValues?.get(2)?.toIntOrNull() ?: 4
+    val isDev = match?.groupValues?.get(3) == ".dev"
+    return (major * 10000) + (minor * 100) + if (isDev) 1000 else 0
+}
+
 // Dynamic keystore configuration for local dev and CI builds
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
@@ -31,8 +50,9 @@ android {
         applicationId = "com.oxyzenq.kconvert"
         minSdk = 26  // Android 8.0 (API level 26)
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.dev-3"
+        val appVersion = getAppVersion()
+        versionCode = getVersionCode(appVersion)
+        versionName = appVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

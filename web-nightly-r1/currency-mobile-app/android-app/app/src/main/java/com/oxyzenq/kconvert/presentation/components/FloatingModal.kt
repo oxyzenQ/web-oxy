@@ -9,21 +9,15 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,52 +62,44 @@ fun FloatingModal(
             dismissOnClickOutside = true
         )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = backdropAlpha * alphaAnim))
-                .clickable(enabled = true, indication = null, interactionSource = null) { onDismiss() },
-            contentAlignment = Alignment.Center
+        // Direct card without full-screen backdrop
+        Card(
+            modifier = modifier
+                .width(width)
+                .wrapContentHeight(),
+            backgroundColor = Color.Transparent,
+            elevation = 0.dp,
+            shape = RoundedCornerShape(cornerRadius)
         ) {
-            // The card
-            Card(
-                modifier = modifier
-                    .width(width)
-                    .wrapContentHeight(),
-                backgroundColor = Color.Transparent,
-                elevation = 0.dp,
-                shape = RoundedCornerShape(cornerRadius)
+            Box(
+                modifier = Modifier
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF1E293B).copy(alpha = 0.92f),
+                                Color(0xFF0F172A).copy(alpha = 0.95f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+                    .border(
+                        width = 0.5.dp,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.25f),
+                                Color.White.copy(alpha = 0.05f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+                    .padding(24.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF1E293B).copy(alpha = 0.92f),
-                                    Color(0xFF0F172A).copy(alpha = 0.95f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(cornerRadius)
-                        )
-                        .border(
-                            width = 0.5.dp,
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.25f),
-                                    Color.White.copy(alpha = 0.05f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(cornerRadius)
-                        )
-                        .padding(24.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        header?.invoke()
-                        content()
-                    }
+                    header?.invoke()
+                    content()
                 }
             }
         }

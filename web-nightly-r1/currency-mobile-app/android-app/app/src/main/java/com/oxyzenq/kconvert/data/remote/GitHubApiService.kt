@@ -21,7 +21,8 @@ interface GitHubApiService {
      */
     @Headers(
         "Accept: application/vnd.github+json",
-        "Cache-Control: max-age=300" // Cache for 5 minutes
+        "Cache-Control: no-cache",
+        "Pragma: no-cache"
     )
     @GET("repos/{owner}/{repo}/releases/latest")
     suspend fun getLatestRelease(
@@ -35,7 +36,8 @@ interface GitHubApiService {
      */
     @Headers(
         "Accept: application/vnd.github+json",
-        "Cache-Control: max-age=600" // Cache for 10 minutes
+        "Cache-Control: no-cache",
+        "Pragma: no-cache"
     )
     @GET("repos/{owner}/{repo}/releases")
     suspend fun getAllReleases(
@@ -49,7 +51,8 @@ interface GitHubApiService {
      */
     @Headers(
         "Accept: application/vnd.github+json",
-        "Cache-Control: max-age=300"
+        "Cache-Control: no-cache",
+        "Pragma: no-cache"
     )
     @GET("repos/{owner}/{repo}/releases/tags/{tag}")
     suspend fun getReleaseByTag(

@@ -6,26 +6,24 @@
 
 package com.oxyzenq.kconvert.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.oxyzenq.kconvert.data.model.Currency
@@ -40,6 +38,21 @@ fun InfoWindow(
     subtitle: String? = null,
     onDismiss: () -> Unit,
     content: @Composable ColumnScope.() -> Unit = {}
+) {
+    FloatingModal(
+        visible = visible,
+        onDismiss = onDismiss,
+        width = 280.dp,
+        header = {
+            FloatingModalHeader(
+                title = title,
+                subtitle = subtitle,
+                icon = Icons.Default.CheckCircle,
+                iconTint = Color(0xFF10B981)
+            )
+        }
+    ) { content() }
+}
 
 /**
  * Currency picker window using global floating modal style.
@@ -116,21 +129,6 @@ fun CurrencyPickerWindow(
         }
     }
 }
-) {
-    FloatingModal(
-        visible = visible,
-        onDismiss = onDismiss,
-        width = 280.dp,
-        header = {
-            FloatingModalHeader(
-                title = title,
-                subtitle = subtitle,
-                icon = Icons.Default.CheckCircle,
-                iconTint = Color(0xFF10B981)
-            )
-        }
-    ) { content() }
-}
 
 @Composable
 fun ErrorWindow(
@@ -191,79 +189,171 @@ fun UpdateResultWindow(
     currentVersion: String,
     onDismiss: () -> Unit,
     onOpenLatest: () -> Unit,
-    onOpenReleases: () -> Unit
+    onOpenReleases: () -> Unit,
+    isWarning: Boolean = false,
+    showGitHubLink: Boolean = true,
+    updateTitle: String = "",
+    uiState: com.oxyzenq.kconvert.data.repository.UpdateUIState = com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE
 ) {
-    val icon = when {
-        updateError -> Icons.Default.Warning
-        isOutdated -> Icons.AutoMirrored.Filled.OpenInNew // will be shown on button; header tint below
-        else -> Icons.Default.CheckCircle
-    }
-    val tint = when {
-        updateError -> Color(0xFFF59E0B)
-        isOutdated -> Color(0xFF60A5FA)
-        else -> Color(0xFF10B981)
+    val (icon, tint, backgroundColor) = when {
+        updateError -> Triple(Icons.Default.Warning, Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.12f))
+        uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING -> Triple(
+            Icons.Default.Warning, 
+            Color(0xFFEF4444), 
+            Color(0xFFEF4444).copy(alpha = 0.12f)
+        )
+        uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE -> Triple(
+            Icons.AutoMirrored.Filled.OpenInNew, 
+            Color(0xFFF59E0B), 
+            Color(0xFFF59E0B).copy(alpha = 0.12f)
+        )
+        uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE -> Triple(
+            Icons.Default.CheckCircle, 
+            Color(0xFF10B981), 
+            Color(0xFF10B981).copy(alpha = 0.12f)
+        )
+        else -> Triple(Icons.Default.CheckCircle, Color(0xFF10B981), Color(0xFF10B981).copy(alpha = 0.12f))
     }
 
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
-        width = 280.dp,
+        width = 320.dp,
+        cornerRadius = 20.dp,
         header = {
-            FloatingModalHeader(
-                title = updateMessage,
-                subtitle = if (!isOutdated && latestVersion.isNotEmpty()) "Current version: $currentVersion" else null,
-                icon = if (updateError) Icons.Default.Warning else if (isOutdated) Icons.Default.CheckCircle else Icons.Default.CheckCircle,
-                iconTint = tint
-            )
+            // iOS-like header with proper centering and rounded corners
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = backgroundColor,
+                        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                    )
+                    .padding(vertical = 20.dp, horizontal = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Centered icon with proper sizing
+                    Box(
+                        modifier = Modifier.size(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    // Title with iOS-like typography
+                    Text(
+                        text = if (updateTitle.isNotEmpty()) updateTitle else updateMessage,
+                        style = MaterialTheme.typography.h6.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            fontSize = 18.sp
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    // Subtitle with proper spacing
+                    if (updateTitle.isNotEmpty()) {
+                        Text(
+                            text = updateMessage,
+                            style = MaterialTheme.typography.body2.copy(
+                                color = Color(0xFFCBD5E1),
+                                fontSize = 14.sp
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Text(
+                            text = "Current version: $currentVersion",
+                            style = MaterialTheme.typography.body2.copy(
+                                color = Color(0xFFCBD5E1),
+                                fontSize = 14.sp
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
     ) {
-        if (isOutdated) {
-            Button(
-                onClick = onOpenLatest,
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3B82F6),
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.elevation(0.dp)
-            ) {
-                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open GitHub", tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Get Update on GitHub", style = MaterialTheme.typography.button.copy(fontSize = 16.sp))
-                }
-            }
-        } else if (latestVersion.isEmpty()) {
-            Button(
-                onClick = onOpenReleases,
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFFF59E0B),
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.elevation(0.dp)
-            ) {
-                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.Launch, contentDescription = "Visit GitHub", tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Visit GitHub Releases", style = MaterialTheme.typography.button.copy(fontSize = 16.sp))
-                }
-            }
-        }
-
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color(0xFF374151).copy(alpha = 0.7f),
-                contentColor = Color.White
-            ),
-            elevation = ButtonDefaults.elevation(0.dp)
+        // iOS-like button layout with proper spacing
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(text = "Close", style = MaterialTheme.typography.button.copy(fontSize = 16.sp))
+            // Show GitHub link button for updates, warnings, or errors
+            if (showGitHubLink && (isOutdated || isWarning || updateError || 
+                uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE ||
+                uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING)) {
+                
+                val buttonColor = when (uiState) {
+                    com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING -> Color(0xFFEF4444)
+                    com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE -> Color(0xFF007AFF) // iOS blue
+                    else -> Color(0xFF007AFF)
+                }
+                
+                Button(
+                    onClick = if (isOutdated || uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE) onOpenLatest else onOpenReleases,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = buttonColor,
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.elevation(0.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center, 
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Launch, 
+                            contentDescription = "Visit GitHub", 
+                            tint = Color.White, 
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = when (uiState) {
+                                com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE -> "Get Update on GitHub"
+                                com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING -> "Visit Repository"
+                                else -> "Visit Original Repository"
+                            },
+                            style = MaterialTheme.typography.button.copy(
+                                fontSize = 16.sp, 
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Close button with iOS styling
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF48525F).copy(alpha = 0.8f),
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.elevation(0.dp)
+            ) {
+                Text(
+                    text = "Close", 
+                    style = MaterialTheme.typography.button.copy(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
         }
     }
 }
