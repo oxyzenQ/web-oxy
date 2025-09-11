@@ -11,14 +11,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.oxyzenq.kconvert.R
+import com.oxyzenq.kconvert.data.local.SettingsDataStore
 
 /**
  * Animated background component with meteor shower effects
  */
 @Composable
 fun AnimatedBackground(isScrolling: Boolean, isFullscreen: Boolean = true, darkLevel: Int = 0) {
+    val context = LocalContext.current
+    val settingsStore = remember { SettingsDataStore(context) }
+    
+    // Observe meteor animation setting
+    val meteorAnimationEnabled by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Static background wallpaper
@@ -51,7 +58,7 @@ fun AnimatedBackground(isScrolling: Boolean, isFullscreen: Boolean = true, darkL
                 enableShimmer = true,
                 enableParallax = true
             ),
-            isActive = true
+            isActive = meteorAnimationEnabled
         )
 
         // Extra adjustable dark overlay from Settings (0..100 => 0..0.5 alpha)

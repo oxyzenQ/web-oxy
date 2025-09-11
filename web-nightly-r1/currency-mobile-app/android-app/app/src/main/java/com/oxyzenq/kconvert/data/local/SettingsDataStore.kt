@@ -27,6 +27,7 @@ object SettingsKeys {
     val CACHE_SIZE: Preferences.Key<Long> = longPreferencesKey("cache_size")
     val CACHE_LAST_SCAN: Preferences.Key<String> = stringPreferencesKey("cache_last_scan")
     val NAVBAR_AUTO_HIDE: Preferences.Key<Boolean> = booleanPreferencesKey("navbar_auto_hide")
+    val METEOR_ANIMATION: Preferences.Key<Boolean> = booleanPreferencesKey("meteor_animation")
 }
 
 class SettingsDataStore(private val context: Context) {
@@ -68,6 +69,11 @@ class SettingsDataStore(private val context: Context) {
     val navbarAutoHideFlow: Flow<Boolean> =
         context.settingsDataStore.data.map { prefs ->
             prefs[SettingsKeys.NAVBAR_AUTO_HIDE] ?: true
+        }
+
+    val meteorAnimationFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[SettingsKeys.METEOR_ANIMATION] ?: true
         }
 
 
@@ -116,6 +122,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setNavbarAutoHide(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.NAVBAR_AUTO_HIDE] = enabled
+        }
+    }
+
+    suspend fun setMeteorAnimation(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.METEOR_ANIMATION] = enabled
         }
     }
 

@@ -227,7 +227,12 @@ fun UpdateResultWindow(
                     .fillMaxWidth()
                     .background(
                         color = backgroundColor,
-                        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                        shape = RoundedCornerShape(
+                            topStart = 20.dp, 
+                            topEnd = 20.dp,
+                            bottomStart = 12.dp,
+                            bottomEnd = 12.dp
+                        )
                     )
                     .padding(vertical = 20.dp, horizontal = 16.dp),
                 contentAlignment = Alignment.Center

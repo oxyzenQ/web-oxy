@@ -37,6 +37,7 @@ data class UserSettingsEntity(
     
     // Performance settings
     val animationsEnabled: Boolean = true,
+    val meteorAnimationEnabled: Boolean = true,
     val lowLatencyMode: Boolean = false,
     
     // Metadata

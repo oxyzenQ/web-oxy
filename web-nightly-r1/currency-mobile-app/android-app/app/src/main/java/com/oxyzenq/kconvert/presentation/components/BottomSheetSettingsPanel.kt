@@ -1002,6 +1002,10 @@ private fun AppSettingsSection(
     // Observe persisted value (default true)
     val persistedFullScreen by settingsStore.fullScreenFlow.collectAsState(initial = true)
     var fullScreenEnabled by remember(persistedFullScreen) { mutableStateOf(persistedFullScreen) }
+    
+    // Meteor animation setting
+    val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
+    var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
 
@@ -1058,6 +1062,19 @@ private fun AppSettingsSection(
                         settingsStore.setNavbarAutoHide(enabled)
                     }
                     onToggleNavbarAutoHide(enabled)
+                    onAnyToggle()
+                }
+            )
+            
+            SettingToggleRow(
+                title = "Meteor Animation",
+                isEnabled = meteorAnimationEnabled,
+                onToggle = { enabled ->
+                    meteorAnimationEnabled = enabled
+                    // Persist to DataStore
+                    scope.launch {
+                        settingsStore.setMeteorAnimation(enabled)
+                    }
                     onAnyToggle()
                 }
             )

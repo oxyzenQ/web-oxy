@@ -8,7 +8,6 @@
 
 package com.oxyzenq.kconvert.presentation.components
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -24,6 +23,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 /**
@@ -95,18 +98,6 @@ fun PremiumMeteorShower(
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
     
-    // Animation state that forces recomposition
-    val infiniteTransition = rememberInfiniteTransition(label = "meteor_animation")
-    val animationTrigger by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 16, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "animation_trigger"
-    )
-    
     // Object pool for meteors - prevents garbage collection overhead
     val meteorPool = remember { 
         mutableStateListOf<Meteor>().apply {
@@ -126,10 +117,20 @@ fun PremiumMeteorShower(
         }
     }
     
-    // Initialize meteors when screen size is available
+    // Animation trigger state for Canvas invalidation
+    var animationTick by remember { mutableStateOf(0L) }
+    
+    // Independent animation timer - completely separate from Compose
+    val animationTimer = remember {
+        Executors.newSingleThreadScheduledExecutor()
+    }
+    // Keep reference to the scheduled task so it can be canceled when disabled
+    val scheduledFutureRef = remember { mutableStateOf<ScheduledFuture<*>?>(null) }
+    
+    // Initialize meteors when screen size changes
     LaunchedEffect(screenSize.width) {
-        if (screenSize.width > 0 && isActive) {
-            // Initialize some meteors at startup
+        if (screenSize.width > 0) {
+            // Initialize meteors at startup
             meteorPool.take(3).forEach { meteor ->
                 meteor.reset(
                     screenWidth = screenSize.width.toFloat(),
@@ -144,17 +145,16 @@ fun PremiumMeteorShower(
         }
     }
     
-    // Update meteor positions on every animation frame
-    LaunchedEffect(animationTrigger, isActive) {
-        if (!isActive || screenSize.width == 0) return@LaunchedEffect
-        
-        // Update existing meteors position
-        meteorPool.forEach { meteor ->
-            if (meteor.isActive) {
-                meteor.y += meteor.speed
-                
-                // Reset meteor when it goes off screen (infinite loop)
-                if (meteor.y > screenSize.height + 100f) {
+    // Start/stop independent animation timer
+    LaunchedEffect(isActive, screenSize.width) {
+        // Always cancel any existing task before (re)starting
+        scheduledFutureRef.value?.cancel(false)
+        scheduledFutureRef.value = null
+
+        if (isActive && screenSize.width > 0) {
+            // Immediately seed a few meteors so the user sees activity right away
+            meteorPool.take(3).forEach { meteor ->
+                if (!meteor.isActive) {
                     meteor.reset(
                         screenWidth = screenSize.width.toFloat(),
                         newColor = MeteorColorPalette.colors.random(),
@@ -162,25 +162,72 @@ fun PremiumMeteorShower(
                         newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
                         newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
                     )
+                    // Start from slightly above the screen for a natural entrance
+                    meteor.y = -50f
                 }
             }
-        }
-        
-        // Spawn new meteor occasionally
-        val inactiveMeteor = meteorPool.find { !it.isActive }
-        if (inactiveMeteor != null && Random.nextFloat() < 0.02f) {
-            val newColor = MeteorColorPalette.colors.random()
-            val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
-            val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
-            val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+            val animationTask = Runnable {
+                // Update meteors on background thread
+                meteorPool.forEach { meteor ->
+                    if (meteor.isActive) {
+                        meteor.y += meteor.speed
+                        
+                        // Reset meteor when it goes off screen
+                        if (meteor.y > screenSize.height + 100f) {
+                            meteor.reset(
+                                screenWidth = screenSize.width.toFloat(),
+                                newColor = MeteorColorPalette.colors.random(),
+                                newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed,
+                                newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
+                                newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+                            )
+                        }
+                    }
+                }
+                
+                // Spawn new meteor occasionally
+                val inactiveMeteor = meteorPool.find { !it.isActive }
+                if (inactiveMeteor != null && Random.nextFloat() < 0.02f) {
+                    val newColor = MeteorColorPalette.colors.random()
+                    val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
+                    val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
+                    val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+                    
+                    inactiveMeteor.reset(
+                        screenWidth = screenSize.width.toFloat(),
+                        newColor = newColor,
+                        newSpeed = newSpeed,
+                        newHeadSize = newHeadSize,
+                        newTailLength = newTailLength
+                    )
+                }
+                
+                // Trigger Canvas redraw by updating state
+                animationTick = System.currentTimeMillis()
+            }
             
-            inactiveMeteor.reset(
-                screenWidth = screenSize.width.toFloat(),
-                newColor = newColor,
-                newSpeed = newSpeed,
-                newHeadSize = newHeadSize,
-                newTailLength = newTailLength
+            // Schedule animation at 60 FPS (16ms intervals)
+            val scheduledFuture = animationTimer.scheduleAtFixedRate(
+                animationTask,
+                0,
+                16,
+                TimeUnit.MILLISECONDS
             )
+            scheduledFutureRef.value = scheduledFuture
+            
+        } else {
+            // When inactive: mark meteors inactive and stop updating
+            meteorPool.forEach { it.isActive = false }
+        }
+    }
+    
+    // Cleanup timer when component is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            // Cancel any running task and shutdown executor
+            scheduledFutureRef.value?.cancel(false)
+            scheduledFutureRef.value = null
+            animationTimer.shutdown()
         }
     }
     
@@ -191,6 +238,9 @@ fun PremiumMeteorShower(
                 screenSize = size
             }
     ) {
+        // Force Canvas to observe animation tick for redraws
+        animationTick // This triggers recomposition when animationTick changes
+        
         if (screenSize.width == 0) return@Canvas
         
         // NO BACKGROUND - Let wallpaper show through
