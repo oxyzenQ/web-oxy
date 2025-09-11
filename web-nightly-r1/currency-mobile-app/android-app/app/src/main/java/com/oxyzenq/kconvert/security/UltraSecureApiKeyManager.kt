@@ -256,7 +256,7 @@ class UltraSecureApiKeyManager @Inject constructor() {
         val buildInfo = "${Build.MANUFACTURER}_${Build.MODEL}_${Build.BOARD}"
         val packageInfo = try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${pInfo.firstInstallTime}_${pInfo.versionCode}"
+            "${pInfo.firstInstallTime}_${pInfo.longVersionCode}"
         } catch (e: Exception) {
             "unknown_package"
         }
@@ -360,8 +360,18 @@ class UltraSecureApiKeyManager @Inject constructor() {
      */
     private fun checkAppIntegrity(context: Context): Boolean {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
-            val signatures = packageInfo.signatures
+            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            }
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
             
             // Check if app is signed with expected signature
             signatures?.isNotEmpty() == true && signatures[0] != null

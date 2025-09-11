@@ -122,54 +122,50 @@ fun PremiumMeteorShower(
         }
     }
     
-    // Animation trigger for smooth 60 FPS updates
-    val infiniteTransition = rememberInfiniteTransition(label = "meteor_animation")
-    val animationFrame by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 16, easing = LinearEasing), // ~60 FPS
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "animation_frame"
-    )
-    
-    // Meteor spawning and lifecycle management
-    LaunchedEffect(isActive, animationFrame) {
-        if (!isActive || screenSize.width == 0) return@LaunchedEffect
+    // Continuous animation loop for smooth movement
+    LaunchedEffect(isActive) {
+        if (!isActive) return@LaunchedEffect
         
         while (isActive) {
-            // Update existing meteors
-            meteorPool.forEach { meteor ->
-                if (meteor.isActive) {
-                    meteor.y += meteor.speed
-                    
-                    // Deactivate meteors that fall off screen
-                    if (meteor.y > screenSize.height + 100f) {
-                        meteor.isActive = false
+            if (screenSize.width > 0) {
+                // Update existing meteors position
+                meteorPool.forEach { meteor ->
+                    if (meteor.isActive) {
+                        meteor.y += meteor.speed
+                        
+                        // Reset meteor when it goes off screen (infinite loop)
+                        if (meteor.y > screenSize.height + 100f) {
+                            meteor.reset(
+                                screenWidth = screenSize.width.toFloat(),
+                                newColor = MeteorColorPalette.colors.random(),
+                                newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed,
+                                newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
+                                newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+                            )
+                        }
                     }
+                }
+                
+                // Spawn new meteor if pool has inactive meteors
+                val inactiveMeteor = meteorPool.find { !it.isActive }
+                if (inactiveMeteor != null && Random.nextFloat() < 0.1f) {
+                    val newColor = MeteorColorPalette.colors.random()
+                    val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
+                    val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
+                    val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+                    
+                    inactiveMeteor.reset(
+                        screenWidth = screenSize.width.toFloat(),
+                        newColor = newColor,
+                        newSpeed = newSpeed,
+                        newHeadSize = newHeadSize,
+                        newTailLength = newTailLength
+                    )
                 }
             }
             
-            // Spawn new meteor if pool has inactive meteors
-            val inactiveMeteor = meteorPool.find { !it.isActive }
-            if (inactiveMeteor != null && Random.nextFloat() < 0.3f) {
-                val newColor = MeteorColorPalette.colors.random()
-                val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
-                val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
-                val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
-                
-                inactiveMeteor.reset(
-                    screenWidth = screenSize.width.toFloat(),
-                    newColor = newColor,
-                    newSpeed = newSpeed,
-                    newHeadSize = newHeadSize,
-                    newTailLength = newTailLength
-                )
-            }
-            
-            // Random spawn interval for natural feel
-            delay(Random.nextLong(config.spawnIntervalMin, config.spawnIntervalMax))
+            // 60 FPS update rate
+            delay(16L)
         }
     }
     
@@ -182,19 +178,8 @@ fun PremiumMeteorShower(
     ) {
         if (screenSize.width == 0) return@Canvas
         
-        // Draw deep space background gradient
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF0B0B1A), // Deep space blue
-                    Color(0xFF000000)  // Pure black
-                ),
-                startY = 0f,
-                endY = size.height
-            )
-        )
-        
-        // Render active meteors with premium effects
+        // NO BACKGROUND - Let wallpaper show through
+        // Render active meteors with premium effects on transparent canvas
         meteorPool.forEach { meteor ->
             if (meteor.isActive) {
                 drawPremiumMeteor(

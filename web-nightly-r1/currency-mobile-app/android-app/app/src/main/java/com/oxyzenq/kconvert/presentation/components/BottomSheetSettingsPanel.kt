@@ -16,6 +16,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +25,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -173,20 +176,22 @@ fun BottomSheetSettingsPanel(
                 .fillMaxSize()
                 .zIndex(10f)
         ) {
-            // Background blur overlay
+            // Background blur overlay with proper touch interception
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f * (1f - animatedOffset)))
                     .blur(backgroundBlur.dp)
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
                     ) {
+                        // Always consume clicks to prevent touch leaks
                         if (panelHeight < 0.7f) {
                             if (hapticsEnabled) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             onDismiss()
                         }
+                        // Consume click even if not dismissing to prevent background interaction
                     }
             )
             
@@ -239,7 +244,7 @@ fun BottomSheetSettingsPanel(
                             .then(if (panelHeight >= 0.95f) Modifier.statusBarsPadding() else Modifier)
                             .padding(top = if (panelHeight >= 0.95f) 20.dp else 0.dp)
                     ) {
-                        // FIXED: Enhanced drag handle with better gesture detection
+                        // FIXED: Drag handle - only for header area, separate from content scroll
                         if (panelHeight < 0.95f) {
                             val configuration = LocalConfiguration.current
                             val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
@@ -265,46 +270,32 @@ fun BottomSheetSettingsPanel(
                                             onDragEnd = {
                                                 isDragging = false
                                                 scope.launch {
-                                                    // FIXED: Improved snap logic with elastic zones
+                                                    // Google Maps-style anchor-based snapping
                                                     val target = when {
-                                                        panelHeight < 0.25f -> {
-                                                            // Close threshold
+                                                        panelHeight < 0.3f -> {
+                                                            // Close threshold - below 30%
                                                             if (hapticsEnabled) {
                                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                                             }
                                                             0.0f
                                                         }
-                                                        panelHeight < 0.75f -> {
-                                                            // Stay at half
-                                                            if (hapticsEnabled) {
-                                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                            }
-                                                            0.5f
-                                                        }
-                                                        panelHeight >= 0.95f -> {
-                                                            // Full screen snap
+                                                        panelHeight > 0.85f -> {
+                                                            // Full screen threshold - above 85%
                                                             if (hapticsEnabled) {
                                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                                             }
                                                             1.0f
                                                         }
                                                         else -> {
-                                                            // FIXED: Elastic zone - follow user intention
-                                                            // If user is dragging up with momentum, lean toward full
-                                                            // If dragging down or slow, lean toward half
-                                                            if (dragVelocity < -50f) { // Fast upward
-                                                                1.0f
-                                                            } else if (dragVelocity > 50f) { // Fast downward
-                                                                0.5f
-                                                            } else {
-                                                                // Gentle movement - stay where user left it
-                                                                panelHeight.coerceIn(0.5f, 0.95f)
+                                                            // Default anchor at 50%
+                                                            if (hapticsEnabled) {
+                                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                             }
+                                                            0.5f
                                                         }
                                                     }
                                                     
                                                     if (target == 0.0f) {
-                                                        panelHeight = 0.0f
                                                         kotlinx.coroutines.delay(200)
                                                         onDismiss()
                                                     } else {
@@ -314,22 +305,16 @@ fun BottomSheetSettingsPanel(
                                                 }
                                             }
                                         ) { _, dragAmount ->
-                                            // FIXED: Improved drag calculation with velocity tracking
+                                            // Smooth drag calculation without auto-snapping
                                             val delta = dragAmount.y / screenHeightPx.toFloat()
                                             val previousHeight = panelHeight
                                             var newHeight = panelHeight - delta
                                             
-                                            // Track velocity for better snap decisions
+                                            // Track velocity for snap decisions
                                             dragVelocity = (previousHeight - newHeight) * 1000f
                                             
-                                            // FIXED: Only auto-snap to full at 97% to give more control
-                                            newHeight = if (newHeight >= 0.97f) {
-                                                1.0f
-                                            } else {
-                                                newHeight.coerceIn(0.0f, 1.0f)
-                                            }
-                                            
-                                            panelHeight = newHeight
+                                            // Allow free movement between 0% and 100%
+                                            panelHeight = newHeight.coerceIn(0.0f, 1.0f)
                                         }
                                     },
                                 contentAlignment = Alignment.Center
@@ -385,9 +370,9 @@ fun BottomSheetSettingsPanel(
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 20.dp),
+                                    .padding(horizontal = 16.dp)
+                                    .nestedScroll(rememberNestedScrollInteropConnection()),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                                // FIXED: Disable overscroll effects completely
                                 userScrollEnabled = true
                             ) {
                                 // Extra breathing room below fixed title
@@ -1100,7 +1085,7 @@ private fun MaintenanceSection(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Launch,
+                                                    imageVector = Icons.AutoMirrored.Filled.Launch,
                                                     contentDescription = "Visit GitHub",
                                                     tint = Color.White,
                                                     modifier = Modifier.size(18.dp)

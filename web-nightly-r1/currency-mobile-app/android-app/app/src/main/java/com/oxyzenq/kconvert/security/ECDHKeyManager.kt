@@ -56,7 +56,7 @@ class ECDHKeyManager @Inject constructor() {
         val buildInfo = "${Build.MANUFACTURER}${Build.MODEL}${Build.BOARD}${Build.HARDWARE}"
         val packageInfo = try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${pInfo.firstInstallTime}${pInfo.versionCode}"
+            "${pInfo.firstInstallTime}${pInfo.longVersionCode}"
         } catch (e: Exception) {
             "unknown_package"
         }

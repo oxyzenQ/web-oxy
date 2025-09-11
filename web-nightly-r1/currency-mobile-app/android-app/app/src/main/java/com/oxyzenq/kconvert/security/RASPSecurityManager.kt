@@ -244,7 +244,12 @@ class RASPSecurityManager @Inject constructor() {
             Build.PRODUCT.contains("sdk"),
             Build.HARDWARE.contains("goldfish"),
             Build.HARDWARE.contains("ranchu"),
-            "1" == Settings.Secure.getString(context.contentResolver, Settings.Secure.ADB_ENABLED)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                Settings.Global.getInt(context.contentResolver, Settings.Global.ADB_ENABLED, 0) == 1
+            } else {
+                @Suppress("DEPRECATION")
+                "1" == Settings.Secure.getString(context.contentResolver, Settings.Secure.ADB_ENABLED)
+            }
         )
         
         val emulatorDetected = emulatorIndicators.any { it }
@@ -264,12 +269,25 @@ class RASPSecurityManager @Inject constructor() {
      */
     private fun checkTamperDetection(context: Context): SecurityCheckResult {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(
-                context.packageName,
-                PackageManager.GET_SIGNATURES
-            )
+            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.GET_SIGNING_CERTIFICATES
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.GET_SIGNATURES
+                )
+            }
             
-            val signatures = packageInfo.signatures
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
             if (signatures?.isEmpty() != false) {
                 return SecurityCheckResult(
                     false,
@@ -350,7 +368,12 @@ class RASPSecurityManager @Inject constructor() {
         val debuggingIndicators = listOf(
             android.os.Debug.isDebuggerConnected(),
             (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
-            Settings.Secure.getInt(context.contentResolver, Settings.Secure.ADB_ENABLED, 0) == 1
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                Settings.Global.getInt(context.contentResolver, Settings.Global.ADB_ENABLED, 0) == 1
+            } else {
+                @Suppress("DEPRECATION")
+                Settings.Secure.getInt(context.contentResolver, Settings.Secure.ADB_ENABLED, 0) == 1
+            }
         )
         
         val debuggingDetected = debuggingIndicators.any { it }
@@ -371,7 +394,12 @@ class RASPSecurityManager @Inject constructor() {
     private fun checkAppIntegrity(context: Context): SecurityCheckResult {
         return try {
             // Check if app is installed from trusted source
-            val installer = context.packageManager.getInstallerPackageName(context.packageName)
+            val installer = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getInstallerPackageName(context.packageName)
+            }
             val trustedInstallers = setOf(
                 "com.android.vending", // Google Play Store
                 "com.amazon.venezia",  // Amazon Appstore

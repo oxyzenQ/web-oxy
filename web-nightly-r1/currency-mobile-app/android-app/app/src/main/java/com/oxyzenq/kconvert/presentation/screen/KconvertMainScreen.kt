@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -260,7 +261,7 @@ fun KconvertMainScreen(
                 ElegantInfoCard(
                     title = "Currency Strength Comparison",
                     titleIcon = {
-                        Icon(imageVector = Icons.Default.ShowChart, contentDescription = null, tint = Color(0xFF93C5FD))
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, tint = Color(0xFF93C5FD))
                     }
                 ) {
                     ChartGaugeContent(
