@@ -334,7 +334,8 @@ fun KconvertMainScreen(
             title = uiState.confirmationDialog.title,
             type = uiState.confirmationDialog.type,
             onConfirm = { viewModel.onConfirmationResult(true, context) },
-            onDismiss = { viewModel.onConfirmationResult(false, context) }
+            onDismiss = { viewModel.onConfirmationResult(false, context) },
+            hapticsEnabled = hapticsEnabled
         )
         
         // Update dialog for automatic update checking
@@ -344,10 +345,10 @@ fun KconvertMainScreen(
             isOutdated = uiState.updateDialog.isOutdated,
             latestVersion = uiState.updateDialog.latestVersion,
             updateMessage = uiState.updateDialog.updateMessage,
-            currentVersion = AppVersion.VERSION_NAME,
+            currentVersion = com.oxyzenq.kconvert.AppVersion.VERSION_NAME,
             onDismiss = { viewModel.dismissUpdateDialog() },
             onOpenLatest = {
-                // Open GitHub releases page
+                // Open GitHub latest release
                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/oxyzenQ/web-oxy/releases/latest"))
                 context.startActivity(intent)
             },
@@ -359,7 +360,8 @@ fun KconvertMainScreen(
             isWarning = uiState.updateDialog.isWarning,
             showGitHubLink = uiState.updateDialog.showGitHubLink,
             updateTitle = uiState.updateDialog.updateTitle,
-            uiState = uiState.updateDialog.uiState
+            uiState = uiState.updateDialog.uiState,
+            hapticsEnabled = hapticsEnabled
         )
         
         // Welcome dialog for new app updates and first installs
@@ -373,7 +375,8 @@ fun KconvertMainScreen(
                 // Open GitHub releases page
                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/oxyzenQ/web-oxy/releases"))
                 context.startActivity(intent)
-            }
+            },
+            hapticsEnabled = hapticsEnabled
         )
         
         // Error handling
@@ -389,6 +392,7 @@ fun KconvertMainScreen(
         BottomNavBar(
             isVisible = isNavbarVisible,
             onExitClick = {
+                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 viewModel.showConfirmationDialog(ConfirmationType.EXIT_APP)
             },
             onSettingsClick = {

@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.oxyzenq.kconvert.data.model.Currency
 
 /**
@@ -38,8 +40,10 @@ fun InfoWindow(
     subtitle: String? = null,
     onDismiss: () -> Unit,
     strict: Boolean = true,
+    hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -66,8 +70,10 @@ fun CurrencyPickerWindow(
     currencies: List<Currency>,
     onCurrencySelected: (Currency) -> Unit,
     onDismiss: () -> Unit,
-    strict: Boolean = true
+    strict: Boolean = true,
+    hapticsEnabled: Boolean = true
 ) {
+    val haptic = LocalHapticFeedback.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -120,7 +126,10 @@ fun CurrencyPickerWindow(
         }
         // Close button
         Button(
-            onClick = onDismiss,
+            onClick = {
+                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onDismiss()
+            },
             modifier = Modifier.fillMaxWidth().height(44.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -141,8 +150,10 @@ fun ErrorWindow(
     subtitle: String? = null,
     onDismiss: () -> Unit,
     strict: Boolean = true,
+    hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -166,8 +177,10 @@ fun SuccessWindow(
     subtitle: String? = null,
     onDismiss: () -> Unit,
     strict: Boolean = true,
+    hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -202,8 +215,10 @@ fun UpdateResultWindow(
     showGitHubLink: Boolean = true,
     updateTitle: String = "",
     uiState: com.oxyzenq.kconvert.data.repository.UpdateUIState = com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE,
-    strict: Boolean = true
+    strict: Boolean = true,
+    hapticsEnabled: Boolean = true
 ) {
+    val haptic = LocalHapticFeedback.current
     val (icon, tint, backgroundColor) = when {
         updateError -> Triple(Icons.Default.Warning, Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.12f))
         uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING -> Triple(
@@ -315,7 +330,10 @@ fun UpdateResultWindow(
                 }
                 
                 Button(
-                    onClick = if (isOutdated || uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE) onOpenLatest else onOpenReleases,
+                    onClick = {
+                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (isOutdated || uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE) onOpenLatest() else onOpenReleases()
+                    },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -352,7 +370,10 @@ fun UpdateResultWindow(
 
             // Close button with iOS styling
             Button(
-                onClick = onDismiss,
+                onClick = {
+                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDismiss()
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -384,8 +405,10 @@ fun WelcomeWindow(
     isFirstInstall: Boolean,
     onDismiss: () -> Unit,
     onOpenGitHub: () -> Unit,
-    strict: Boolean = true
+    strict: Boolean = true,
+    hapticsEnabled: Boolean = true
 ) {
+    val haptic = LocalHapticFeedback.current
     val (title, message, icon) = if (isFirstInstall) {
         Triple(
             "Welcome to Kconvert!",
@@ -463,7 +486,10 @@ fun WelcomeWindow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = onDismiss,
+                    onClick = {
+                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onDismiss()
+                    },
                     modifier = Modifier.weight(1f).height(44.dp),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color(0xFF6B7280),
@@ -475,7 +501,10 @@ fun WelcomeWindow(
                 }
                 
                 Button(
-                    onClick = onOpenGitHub,
+                    onClick = {
+                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onOpenGitHub()
+                    },
                     modifier = Modifier.weight(1f).height(44.dp),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = iconTint,
@@ -513,8 +542,10 @@ fun CacheManagementWindow(
     onScan: () -> Unit,
     onRequestClear: () -> Unit,
     onDismiss: () -> Unit,
-    strict: Boolean = true
+    strict: Boolean = true,
+    hapticsEnabled: Boolean = true
 ) {
+    val haptic = LocalHapticFeedback.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -531,7 +562,10 @@ fun CacheManagementWindow(
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
-                onClick = onScan,
+                onClick = {
+                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onScan()
+                },
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -544,7 +578,10 @@ fun CacheManagementWindow(
                 Text(text = if (isScanning) "Scanning..." else "Scan", style = MaterialTheme.typography.button)
             }
             Button(
-                onClick = onRequestClear,
+                onClick = {
+                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onRequestClear()
+                },
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -558,7 +595,10 @@ fun CacheManagementWindow(
             }
         }
         Button(
-            onClick = onDismiss,
+            onClick = {
+                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onDismiss()
+            },
             modifier = Modifier.fillMaxWidth().height(44.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(

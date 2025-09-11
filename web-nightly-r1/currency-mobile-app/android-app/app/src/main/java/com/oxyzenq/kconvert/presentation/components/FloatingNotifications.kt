@@ -37,7 +37,8 @@ fun ConfirmationDialog(
     type: ConfirmationType,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    strict: Boolean = true
+    strict: Boolean = true,
+    hapticsEnabled: Boolean = true
 ) {
     if (!isVisible) return
 
