@@ -29,6 +29,7 @@ class AppPreferences @Inject constructor(
     companion object {
         private val AUTO_UPDATE_ON_LAUNCH = booleanPreferencesKey("auto_update_on_launch")
         private val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
+        private val LAST_KNOWN_VERSION = androidx.datastore.preferences.core.stringPreferencesKey("last_known_version")
     }
     
     /**
@@ -79,5 +80,23 @@ class AppPreferences @Inject constructor(
         return context.dataStore.data.map { preferences ->
             preferences[HAPTICS_ENABLED] ?: true
         }.first()
+    }
+
+    /**
+     * Get last known app version
+     */
+    suspend fun getLastKnownVersion(): String? {
+        return context.dataStore.data.map { preferences ->
+            preferences[LAST_KNOWN_VERSION]
+        }.first()
+    }
+
+    /**
+     * Set last known app version
+     */
+    suspend fun setLastKnownVersion(version: String) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_KNOWN_VERSION] = version
+        }
     }
 }

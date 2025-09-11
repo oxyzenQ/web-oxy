@@ -337,6 +337,45 @@ fun KconvertMainScreen(
             onDismiss = { viewModel.onConfirmationResult(false, context) }
         )
         
+        // Update dialog for automatic update checking
+        UpdateResultWindow(
+            visible = uiState.updateDialog.isVisible,
+            updateError = uiState.updateDialog.updateError,
+            isOutdated = uiState.updateDialog.isOutdated,
+            latestVersion = uiState.updateDialog.latestVersion,
+            updateMessage = uiState.updateDialog.updateMessage,
+            currentVersion = AppVersion.VERSION_NAME,
+            onDismiss = { viewModel.dismissUpdateDialog() },
+            onOpenLatest = {
+                // Open GitHub releases page
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/oxyzenQ/web-oxy/releases/latest"))
+                context.startActivity(intent)
+            },
+            onOpenReleases = {
+                // Open GitHub releases page
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/oxyzenQ/web-oxy/releases"))
+                context.startActivity(intent)
+            },
+            isWarning = uiState.updateDialog.isWarning,
+            showGitHubLink = uiState.updateDialog.showGitHubLink,
+            updateTitle = uiState.updateDialog.updateTitle,
+            uiState = uiState.updateDialog.uiState
+        )
+        
+        // Welcome dialog for new app updates and first installs
+        WelcomeWindow(
+            visible = uiState.welcomeDialog.isVisible,
+            currentVersion = uiState.welcomeDialog.currentVersion,
+            previousVersion = uiState.welcomeDialog.previousVersion,
+            isFirstInstall = uiState.welcomeDialog.isFirstInstall,
+            onDismiss = { viewModel.dismissWelcomeDialog() },
+            onOpenGitHub = {
+                // Open GitHub releases page
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/oxyzenQ/web-oxy/releases"))
+                context.startActivity(intent)
+            }
+        )
+        
         // Error handling
         uiState.error?.let { error ->
             LaunchedEffect(error) {

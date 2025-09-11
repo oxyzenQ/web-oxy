@@ -13,7 +13,7 @@ package com.oxyzenq.kconvert
 object AppVersion {
     
     // ===== EDIT THIS LINE ONLY TO UPDATE APP VERSION =====
-    const val VERSION_NAME = "Stellar-1.4"
+    const val VERSION_NAME = "Stellar-1.5"
     // =====================================================
     
     // Auto-generated version components (DO NOT EDIT)

@@ -995,10 +995,9 @@ private fun AppSettingsSection(
     val settingsStore = remember { SettingsDataStore(context) }
     // Observe persisted values; fall back to defaults on first launch
     val persistedAutoUpdate by settingsStore.autoUpdateFlow.collectAsState(initial = autoUpdateEnabledDefault)
-    val persistedHaptics by settingsStore.hapticsFlow.collectAsState(initial = hapticsEnabledDefault)
-
     var autoUpdateEnabled by remember(persistedAutoUpdate) { mutableStateOf(persistedAutoUpdate) }
-    var hapticsEnabled by remember(persistedHaptics) { mutableStateOf(persistedHaptics) }
+    // Use the haptics state passed from ViewModel instead of local state
+    val hapticsEnabled = hapticsEnabledDefault
     // Observe persisted value (default true)
     val persistedFullScreen by settingsStore.fullScreenFlow.collectAsState(initial = true)
     var fullScreenEnabled by remember(persistedFullScreen) { mutableStateOf(persistedFullScreen) }
@@ -1137,9 +1136,7 @@ private fun AppSettingsSection(
                 title = "Haptic Feedback",
                 isEnabled = hapticsEnabled,
                 onToggle = { enabled ->
-                    hapticsEnabled = enabled
-                    // persist and notify VM/UI
-                    scope.launch { settingsStore.setHaptics(enabled) }
+                    // Only use the ViewModel's method to ensure single source of truth
                     onToggleHaptics(enabled)
                     onAnyToggle()
                 }

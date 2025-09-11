@@ -36,7 +36,8 @@ fun ConfirmationDialog(
     title: String,
     type: ConfirmationType,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    strict: Boolean = true
 ) {
     if (!isVisible) return
 
@@ -48,6 +49,7 @@ fun ConfirmationDialog(
     FloatingModal(
         visible = isVisible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(

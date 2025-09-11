@@ -44,7 +44,7 @@ fun FloatingModal(
     modifier: Modifier = Modifier,
     width: Dp = 280.dp,
     cornerRadius: Dp = 20.dp,
-    backdropAlpha: Float = 0.6f,
+    strictModal: Boolean = false,
     header: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -58,8 +58,8 @@ fun FloatingModal(
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
+            dismissOnBackPress = !strictModal,
+            dismissOnClickOutside = !strictModal
         )
     ) {
         // Direct card without full-screen backdrop

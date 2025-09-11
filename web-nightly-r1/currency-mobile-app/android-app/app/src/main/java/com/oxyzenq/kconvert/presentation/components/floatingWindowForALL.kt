@@ -37,11 +37,13 @@ fun InfoWindow(
     title: String,
     subtitle: String? = null,
     onDismiss: () -> Unit,
+    strict: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(
@@ -63,11 +65,13 @@ fun CurrencyPickerWindow(
     title: String = "Select Currency",
     currencies: List<Currency>,
     onCurrencySelected: (Currency) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    strict: Boolean = true
 ) {
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 320.dp,
         header = {
             FloatingModalHeader(
@@ -136,11 +140,13 @@ fun ErrorWindow(
     title: String,
     subtitle: String? = null,
     onDismiss: () -> Unit,
+    strict: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(
@@ -159,11 +165,13 @@ fun SuccessWindow(
     title: String,
     subtitle: String? = null,
     onDismiss: () -> Unit,
+    strict: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(
@@ -193,7 +201,8 @@ fun UpdateResultWindow(
     isWarning: Boolean = false,
     showGitHubLink: Boolean = true,
     updateTitle: String = "",
-    uiState: com.oxyzenq.kconvert.data.repository.UpdateUIState = com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE
+    uiState: com.oxyzenq.kconvert.data.repository.UpdateUIState = com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE,
+    strict: Boolean = true
 ) {
     val (icon, tint, backgroundColor) = when {
         updateError -> Triple(Icons.Default.Warning, Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.12f))
@@ -218,6 +227,7 @@ fun UpdateResultWindow(
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 320.dp,
         cornerRadius = 20.dp,
         header = {
@@ -364,7 +374,134 @@ fun UpdateResultWindow(
 }
 
 /**
- * Cache management window: scan + clear + cancel.
+ * Welcome dialog for new app updates and first installs
+ */
+@Composable
+fun WelcomeWindow(
+    visible: Boolean,
+    currentVersion: String,
+    previousVersion: String,
+    isFirstInstall: Boolean,
+    onDismiss: () -> Unit,
+    onOpenGitHub: () -> Unit,
+    strict: Boolean = true
+) {
+    val (title, message, icon) = if (isFirstInstall) {
+        Triple(
+            "Welcome to Kconvert!",
+            "Thank you for installing Kconvert $currentVersion. Enjoy fast, secure currency conversion with premium features and real-time updates.",
+            Icons.Default.Star
+        )
+    } else {
+        Triple(
+            "Successfully Updated!",
+            "Congratulations! You've successfully updated from $previousVersion to $currentVersion. Enjoy the latest features and improvements.",
+            Icons.Default.CheckCircle
+        )
+    }
+    
+    val iconTint = if (isFirstInstall) Color(0xFF10B981) else Color(0xFF3B82F6)
+
+    FloatingModal(
+        visible = visible,
+        onDismiss = onDismiss,
+        strictModal = strict,
+        width = 320.dp,
+        cornerRadius = 20.dp,
+        header = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = iconTint.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(
+                            topStart = 20.dp,
+                            topEnd = 20.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                    )
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = iconTint
+                    )
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.h6.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.body2.copy(
+                    color = Color(0xFFE5E7EB),
+                    lineHeight = 20.sp
+                ),
+                textAlign = TextAlign.Center
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF6B7280),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Continue")
+                }
+                
+                Button(
+                    onClick = onOpenGitHub,
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = iconTint,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text("GitHub")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Cache management window used by Maintenance section.
  * Host screen should handle the actual scan/clear work via callbacks.
  */
 @Composable
@@ -375,11 +512,13 @@ fun CacheManagementWindow(
     isClearing: Boolean,
     onScan: () -> Unit,
     onRequestClear: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    strict: Boolean = true
 ) {
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(

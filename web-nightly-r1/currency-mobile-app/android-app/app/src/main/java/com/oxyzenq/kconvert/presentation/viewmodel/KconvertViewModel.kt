@@ -8,9 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oxyzenq.kconvert.data.preferences.AppPreferences
 import com.oxyzenq.kconvert.data.repository.CurrencyRepository
+import com.oxyzenq.kconvert.data.repository.UpdateRepository
 import android.content.Context
 import com.oxyzenq.kconvert.data.repository.ConversionResult
 import com.oxyzenq.kconvert.data.model.Currency
+import com.oxyzenq.kconvert.AppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -23,7 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class KconvertViewModel @Inject constructor(
     private val currencyRepository: CurrencyRepository,
-    private val appPreferences: AppPreferences
+    private val appPreferences: AppPreferences,
+    private val updateRepository: UpdateRepository
 ) : ViewModel() {
 
     // UI State
@@ -103,7 +106,13 @@ class KconvertViewModel @Inject constructor(
                             }
                         )
                     }
+                    
+                    // Check for app updates automatically
+                    checkForUpdatesAutomatically()
                 }
+                
+                // Check for version updates and show welcome dialog
+                checkForVersionUpdate()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -111,6 +120,112 @@ class KconvertViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * Check for app updates automatically on launch
+     */
+    private fun checkForUpdatesAutomatically() {
+        viewModelScope.launch {
+            try {
+                val result = updateRepository.getLatestRelease()
+                result.fold(
+                    onSuccess = { release ->
+                        val latestVersion = release.tag_name
+                        val currentVersion = AppVersion.VERSION_NAME
+                        
+                        val comparison = updateRepository.compareVersions(latestVersion, currentVersion)
+                        val updateMsg = updateRepository.generateUpdateMessage(latestVersion, currentVersion, comparison)
+                        
+                        // Show update dialog if there's an update available or version mismatch
+                        if (comparison == com.oxyzenq.kconvert.data.repository.VersionComparison.NEWER_AVAILABLE || 
+                            updateMsg.isWarning) {
+                            _uiState.value = _uiState.value.copy(
+                                updateDialog = UpdateDialogState(
+                                    isVisible = true,
+                                    isOutdated = comparison == com.oxyzenq.kconvert.data.repository.VersionComparison.NEWER_AVAILABLE,
+                                    updateError = false,
+                                    latestVersion = latestVersion,
+                                    updateMessage = updateMsg.message,
+                                    updateTitle = updateMsg.title,
+                                    isWarning = updateMsg.isWarning,
+                                    showGitHubLink = updateMsg.showGitHubLink,
+                                    uiState = updateMsg.uiState
+                                )
+                            )
+                        }
+                    },
+                    onFailure = { 
+                        // Silent fail for automatic update check - don't show error dialog on launch
+                        // User can still manually check for updates if needed
+                    }
+                )
+            } catch (e: Exception) {
+                // Silent fail for automatic update check
+            }
+        }
+    }
+
+    /**
+     * Check for version updates and show welcome dialog
+     */
+    private fun checkForVersionUpdate() {
+        viewModelScope.launch {
+            try {
+                val currentVersion = AppVersion.VERSION_NAME
+                val lastKnownVersion = appPreferences.getLastKnownVersion()
+                
+                when {
+                    lastKnownVersion == null -> {
+                        // First install - show welcome dialog for new users
+                        _uiState.value = _uiState.value.copy(
+                            welcomeDialog = WelcomeDialogState(
+                                isVisible = true,
+                                currentVersion = currentVersion,
+                                previousVersion = "",
+                                isFirstInstall = true
+                            )
+                        )
+                        // Save current version
+                        appPreferences.setLastKnownVersion(currentVersion)
+                    }
+                    lastKnownVersion != currentVersion -> {
+                        // App was updated - show congratulations dialog
+                        _uiState.value = _uiState.value.copy(
+                            welcomeDialog = WelcomeDialogState(
+                                isVisible = true,
+                                currentVersion = currentVersion,
+                                previousVersion = lastKnownVersion,
+                                isFirstInstall = false
+                            )
+                        )
+                        // Save new version
+                        appPreferences.setLastKnownVersion(currentVersion)
+                    }
+                    // else: same version, no dialog needed
+                }
+            } catch (e: Exception) {
+                // Silent fail for version check
+            }
+        }
+    }
+
+    /**
+     * Dismiss update dialog
+     */
+    fun dismissUpdateDialog() {
+        _uiState.value = _uiState.value.copy(
+            updateDialog = UpdateDialogState()
+        )
+    }
+
+    /**
+     * Dismiss welcome dialog
+     */
+    fun dismissWelcomeDialog() {
+        _uiState.value = _uiState.value.copy(
+            welcomeDialog = WelcomeDialogState()
+        )
     }
 
     /**
@@ -442,7 +557,9 @@ data class KconvertUiState(
     val error: String? = null,
     val shouldScrollToTop: Boolean = false,
     val confirmationDialog: ConfirmationDialogState = ConfirmationDialogState(),
-    val notification: NotificationState = NotificationState()
+    val notification: NotificationState = NotificationState(),
+    val updateDialog: UpdateDialogState = UpdateDialogState(),
+    val welcomeDialog: WelcomeDialogState = WelcomeDialogState()
 )
 
 /**
@@ -461,6 +578,31 @@ data class NotificationState(
     val isVisible: Boolean = false,
     val message: String = "",
     val type: NotificationType = NotificationType.SUCCESS
+)
+
+/**
+ * Update dialog state
+ */
+data class UpdateDialogState(
+    val isVisible: Boolean = false,
+    val isOutdated: Boolean = false,
+    val updateError: Boolean = false,
+    val latestVersion: String = "",
+    val updateMessage: String = "",
+    val updateTitle: String = "",
+    val isWarning: Boolean = false,
+    val showGitHubLink: Boolean = true,
+    val uiState: com.oxyzenq.kconvert.data.repository.UpdateUIState = com.oxyzenq.kconvert.data.repository.UpdateUIState.UP_TO_DATE
+)
+
+/**
+ * Welcome dialog state for new app updates
+ */
+data class WelcomeDialogState(
+    val isVisible: Boolean = false,
+    val currentVersion: String = "",
+    val previousVersion: String = "",
+    val isFirstInstall: Boolean = false
 )
 
 /**

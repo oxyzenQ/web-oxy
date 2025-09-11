@@ -47,13 +47,15 @@ fun FloatingConfirmationDialog(
     dismissButtonColor: Color = Color(0xFF6B7280),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    hapticsEnabled: Boolean = true
+    hapticsEnabled: Boolean = true,
+    strict: Boolean = true
 ) {
     val haptic = LocalHapticFeedback.current
 
     FloatingModal(
         visible = isVisible,
         onDismiss = onDismiss,
+        strictModal = strict,
         width = 280.dp,
         header = {
             FloatingModalHeader(
