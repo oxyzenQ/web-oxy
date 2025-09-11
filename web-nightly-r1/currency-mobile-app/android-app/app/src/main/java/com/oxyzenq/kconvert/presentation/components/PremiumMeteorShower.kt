@@ -53,23 +53,15 @@ data class Meteor(
 
 /**
  * Premium Color Palette for Meteors
- * Carefully selected colors for maximum visual impact
+ * Limited to blue and white for clean aesthetic
  */
 object MeteorColorPalette {
     val ElectricBlue = Color(0xFF00BFFF)
     val PureWhite = Color(0xFFFFFFFF)
-    val SunsetOrange = Color(0xFFFF8C00)
-    val FieryRedOrange = Color(0xFFFF4500)
-    val CyberPurple = Color(0xFF9D4EDD)
-    val NeonGreen = Color(0xFF39FF14)
     
     val colors = listOf(
         ElectricBlue,
-        PureWhite,
-        SunsetOrange,
-        FieryRedOrange,
-        CyberPurple,
-        NeonGreen
+        PureWhite
     )
 }
 
@@ -103,6 +95,18 @@ fun PremiumMeteorShower(
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
     
+    // Animation state that forces recomposition
+    val infiniteTransition = rememberInfiniteTransition(label = "meteor_animation")
+    val animationTrigger by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 16, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "animation_trigger"
+    )
+    
     // Object pool for meteors - prevents garbage collection overhead
     val meteorPool = remember { 
         mutableStateListOf<Meteor>().apply {
@@ -122,50 +126,61 @@ fun PremiumMeteorShower(
         }
     }
     
-    // Continuous animation loop for smooth movement
-    LaunchedEffect(isActive) {
-        if (!isActive) return@LaunchedEffect
+    // Initialize meteors when screen size is available
+    LaunchedEffect(screenSize.width) {
+        if (screenSize.width > 0 && isActive) {
+            // Initialize some meteors at startup
+            meteorPool.take(3).forEach { meteor ->
+                meteor.reset(
+                    screenWidth = screenSize.width.toFloat(),
+                    newColor = MeteorColorPalette.colors.random(),
+                    newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed,
+                    newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
+                    newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
+                )
+                // Stagger initial positions
+                meteor.y = Random.nextFloat() * screenSize.height
+            }
+        }
+    }
+    
+    // Update meteor positions on every animation frame
+    LaunchedEffect(animationTrigger, isActive) {
+        if (!isActive || screenSize.width == 0) return@LaunchedEffect
         
-        while (isActive) {
-            if (screenSize.width > 0) {
-                // Update existing meteors position
-                meteorPool.forEach { meteor ->
-                    if (meteor.isActive) {
-                        meteor.y += meteor.speed
-                        
-                        // Reset meteor when it goes off screen (infinite loop)
-                        if (meteor.y > screenSize.height + 100f) {
-                            meteor.reset(
-                                screenWidth = screenSize.width.toFloat(),
-                                newColor = MeteorColorPalette.colors.random(),
-                                newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed,
-                                newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
-                                newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
-                            )
-                        }
-                    }
-                }
+        // Update existing meteors position
+        meteorPool.forEach { meteor ->
+            if (meteor.isActive) {
+                meteor.y += meteor.speed
                 
-                // Spawn new meteor if pool has inactive meteors
-                val inactiveMeteor = meteorPool.find { !it.isActive }
-                if (inactiveMeteor != null && Random.nextFloat() < 0.1f) {
-                    val newColor = MeteorColorPalette.colors.random()
-                    val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
-                    val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
-                    val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
-                    
-                    inactiveMeteor.reset(
+                // Reset meteor when it goes off screen (infinite loop)
+                if (meteor.y > screenSize.height + 100f) {
+                    meteor.reset(
                         screenWidth = screenSize.width.toFloat(),
-                        newColor = newColor,
-                        newSpeed = newSpeed,
-                        newHeadSize = newHeadSize,
-                        newTailLength = newTailLength
+                        newColor = MeteorColorPalette.colors.random(),
+                        newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed,
+                        newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize,
+                        newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
                     )
                 }
             }
+        }
+        
+        // Spawn new meteor occasionally
+        val inactiveMeteor = meteorPool.find { !it.isActive }
+        if (inactiveMeteor != null && Random.nextFloat() < 0.02f) {
+            val newColor = MeteorColorPalette.colors.random()
+            val newSpeed = Random.nextFloat() * (config.maxSpeed - config.minSpeed) + config.minSpeed
+            val newHeadSize = Random.nextFloat() * (config.maxHeadSize - config.minHeadSize) + config.minHeadSize
+            val newTailLength = Random.nextInt(config.minTailLength, config.maxTailLength + 1)
             
-            // 60 FPS update rate
-            delay(16L)
+            inactiveMeteor.reset(
+                screenWidth = screenSize.width.toFloat(),
+                newColor = newColor,
+                newSpeed = newSpeed,
+                newHeadSize = newHeadSize,
+                newTailLength = newTailLength
+            )
         }
     }
     

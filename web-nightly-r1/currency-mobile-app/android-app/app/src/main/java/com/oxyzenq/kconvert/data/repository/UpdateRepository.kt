@@ -23,7 +23,7 @@ class UpdateRepository @Inject constructor(
 ) {
     
     companion object {
-        private const val OWNER = "oxyzenq"
+        private const val OWNER = "oxyzenQu"
         private const val REPO = "web-oxy"
         private const val NETWORK_TIMEOUT = 30000L // 30 seconds
     }

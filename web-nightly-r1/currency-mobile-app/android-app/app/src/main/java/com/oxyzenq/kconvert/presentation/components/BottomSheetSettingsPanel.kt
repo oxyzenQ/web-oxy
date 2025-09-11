@@ -103,6 +103,7 @@ fun BottomSheetSettingsPanel(
     onDarkLevelChange: (Int) -> Unit = {},
     navbarAutoHideEnabled: Boolean = true,
     onToggleNavbarAutoHide: (Boolean) -> Unit = {},
+    isVisible: Boolean = false,
     securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -114,8 +115,13 @@ fun BottomSheetSettingsPanel(
     // Security state
     val securityState by securityViewModel.securityState.collectAsState()
     
-    // FIXED: Enhanced drag state management
-    var panelHeight by remember { mutableStateOf(0.5f) }
+    // FIXED: Enhanced drag state management - controlled by isVisible
+    var panelHeight by remember { mutableStateOf(if (isVisible) 0.5f else 0.0f) }
+    
+    // Update panel height when visibility changes
+    LaunchedEffect(isVisible) {
+        panelHeight = if (isVisible) 0.5f else 0.0f
+    }
     
     // FIXED: Improved animation timing for smoother transitions
     val animatedOffset by animateFloatAsState(
@@ -166,7 +172,7 @@ fun BottomSheetSettingsPanel(
     val panelHeightForLayout = if (isDragging) panelHeight else animatedPanelHeight
     
     LaunchedEffect(Unit) {
-        panelHeight = 0.5f
+        // Only perform security check, don't auto-show panel
         securityViewModel.performSecurityCheck(context)
     }
     
@@ -829,6 +835,7 @@ private fun MaintenanceSection(
             var isOutdated by remember { mutableStateOf(false) }
             var latestVersion by remember { mutableStateOf("") }
             var updateMessage by remember { mutableStateOf("") }
+            var updateError by remember { mutableStateOf(false) }
             val appLastUpdated = remember {
                 try {
                     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -858,6 +865,7 @@ private fun MaintenanceSection(
                                     
                                     val comparison = updateRepository.compareVersions(latestVersion, current)
                                     isOutdated = comparison == VersionComparison.NEWER_AVAILABLE
+                                    updateError = false
                                     
                                     updateMessage = when (comparison) {
                                         VersionComparison.NEWER_AVAILABLE -> "Latest version $latestVersion available"
@@ -872,11 +880,12 @@ private fun MaintenanceSection(
                                         exception.message?.contains("timeout", ignoreCase = true) == true -> "Connection timeout. Please check your internet connection."
                                         exception.message?.contains("UnknownHost", ignoreCase = true) == true -> "Unable to reach GitHub. Please check your internet connection."
                                         exception.message?.contains("403", ignoreCase = true) == true -> "GitHub API rate limit exceeded. Please try again later."
-                                        exception.message?.contains("404", ignoreCase = true) == true -> "Repository not found. Please check manually on GitHub."
-                                        else -> "Unable to check for updates. Please visit GitHub manually."
+                                        exception.message?.contains("404", ignoreCase = true) == true -> "No releases found in repository. Check https://github.com/oxyzenQ/web-oxy/releases"
+                                        else -> "Unable to check for updates: ${exception.message}. Visit https://github.com/oxyzenQ/web-oxy/releases"
                                     }
                                     isOutdated = false
                                     latestVersion = ""
+                                    updateError = true
                                     showUpdateDialog = true
                                 }
                             )
@@ -943,217 +952,18 @@ private fun MaintenanceSection(
                 }
             }
 
-            // Update result dialog (only shows after check completes)
-            if (showUpdateDialog && !updateChecking) {
-                Dialog(
-                    onDismissRequest = { showUpdateDialog = false },
-                    properties = DialogProperties(
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true
-                    )
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .wrapContentHeight(),
-                        shape = RoundedCornerShape(20.dp),
-                        backgroundColor = Color.Transparent,
-                        elevation = 16.dp
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFF1E293B).copy(alpha = 0.95f),
-                                            Color(0xFF0F172A).copy(alpha = 0.98f)
-                                        )
-                                    )
-                                )
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
-                                .padding(16.dp)
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Icon with glow
-                                Box(
-                                    modifier = Modifier.size(64.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (updateChecking) Icons.Default.Refresh 
-                                                     else if (isOutdated) Icons.Default.SystemUpdate 
-                                                     else Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = if (updateChecking) Color(0xFF93C5FD)
-                                               else if (isOutdated) Color(0xFF60A5FA) 
-                                               else Color(0xFF10B981),
-                                        modifier = Modifier.size(40.dp)
-                                    )
-                                }
-
-                                Text(
-                                    text = updateMessage,
-                                    style = MaterialTheme.typography.h6.copy(
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp
-                                    ),
-                                    textAlign = TextAlign.Center
-                                )
-
-                                if (updateChecking) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = Color(0xFF93C5FD),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    if (!isOutdated && latestVersion.isNotEmpty()) {
-                                        Text(
-                                            text = "Current version: ${BuildConfig.VERSION_NAME}",
-                                            style = MaterialTheme.typography.body2.copy(
-                                                color = Color(0xFFCBD5E1),
-                                                fontSize = 14.sp
-                                            ),
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-
-                                    if (isOutdated) {
-                                        // GitHub button for updates
-                                        Button(
-                                            onClick = {
-                                                uriHandler.openUri("https://github.com/oxyzenq/web-oxy/releases/latest")
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(48.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                backgroundColor = Color(0xFF3B82F6),
-                                                contentColor = Color.White
-                                            ),
-                                            elevation = ButtonDefaults.elevation(
-                                                defaultElevation = 0.dp,
-                                                pressedElevation = 2.dp
-                                            )
-                                        ) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.Center,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                                    contentDescription = "Open GitHub",
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(
-                                                    text = "Get Update on GitHub",
-                                                    style = MaterialTheme.typography.button.copy(
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        fontSize = 16.sp
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    } else if (latestVersion.isEmpty()) {
-                                        // Error case - show "Visit GitHub" button
-                                        Button(
-                                            onClick = {
-                                                uriHandler.openUri("https://github.com/oxyzenq/web-oxy/releases")
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(48.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                backgroundColor = Color(0xFFF59E0B), // Amber for fallback action
-                                                contentColor = Color.White
-                                            ),
-                                            elevation = ButtonDefaults.elevation(
-                                                defaultElevation = 0.dp,
-                                                pressedElevation = 2.dp
-                                            )
-                                        ) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.Center,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Filled.Launch,
-                                                    contentDescription = "Visit GitHub",
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(
-                                                    text = "Visit GitHub Releases",
-                                                    style = MaterialTheme.typography.button.copy(
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        fontSize = 16.sp
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // Close button with iOS-style red gradient
-                                    Button(
-                                        onClick = { showUpdateDialog = false },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(48.dp),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            backgroundColor = Color.Transparent,
-                                            contentColor = Color.White
-                                        ),
-                                        elevation = ButtonDefaults.elevation(
-                                            defaultElevation = 0.dp,
-                                            pressedElevation = 2.dp
-                                        )
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(
-                                                    brush = Brush.horizontalGradient(
-                                                        colors = listOf(
-                                                            Color(0xFFEF4444), // Red-500
-                                                            Color(0xFFDC2626), // Red-600
-                                                            Color(0xFFB91C1C)  // Red-700
-                                                        )
-                                                    ),
-                                                    shape = RoundedCornerShape(12.dp)
-                                                )
-                                                .border(
-                                                    1.dp,
-                                                    Color.White.copy(alpha = 0.1f),
-                                                    RoundedCornerShape(12.dp)
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Close",
-                                                style = MaterialTheme.typography.button.copy(
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 16.sp
-                                                ),
-                                                color = Color.White
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // Update result dialog using centralized UpdateResultWindow
+            UpdateResultWindow(
+                visible = showUpdateDialog && !updateChecking,
+                updateError = updateError,
+                isOutdated = isOutdated,
+                latestVersion = latestVersion,
+                updateMessage = updateMessage,
+                currentVersion = BuildConfig.VERSION_NAME,
+                onDismiss = { showUpdateDialog = false },
+                onOpenLatest = { uriHandler.openUri("https://github.com/oxyzenQ/web-oxy/releases/latest") },
+                onOpenReleases = { uriHandler.openUri("https://github.com/oxyzenQ/web-oxy/releases") }
+            )
 
         }
     }
@@ -1419,270 +1229,54 @@ private fun AppSettingsSection(
                 }
             }
             
-            // Cache Action Dialog with glassmorphism style
-            if (showCacheActionDialog) {
-                Dialog(
-                    onDismissRequest = { showCacheActionDialog = false },
-                    properties = DialogProperties(
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true
-                    )
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .heightIn(min = 180.dp, max = 320.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                    ) {
-                        // Outer glow effect
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.3f))
-                                .blur(24.dp)
-                        )
-                        
-                        // Main glassmorphism background
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFF1E293B).copy(alpha = 0.95f),
-                                            Color(0xFF0F172A).copy(alpha = 0.98f)
-                                        )
-                                    )
-                                )
-                                .border(
-                                    1.dp,
-                                    Color.White.copy(alpha = 0.1f),
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .padding(20.dp)
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                // Compact header with icon and title in row
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Storage,
-                                        contentDescription = "Cache Management",
-                                        tint = Color(0xFF059669),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Cache Management",
-                                        style = MaterialTheme.typography.h6.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            fontSize = 16.sp
-                                        )
-                                    )
-                                }
-                                
-                                Text(
-                                    text = "Current cache size: ${formatFileSize(cacheSize)}",
-                                    style = MaterialTheme.typography.body2.copy(
-                                        color = Color(0xFFCBD5E1),
-                                        fontSize = 12.sp
-                                    ),
-                                    textAlign = TextAlign.Center
-                                )
-                                
-                                // Compact action buttons
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // Scan button with progress indicator
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                isScanningCache = true
-                                                isProcessingCache = true
-                                                
-                                                try {
-                                                    // Add timeout for large cache scans (30 seconds max)
-                                                    val newCacheSize = withContext(Dispatchers.IO) {
-                                                        withTimeout(30000) {
-                                                            StorageUtils.getCacheSize(context)
-                                                        }
-                                                    }
-                                                    
-                                                    // Check if cache size is extremely large (>5GB)
-                                                    if (newCacheSize > 5L * 1024 * 1024 * 1024) {
-                                                        android.widget.Toast.makeText(
-                                                            context, 
-                                                            "Warning: Cache size is very large (${formatFileSize(newCacheSize)}). Consider clearing it.", 
-                                                            android.widget.Toast.LENGTH_LONG
-                                                        ).show()
-                                                    }
-                                                    
-                                                    val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                                                    
-                                                    cacheSize = newCacheSize
-                                                    lastScanTime = timestamp
-                                                    
-                                                    cacheSettingsStore.setCacheSize(newCacheSize)
-                                                    cacheSettingsStore.setCacheLastScan(timestamp)
-                                                    
-                                                    android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
-                                                } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                                                    android.widget.Toast.makeText(context, "Scan timeout: Cache too large to scan quickly", android.widget.Toast.LENGTH_LONG).show()
-                                                } catch (e: Exception) {
-                                                    android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                                } finally {
-                                                    isScanningCache = false
-                                                    isProcessingCache = false
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(38.dp),
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            backgroundColor = Color(0xFF3B82F6).copy(alpha = 0.9f),
-                                            contentColor = Color.White
-                                        ),
-                                        elevation = ButtonDefaults.elevation(
-                                            defaultElevation = 0.dp,
-                                            pressedElevation = 1.dp
-                                        ),
-                                        enabled = !isScanningCache && !isClearingCache
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            if (isScanningCache) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    color = Color.White,
-                                                    strokeWidth = 2.dp
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                            }
-                                            Text(
-                                                text = if (isScanningCache) "Scanning..." else "Scan",
-                                                style = MaterialTheme.typography.button.copy(
-                                                    fontWeight = FontWeight.Medium,
-                                                    fontSize = 14.sp
-                                                )
-                                            )
-                                        }
-                                    }
-                                    
-                                    // Clear button with progress indicator
-                                    Button(
-                                        onClick = {
-                                            if (cacheSize > 1L * 1024 * 1024 * 1024) { // >1GB
-                                                // Show warning for large cache
-                                                android.widget.Toast.makeText(
-                                                    context,
-                                                    "Large cache detected (${formatFileSize(cacheSize)}). This may take a while.",
-                                                    android.widget.Toast.LENGTH_LONG
-                                                ).show()
-                                            }
-                                            showCacheActionDialog = false
-                                            showDeleteConfirmDialog = true
-                                        },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(38.dp),
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            backgroundColor = if (cacheSize > 0) Color(0xFFEF4444).copy(alpha = 0.9f) else Color(0xFF6B7280).copy(alpha = 0.9f),
-                                            contentColor = Color.White
-                                        ),
-                                        elevation = ButtonDefaults.elevation(
-                                            defaultElevation = 0.dp,
-                                            pressedElevation = 1.dp
-                                        ),
-                                        enabled = cacheSize > 0 && !isScanningCache && !isClearingCache
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            if (isClearingCache) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    color = Color.White,
-                                                    strokeWidth = 2.dp
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                            }
-                                            Text(
-                                                text = if (isClearingCache) "Clearing..." else "Clear",
-                                                style = MaterialTheme.typography.button.copy(
-                                                    fontWeight = FontWeight.Medium,
-                                                    fontSize = 14.sp
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                
-                                // iOS-style red gradient close button
-                                Button(
-                                    onClick = { showCacheActionDialog = false },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(38.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        backgroundColor = Color.Transparent,
-                                        contentColor = Color.White
-                                    ),
-                                    elevation = ButtonDefaults.elevation(
-                                        defaultElevation = 0.dp,
-                                        pressedElevation = 1.dp
-                                    )
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                brush = Brush.horizontalGradient(
-                                                    colors = listOf(
-                                                        Color(0xFFEF4444), // Red-500
-                                                        Color(0xFFDC2626), // Red-600
-                                                        Color(0xFFB91C1C)  // Red-700
-                                                    )
-                                                ),
-                                                shape = RoundedCornerShape(10.dp)
-                                            )
-                                            .border(
-                                                1.dp,
-                                                Color.White.copy(alpha = 0.1f),
-                                                RoundedCornerShape(10.dp)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "Cancel",
-                                            style = MaterialTheme.typography.button.copy(
-                                                fontWeight = FontWeight.Medium,
-                                                fontSize = 13.sp
-                                            ),
-                                            color = Color.White
-                                        )
-                                    }
-                                }
+            // Compact Cache Action Dialog using centralized CacheManagementWindow
+            CacheManagementWindow(
+                visible = showCacheActionDialog,
+                cacheSizeText = formatFileSize(cacheSize),
+                isScanning = isScanningCache,
+                isClearing = isClearingCache,
+                onScan = {
+                    scope.launch {
+                        isScanningCache = true
+                        isProcessingCache = true
+                        try {
+                            val newCacheSize = withContext(Dispatchers.IO) { withTimeout(30000) { StorageUtils.getCacheSize(context) } }
+                            if (newCacheSize > 5L * 1024 * 1024 * 1024) {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Warning: Cache size is very large (${formatFileSize(newCacheSize)}). Consider clearing it.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
                             }
+                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                            cacheSize = newCacheSize
+                            lastScanTime = timestamp
+                            cacheSettingsStore.setCacheSize(newCacheSize)
+                            cacheSettingsStore.setCacheLastScan(timestamp)
+                            android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
+                        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                            android.widget.Toast.makeText(context, "Scan timeout: Cache too large to scan quickly", android.widget.Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isScanningCache = false
+                            isProcessingCache = false
                         }
                     }
-                }
-            }
+                },
+                onRequestClear = {
+                    if (cacheSize > 1L * 1024 * 1024 * 1024) {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Large cache detected (${formatFileSize(cacheSize)}). This may take a while.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    showCacheActionDialog = false
+                    showDeleteConfirmDialog = true
+                },
+                onDismiss = { showCacheActionDialog = false }
+            )
             
             // Beautiful floating confirmation dialog for cache clearing
             ClearCacheConfirmationDialog(

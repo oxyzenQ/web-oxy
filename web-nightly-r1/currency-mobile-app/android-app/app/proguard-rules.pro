@@ -8,17 +8,17 @@
 # Ultra-Security ProGuard Rules for 98% Protection Level
 
 # Keep ultra-secure API key manager but obfuscate everything else
--keep class com.oxyzenq.currencyconverter.security.UltraSecureApiKeyManager {
+-keep class com.oxyzenq.kconvert.security.UltraSecureApiKeyManager {
     public *;
 }
 
 # Keep RASP security manager interface
--keep class com.oxyzenq.currencyconverter.security.RASPSecurityManager {
+-keep class com.oxyzenq.kconvert.security.RASPSecurityManager {
     public *;
 }
 
 # Keep ECDH key manager
--keep class com.oxyzenq.currencyconverter.security.ECDHKeyManager {
+-keep class com.oxyzenq.kconvert.security.ECDHKeyManager {
     public *;
 }
 
@@ -28,7 +28,7 @@
 }
 
 # Aggressively obfuscate all security internals
--keepclassmembers class com.oxyzenq.currencyconverter.security.** {
+-keepclassmembers class com.oxyzenq.kconvert.security.** {
     private static final byte[] ENCRYPTED_KEY_FRAGMENTS;
     private static final byte[] OBFUSCATED_PARTS;
     private static final java.lang.String SERVER_PUBLIC_KEY_B64;
@@ -41,11 +41,15 @@
 -keep @androidx.room.Dao class *
 
 # Keep Retrofit API interfaces
--keep interface com.oxyzenq.currencyconverter.data.api.* { *; }
+-keep interface com.oxyzenq.kconvert.data.api.* { *; }
+-keep interface com.oxyzenq.kconvert.data.remote.* { *; }
 
 # Keep data models for JSON serialization
--keep class com.oxyzenq.currencyconverter.data.model.** { *; }
--keep class com.oxyzenq.currencyconverter.data.api.** { *; }
+-keep class com.oxyzenq.kconvert.data.model.** { *; }
+-keep class com.oxyzenq.kconvert.data.api.** { *; }
+-keep class com.oxyzenq.kconvert.data.remote.GitHubRelease { *; }
+-keep class com.oxyzenq.kconvert.data.remote.GitHubAsset { *; }
+-keep class com.oxyzenq.kconvert.data.remote.** { *; }
 
 # Keep Hilt generated classes
 -keep class dagger.hilt.** { *; }

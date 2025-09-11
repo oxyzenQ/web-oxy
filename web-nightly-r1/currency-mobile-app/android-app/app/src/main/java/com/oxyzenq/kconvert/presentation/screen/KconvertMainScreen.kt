@@ -379,7 +379,8 @@ fun KconvertMainScreen(
             darkLevel = darkLevel,
             onDarkLevelChange = { level -> darkLevel = level },
             navbarAutoHideEnabled = navbarAutoHideEnabled,
-            onToggleNavbarAutoHide = { enabled -> navbarAutoHideEnabled = enabled }
+            onToggleNavbarAutoHide = { enabled -> navbarAutoHideEnabled = enabled },
+            isVisible = showSettingsPanel
         )
     }
 }
@@ -894,52 +895,12 @@ private fun CurrencyPickerDialog(
     onCurrencySelected: (Currency) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp),
-            backgroundColor = Color(0xFF1E293B),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column {
-                Text(
-                    text = "Select Currency",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.h6.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                )
-                
-                LazyColumn {
-                    items(currencies) { currency ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onCurrencySelected(currency) }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = currency.code,
-                                    style = MaterialTheme.typography.subtitle1.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                )
-                                Text(
-                                    text = currency.name,
-                                    style = MaterialTheme.typography.caption.copy(
-                                        color = Color(0xFF94A3B8)
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Use centralized global floating window
+    CurrencyPickerWindow(
+        visible = true,
+        title = "Select Currency",
+        currencies = currencies,
+        onCurrencySelected = onCurrencySelected,
+        onDismiss = onDismiss
+    )
 }

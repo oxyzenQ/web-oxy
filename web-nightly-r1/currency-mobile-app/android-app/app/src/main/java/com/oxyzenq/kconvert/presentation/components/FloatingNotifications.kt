@@ -23,8 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
 import com.oxyzenq.kconvert.presentation.viewmodel.NotificationType
 import kotlinx.coroutines.delay
@@ -40,117 +39,43 @@ fun ConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    if (isVisible) {
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true
+    if (!isVisible) return
+
+    val confirmColor = when (type) {
+        ConfirmationType.DELETE_DATA, ConfirmationType.EXIT_APP -> Color(0xFFDC2626)
+        ConfirmationType.REFRESH_DATA -> Color(0xFF059669)
+    }
+
+    FloatingModal(
+        visible = isVisible,
+        onDismiss = onDismiss,
+        width = 280.dp,
+        header = {
+            FloatingModalHeader(
+                title = title,
+                subtitle = null,
+                icon = Icons.Default.Warning,
+                iconTint = Color(0xFFF59E0B)
             )
+        }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .widthIn(min = 280.dp, max = 320.dp)
-                    .padding(16.dp)
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
-                // Outer glow
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(Color.Black.copy(alpha = 0.25f))
-                        .blur(20.dp)
-                )
-                // Main background with navbar style
-                Box(
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF0B1530).copy(alpha = 0.8f),
-                                    Color(0xFF0F1F3F).copy(alpha = 0.9f)
-                                )
-                            )
-                        )
-                        .border(
-                            0.5.dp,
-                            Color.White.copy(alpha = 0.08f),
-                            RoundedCornerShape(16.dp)
-                        )
-                ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Warning icon
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = "Warning",
-                        tint = Color(0xFFF59E0B),
-                        modifier = Modifier.size(48.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Title
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.h6.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFF6B7280)
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = "No",
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        
-                        Button(
-                            onClick = {
-                                onConfirm()
-                                onDismiss()
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = when (type) {
-                                    ConfirmationType.DELETE_DATA -> Color(0xFFDC2626)
-                                    ConfirmationType.REFRESH_DATA -> Color(0xFF059669)
-                                    ConfirmationType.EXIT_APP -> Color(0xFFDC2626)
-                                }
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = "Yes",
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f).height(44.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF6B7280), contentColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text(text = "No") }
+
+            Button(
+                onClick = { onConfirm(); onDismiss() },
+                modifier = Modifier.weight(1f).height(44.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = confirmColor, contentColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text(text = "Yes") }
         }
     }
 }
