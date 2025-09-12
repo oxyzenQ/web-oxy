@@ -2,35 +2,32 @@ package com.oxyzenq.kconvert.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import dagger.hilt.android.qualifiers.ApplicationContext
 
-private const val DATASTORE_NAME = "kconvert_settings"
-
-val Context.settingsDataStore by preferencesDataStore(name = DATASTORE_NAME)
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 object SettingsKeys {
-    val FULL_SCREEN: Preferences.Key<Boolean> = booleanPreferencesKey("full_screen")
-    val HAPTICS_ENABLED: Preferences.Key<Boolean> = booleanPreferencesKey("haptics_enabled")
-    val AUTO_UPDATE: Preferences.Key<Boolean> = booleanPreferencesKey("auto_update")
-    val DARK_MODE: Preferences.Key<Boolean> = booleanPreferencesKey("dark_mode")
-    val DARK_LEVEL: Preferences.Key<Int> = intPreferencesKey("dark_level")
-    val CACHE_SIZE: Preferences.Key<Long> = longPreferencesKey("cache_size")
-    val CACHE_LAST_SCAN: Preferences.Key<String> = stringPreferencesKey("cache_last_scan")
-    val NAVBAR_AUTO_HIDE: Preferences.Key<Boolean> = booleanPreferencesKey("navbar_auto_hide")
-    val METEOR_ANIMATION: Preferences.Key<Boolean> = booleanPreferencesKey("meteor_animation")
+    val FULL_SCREEN = booleanPreferencesKey("full_screen")
+    val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
+    val AUTO_UPDATE = booleanPreferencesKey("auto_update")
+    val DARK_MODE = booleanPreferencesKey("dark_mode")
+    val DARK_LEVEL = intPreferencesKey("dark_level")
+    val CACHE_SIZE = longPreferencesKey("cache_size")
+    val CACHE_LAST_SCAN = stringPreferencesKey("cache_last_scan")
+    val NAVBAR_AUTO_HIDE = booleanPreferencesKey("navbar_auto_hide")
+    val METEOR_ANIMATION = booleanPreferencesKey("meteor_animation")
+    val AUTO_REMIND_ENABLED = booleanPreferencesKey("auto_remind_enabled")
+    val LAST_UPDATE_CHECK = stringPreferencesKey("last_update_check")
 }
 
-class SettingsDataStore(private val context: Context) {
+@Singleton
+class SettingsDataStore @Inject constructor(@ApplicationContext private val context: Context) {
     val fullScreenFlow: Flow<Boolean> =
         context.settingsDataStore.data.map { prefs ->
             prefs[SettingsKeys.FULL_SCREEN] ?: true
@@ -71,11 +68,17 @@ class SettingsDataStore(private val context: Context) {
             prefs[SettingsKeys.NAVBAR_AUTO_HIDE] ?: true
         }
 
-    val meteorAnimationFlow: Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs ->
-            prefs[SettingsKeys.METEOR_ANIMATION] ?: true
-        }
+    val meteorAnimationFlow = context.settingsDataStore.data.map { prefs ->
+        prefs[SettingsKeys.METEOR_ANIMATION] ?: true
+    }
 
+    val autoRemindEnabled = context.settingsDataStore.data.map { prefs ->
+        prefs[SettingsKeys.AUTO_REMIND_ENABLED] ?: true
+    }
+
+    val lastUpdateCheckFlow = context.settingsDataStore.data.map { prefs ->
+        prefs[SettingsKeys.LAST_UPDATE_CHECK] ?: "Never"
+    }
 
     suspend fun setFullScreen(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
@@ -128,6 +131,18 @@ class SettingsDataStore(private val context: Context) {
     suspend fun setMeteorAnimation(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.METEOR_ANIMATION] = enabled
+        }
+    }
+
+    suspend fun setAutoRemindEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.AUTO_REMIND_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setLastUpdateCheck(timestamp: String) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.LAST_UPDATE_CHECK] = timestamp
         }
     }
 

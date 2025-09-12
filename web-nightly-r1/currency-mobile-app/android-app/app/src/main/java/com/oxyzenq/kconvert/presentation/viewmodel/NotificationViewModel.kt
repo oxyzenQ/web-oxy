@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oxyzenq.kconvert.data.local.dao.NotifyDao
 import com.oxyzenq.kconvert.data.local.entity.NotifyMessage
+import com.oxyzenq.kconvert.data.local.SettingsDataStore
 import com.oxyzenq.kconvert.domain.engine.UpdateEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class NotificationViewModel @Inject constructor(
     private val notifyDao: NotifyDao,
-    private val updateEngine: UpdateEngine
+    val updateEngine: UpdateEngine,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     // Observe all notifications
@@ -48,6 +50,10 @@ class NotificationViewModel @Inject constructor(
     // Loading state
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+    // Report window state
+    private val _showReportWindow = MutableStateFlow(false)
+    val showReportWindow = _showReportWindow.asStateFlow()
 
     /**
      * Show notification bottom sheet
@@ -111,18 +117,20 @@ class NotificationViewModel @Inject constructor(
     /**
      * Get auto-remind setting as Flow
      */
-    val autoRemindEnabled = flow {
-        emit(updateEngine.isAutoRemindEnabled())
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = true
-    )
+    val autoRemindEnabled = settingsDataStore.autoRemindEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
 
     /**
      * Set auto-remind setting
      */
     fun setAutoRemindEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.setAutoRemindEnabled(enabled)
+        }
         updateEngine.setAutoRemindEnabled(enabled)
     }
 
@@ -162,12 +170,28 @@ class NotificationViewModel @Inject constructor(
     }
 
     /**
+     * Show report window
+     */
+    fun showReportWindow() {
+        _showReportWindow.value = true
+    }
+
+    /**
+     * Hide report window
+     */
+    fun hideReportWindow() {
+        _showReportWindow.value = false
+    }
+
+    /**
      * Trigger update check on main screen entry
      */
     fun checkForUpdatesOnMainScreen() {
         viewModelScope.launch {
             try {
                 updateEngine.checkOnceAndNotifyIfNeeded()
+                // Show report window after successful check
+                showReportWindow()
             } catch (e: Exception) {
                 // Error handling is done in UpdateEngine
             }

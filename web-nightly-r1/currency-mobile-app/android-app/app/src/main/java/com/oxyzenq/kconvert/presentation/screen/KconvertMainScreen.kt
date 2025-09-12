@@ -25,6 +25,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import com.oxyzenq.kconvert.domain.engine.UpdateCheckResult
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -103,6 +104,7 @@ fun KconvertMainScreen(
     val unreadCount by notificationViewModel.notificationCount.collectAsState()
     val showNotificationSheet by notificationViewModel.isBottomSheetVisible.collectAsState()
     val selectedMessage by notificationViewModel.selectedMessage.collectAsState()
+    // val showReportWindow by notificationViewModel.showReportWindow.collectAsState() // Removed - using local state
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -142,9 +144,57 @@ fun KconvertMainScreen(
     }
     // hapticsEnabled persisted in DataStore via ViewModel; no local state needed
     
+    // Update engine check on main screen entry with report floating window
+    var showReportWindow by remember { mutableStateOf(false) }
+    var reportMessage by remember { mutableStateOf("") }
+    var reportIcon by remember { mutableStateOf(Icons.Default.CheckCircle) }
+    var reportIconColor by remember { mutableStateOf(Color(0xFF10B981)) }
+    
+    // Use existing UpdateEngine from NotificationViewModel
+    val updateEngine = remember { 
+        notificationViewModel.updateEngine
+    }
+    
+    LaunchedEffect(Unit) {
+        val result = updateEngine.checkOnceAndNotifyIfNeeded()
+        
+        // Show report floating window based on result
+        when (result) {
+            UpdateCheckResult.UPDATE_AVAILABLE -> {
+                reportMessage = "Update available - Report sent to inbox notify"
+                reportIcon = Icons.Default.SystemUpdate
+                reportIconColor = Color(0xFF3B82F6) // Blue
+                showReportWindow = true
+            }
+            UpdateCheckResult.UP_TO_DATE -> {
+                reportMessage = "Update not available - Report sent to inbox notify"
+                reportIcon = Icons.Default.CheckCircle
+                reportIconColor = Color(0xFF10B981) // Green
+                showReportWindow = true
+            }
+            UpdateCheckResult.VERSION_MISMATCH -> {
+                reportMessage = "Caution mismatch version - Report sent to inbox notify"
+                reportIcon = Icons.Default.Warning
+                reportIconColor = Color(0xFFF59E0B) // Orange
+                showReportWindow = true
+            }
+            UpdateCheckResult.ERROR -> {
+                reportMessage = "Update check failed - Report sent to inbox notify"
+                reportIcon = Icons.Default.Error
+                reportIconColor = Color(0xFFEF4444) // Red
+                showReportWindow = true
+            }
+            else -> {
+                // No report for DISABLED, ALREADY_CHECKING, ALREADY_CHECKED
+            }
+        }
+    }    
     // Initialize app on first composition
     LaunchedEffect(Unit) {
         viewModel.initializeApp(context)
+        
+        // Trigger update check on main screen entry
+        notificationViewModel.checkForUpdatesOnMainScreen()
         
         // Mark notifications as read when screen is viewed
         notificationViewModel.markAllAsRead()
@@ -256,7 +306,7 @@ fun KconvertMainScreen(
                             isRefreshing = uiState.isRefreshing,
                             onRefreshData = {
                                 HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
-                                viewModel.refreshData()
+                                viewModel.refreshData(context)
                             },
                             onDeleteData = {
                                 HapticHelper.performHaptic(context, HapticType.ERROR, hapticsEnabled)
@@ -473,6 +523,15 @@ fun KconvertMainScreen(
                 }
             )
         }
+        
+        // Report floating window
+        ReportFloatingWindow(
+            isVisible = showReportWindow,
+            reportMessage = reportMessage,
+            reportIcon = reportIcon,
+            iconColor = reportIconColor,
+            onDismiss = { showReportWindow = false }
+        )
     }
 }
 

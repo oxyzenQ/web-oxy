@@ -388,7 +388,7 @@ fun BottomSheetSettingsPanel(
                                 
                                 // Box 1 : App Settings Section
                                 item {
-                                    AppSettingsSection(
+                                    com.oxyzenq.kconvert.presentation.components.AppSettingsSection(
                                         darkModeEnabledDefault = false,
                                         hapticsEnabledDefault = hapticsEnabled,
                                         onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
@@ -741,7 +741,7 @@ private fun SecurityCheckSection(
 }
 
 @Composable
-private fun AboutSection() {
+fun AboutSection() {
     SettingsCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -768,8 +768,9 @@ private fun AboutSection() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             InfoRow("App name", "Kconvert")
-            InfoRow("Version", AppVersion.VERSION_NAME)
-            InfoRow("License", "MIT")
+            InfoRow("App Version", AppVersion.VERSION_NAME)
+            InfoRow("Build Type", if (com.oxyzenq.kconvert.BuildConfig.DEBUG) "Debug" else "Release")
+            InfoRow("Target SDK", "35")
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -825,10 +826,13 @@ private fun MaintenanceSection(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            InfoRow("Status", "All systems operational")
-            
+            val updateStatus = "Ready"
             // Real app version installation/update date
             val context = LocalContext.current
+            val settingsStore = remember { SettingsDataStore(context) }
+            val updateCheckTime by settingsStore.lastUpdateCheckFlow.collectAsState(initial = "Never")
+            InfoRow("Update Status", updateStatus)
+            InfoRow("Last Update Check", updateCheckTime)
             val uriHandler = LocalUriHandler.current
             val scope = rememberCoroutineScope()
             
@@ -868,6 +872,13 @@ private fun MaintenanceSection(
                                 onSuccess = { release: com.oxyzenq.kconvert.data.remote.GitHubRelease ->
                                     latestVersion = release.tag_name
                                     val current = AppVersion.VERSION_NAME
+                                    
+                                    // Update last check timestamp for manual check
+                                    val formatter = java.text.SimpleDateFormat("HH:mm dd/MM/yy", java.util.Locale.getDefault())
+                                    val timestamp = formatter.format(java.util.Date())
+                                    scope.launch {
+                                        settingsStore.setLastUpdateCheck(timestamp)
+                                    }
                                     
                                     val comparison = updateRepository.compareVersions(latestVersion, current)
                                     val updateMsg = updateRepository.generateUpdateMessage(latestVersion, current, comparison)
@@ -976,366 +987,10 @@ private fun MaintenanceSection(
             )
 
         }
-}
-
-@Composable
-private fun AppSettingsSection(
-    darkModeEnabledDefault: Boolean,
-    hapticsEnabledDefault: Boolean,
-    onToggleHaptics: (Boolean) -> Unit,
-    autoRemindEnabled: Boolean,
-    onToggleAutoRemind: (Boolean) -> Unit,
-    isFullscreenMode: Boolean,
-    onToggleFullscreen: (Boolean) -> Unit,
-    darkLevel: Int,
-    onDarkLevelChange: (Int) -> Unit,
-    navbarAutoHideEnabled: Boolean,
-    onToggleNavbarAutoHide: (Boolean) -> Unit
-) {
-    val context = LocalContext.current
-    val settingsStore = remember { SettingsDataStore(context) }
-    // Use the haptics state passed from ViewModel instead of local state
-    val hapticsEnabled = hapticsEnabledDefault
-    // Observe persisted value (default true)
-    val persistedFullScreen by settingsStore.fullScreenFlow.collectAsState(initial = true)
-    var fullScreenEnabled by remember(persistedFullScreen) { mutableStateOf(persistedFullScreen) }
-    
-    // Meteor animation setting
-    val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
-    var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
-    
-    
-    val activity = (LocalContext.current as? Activity)
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(persistedFullScreen) {
-        activity?.let { setImmersiveMode(it, persistedFullScreen) }
-    }
-
-    SettingsCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
-                tint = Color(0xFF8B5CF6),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "App Settings",
-                style = MaterialTheme.typography.h6.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            SettingToggleRow(
-                title = "Full Screen Mode",
-                isEnabled = fullScreenEnabled,
-                onToggle = { enabled ->
-                    fullScreenEnabled = enabled
-                    activity?.let { setImmersiveMode(it, enabled) }
-                    // persist setting
-                    scope.launch {
-                        settingsStore.setFullScreen(enabled)
-                    }
-                    onToggleFullscreen(enabled)
-                }
-            )
-            
-            SettingToggleRow(
-                title = "Auto-Hide Bottom Navbar",
-                isEnabled = navbarAutoHideEnabled,
-                onToggle = { enabled ->
-                    // Persist to DataStore
-                    scope.launch {
-                        settingsStore.setNavbarAutoHide(enabled)
-                    }
-                    onToggleNavbarAutoHide(enabled)
-                }
-            )
-            
-            SettingToggleRow(
-                title = "Meteor Animation",
-                isEnabled = meteorAnimationEnabled,
-                onToggle = { enabled ->
-                    meteorAnimationEnabled = enabled
-                    // Persist to DataStore
-                    scope.launch {
-                        settingsStore.setMeteorAnimation(enabled)
-                    }
-                }
-            )
-            
-            SettingToggleRow(
-                title = "Automatic check update when on main screen",
-                isEnabled = autoRemindEnabled,
-                onToggle = { enabled ->
-                    onToggleAutoRemind(enabled)
-                }
-            )
-
-            // Background dark level slider (0..100)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Adjust background darkness",
-                style = MaterialTheme.typography.subtitle2.copy(color = Color(0xFFCBD5E1))
-            )
-            val levelState = remember(darkLevel) { mutableStateOf(darkLevel) }
-            
-            // Custom slider with brightness icon indicator
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Slider(
-                    value = levelState.value.toFloat(),
-                    onValueChange = { v ->
-                        levelState.value = v.toInt().coerceIn(0, 100)
-                        onDarkLevelChange(levelState.value)
-                        // Persist to DataStore
-                        scope.launch {
-                            settingsStore.setDarkLevel(levelState.value)
-                        }
-                    },
-                    valueRange = 0f..100f,
-                    steps = 0,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                // Brightness icon indicator
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF059669))
-                        .border(2.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Brightness6,
-                        contentDescription = "Brightness Level: ${levelState.value}",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Low", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
-                Text("Medium", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
-                Text("Max", style = MaterialTheme.typography.caption, color = Color(0xFF94A3B8))
-            }
-
-            SettingToggleRow(
-                title = "Haptic Feedback",
-                isEnabled = hapticsEnabled,
-                onToggle = { enabled ->
-                    // Only use the ViewModel's method to ensure single source of truth
-                    onToggleHaptics(enabled)
-                }
-            )
-
-
-            Spacer(modifier = Modifier.height(8.dp))
-            // Cache size indicator with proper state management
-            val cacheContext = LocalContext.current
-            val cacheSettingsStore = remember { SettingsDataStore(cacheContext) }
-            var cacheSize by remember { mutableStateOf(0L) }
-            var lastScanTime by remember { mutableStateOf("") }
-            
-            // Initial cache scan on first load
-            LaunchedEffect(Unit) {
-                try {
-                    cacheSize = StorageUtils.getCacheSize(cacheContext)
-                    val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                    lastScanTime = timestamp
-                    
-                    // Save to persistent storage
-                    cacheSettingsStore.setCacheSize(cacheSize)
-                    cacheSettingsStore.setCacheLastScan(timestamp)
-                } catch (e: Exception) {
-                    cacheSize = 0L
-                }
-            }
-            
-            val cacheInfoText = remember(cacheSize) {
-                formatFileSize(cacheSize)
-            }
-            
-            val lastScanText = remember(lastScanTime) {
-                if (lastScanTime.isNotEmpty()) {
-                    "Last scan: $lastScanTime"
-                } else {
-                    "Not scanned yet"
-                }
-            }
-
-            InfoRow("Storage Cache used", cacheInfoText)
-            InfoRow("Cache status", lastScanText)
-            
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Cache management button
-            val context = LocalContext.current
-            var showCacheActionDialog by remember { mutableStateOf(false) }
-            var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-            var isProcessingCache by remember { mutableStateOf(false) }
-            var isScanningCache by remember { mutableStateOf(false) }
-            var isClearingCache by remember { mutableStateOf(false) }
-            
-            // Single unified cache management button with iOS style
-            Button(
-                onClick = {
-                    showCacheActionDialog = true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF059669).copy(alpha = 0.8f),
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.elevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 2.dp
-                ),
-                enabled = !isProcessingCache
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isProcessingCache) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = Color.White
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isProcessingCache) "Processing..." else "Manage Cache Storage",
-                        style = MaterialTheme.typography.button.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        ),
-                        color = Color.White
-                    )
-                }
-            }
-            
-            // Compact Cache Action Dialog using centralized CacheManagementWindow
-            CacheManagementWindow(
-                visible = showCacheActionDialog,
-                cacheSizeText = formatFileSize(cacheSize),
-                isScanning = isScanningCache,
-                isClearing = isClearingCache,
-                onScan = {
-                    scope.launch {
-                        isScanningCache = true
-                        isProcessingCache = true
-                        try {
-                            val newCacheSize = withContext(Dispatchers.IO) { withTimeout(30000) { StorageUtils.getCacheSize(context) } }
-                            if (newCacheSize > 5L * 1024 * 1024 * 1024) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Warning: Cache size is very large (${formatFileSize(newCacheSize)}). Consider clearing it.",
-                                    android.widget.Toast.LENGTH_LONG
-                                ).show()
-                            }
-                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                            cacheSize = newCacheSize
-                            lastScanTime = timestamp
-                            cacheSettingsStore.setCacheSize(newCacheSize)
-                            cacheSettingsStore.setCacheLastScan(timestamp)
-                            android.widget.Toast.makeText(context, "Cache scanned: ${formatFileSize(newCacheSize)}", android.widget.Toast.LENGTH_SHORT).show()
-                        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                            android.widget.Toast.makeText(context, "Scan timeout: Cache too large to scan quickly", android.widget.Toast.LENGTH_LONG).show()
-                        } catch (e: Exception) {
-                            android.widget.Toast.makeText(context, "Scan failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                        } finally {
-                            isScanningCache = false
-                            isProcessingCache = false
-                        }
-                    }
-                },
-                onRequestClear = {
-                    if (cacheSize > 1L * 1024 * 1024 * 1024) {
-                        android.widget.Toast.makeText(
-                            context,
-                            "Large cache detected (${formatFileSize(cacheSize)}). This may take a while.",
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    showCacheActionDialog = false
-                    showDeleteConfirmDialog = true
-                },
-                onDismiss = { showCacheActionDialog = false }
-            )
-            
-            // Beautiful floating confirmation dialog for cache clearing
-            ClearCacheConfirmationDialog(
-                isVisible = showDeleteConfirmDialog,
-                cacheSize = formatFileSize(cacheSize),
-                onConfirm = {
-                    scope.launch {
-                        isClearingCache = true
-                        isProcessingCache = true
-                        showDeleteConfirmDialog = false
-                        
-                        try {
-                            // Add timeout for large cache clearing (60 seconds max)
-                            withContext(Dispatchers.IO) {
-                                withTimeout(60000) {
-                                    StorageUtils.clearCache(context)
-                                }
-                            }
-                            
-                            cacheSize = 0L
-                            val timestamp = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                            lastScanTime = timestamp
-                            
-                            cacheSettingsStore.setCacheSize(0L)
-                            cacheSettingsStore.setCacheLastScan(timestamp)
-                            
-                            android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
-                        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                            android.widget.Toast.makeText(context, "Clear timeout: Cache too large to clear quickly", android.widget.Toast.LENGTH_LONG).show()
-                        } catch (e: Exception) {
-                            android.widget.Toast.makeText(context, "Clear failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                        } finally {
-                            isClearingCache = false
-                            isProcessingCache = false
-                        }
-                    }
-                },
-                onDismiss = { showDeleteConfirmDialog = false },
-                hapticsEnabled = hapticsEnabled
-            )
-        }
     }
 }
+
+// Duplicate AppSettingsSection removed - using external file from AppSettingsSection.kt
 
 @Composable
 private fun InfoRow(
@@ -1391,5 +1046,4 @@ private fun SettingToggleRow(
             )
         )
     }
-}
 }

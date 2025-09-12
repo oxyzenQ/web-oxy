@@ -29,7 +29,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS setup - restrict to your Vercel domain
 origins = [
-    "https://your-frontend.vercel.app",  # Replace with actual Vercel domain
+    "https://oxyme.vercel.app",  # Replace with actual Vercel domain
     "http://localhost:3000",  # For local development
     "http://127.0.0.1:3000",
     "http://localhost:8080",
