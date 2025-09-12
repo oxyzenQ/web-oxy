@@ -60,7 +60,6 @@ import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
 import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
 import com.oxyzenq.kconvert.presentation.viewmodel.SettingsViewModel
 import com.oxyzenq.kconvert.utils.StorageUtils
-import com.oxyzenq.kconvert.utils.UpdateManager
 import com.oxyzenq.kconvert.data.repository.UpdateRepository
 import com.oxyzenq.kconvert.data.repository.VersionComparison
 import kotlinx.coroutines.launch
@@ -390,19 +389,17 @@ fun BottomSheetSettingsPanel(
                                 // Box 1 : App Settings Section
                                 item {
                                     AppSettingsSection(
-                                        autoUpdateEnabledDefault = false,
                                         darkModeEnabledDefault = false,
                                         hapticsEnabledDefault = hapticsEnabled,
                                         onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
-                                        onAnyToggle = { if (hapticsEnabled) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                        autoRemindEnabled = autoRemindEnabled,
+                                        onToggleAutoRemind = onToggleAutoRemind,
                                         isFullscreenMode = isFullscreenMode,
                                         onToggleFullscreen = onToggleFullscreen,
                                         darkLevel = darkLevel,
                                         onDarkLevelChange = onDarkLevelChange,
                                         navbarAutoHideEnabled = navbarAutoHideEnabled,
-                                        onToggleNavbarAutoHide = onToggleNavbarAutoHide,
-                                        autoRemindEnabled = autoRemindEnabled,
-                                        onToggleAutoRemind = onToggleAutoRemind
+                                        onToggleNavbarAutoHide = onToggleNavbarAutoHide
                                     )
                                 }
                                 
@@ -979,24 +976,21 @@ private fun MaintenanceSection(
             )
 
         }
-    }
 }
 
 @Composable
 private fun AppSettingsSection(
-    autoUpdateEnabledDefault: Boolean,
     darkModeEnabledDefault: Boolean,
     hapticsEnabledDefault: Boolean,
     onToggleHaptics: (Boolean) -> Unit,
-    onAnyToggle: () -> Unit,
-    isFullscreenMode: Boolean = true,
-    onToggleFullscreen: (Boolean) -> Unit = {},
-    darkLevel: Int = 0,
-    onDarkLevelChange: (Int) -> Unit = {},
-    navbarAutoHideEnabled: Boolean = true,
-    onToggleNavbarAutoHide: (Boolean) -> Unit = {},
-    autoRemindEnabled: Boolean = true,
-    onToggleAutoRemind: (Boolean) -> Unit = {}
+    autoRemindEnabled: Boolean,
+    onToggleAutoRemind: (Boolean) -> Unit,
+    isFullscreenMode: Boolean,
+    onToggleFullscreen: (Boolean) -> Unit,
+    darkLevel: Int,
+    onDarkLevelChange: (Int) -> Unit,
+    navbarAutoHideEnabled: Boolean,
+    onToggleNavbarAutoHide: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val settingsStore = remember { SettingsDataStore(context) }
@@ -1010,9 +1004,6 @@ private fun AppSettingsSection(
     val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
     var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
     
-    // Auto-update setting
-    val updateManager = remember { UpdateManager(context) }
-    var autoUpdateEnabled by remember { mutableStateOf(updateManager.isAutoUpdateEnabled()) }
     
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
@@ -1057,7 +1048,6 @@ private fun AppSettingsSection(
                         settingsStore.setFullScreen(enabled)
                     }
                     onToggleFullscreen(enabled)
-                    onAnyToggle()
                 }
             )
             
@@ -1070,7 +1060,6 @@ private fun AppSettingsSection(
                         settingsStore.setNavbarAutoHide(enabled)
                     }
                     onToggleNavbarAutoHide(enabled)
-                    onAnyToggle()
                 }
             )
             
@@ -1083,7 +1072,6 @@ private fun AppSettingsSection(
                     scope.launch {
                         settingsStore.setMeteorAnimation(enabled)
                     }
-                    onAnyToggle()
                 }
             )
             
@@ -1092,7 +1080,6 @@ private fun AppSettingsSection(
                 isEnabled = autoRemindEnabled,
                 onToggle = { enabled ->
                     onToggleAutoRemind(enabled)
-                    onAnyToggle()
                 }
             )
 
@@ -1156,20 +1143,9 @@ private fun AppSettingsSection(
                 onToggle = { enabled ->
                     // Only use the ViewModel's method to ensure single source of truth
                     onToggleHaptics(enabled)
-                    onAnyToggle()
                 }
             )
 
-            SettingToggleRow(
-                title = "Auto-update on launch",
-                isEnabled = autoUpdateEnabled,
-                onToggle = { enabled ->
-                    autoUpdateEnabled = enabled
-                    // persist immediately
-                    scope.launch { settingsStore.setAutoUpdate(enabled) }
-                    onAnyToggle()
-                }
-            )
 
             Spacer(modifier = Modifier.height(8.dp))
             // Cache size indicator with proper state management
@@ -1415,4 +1391,5 @@ private fun SettingToggleRow(
             )
         )
     }
+}
 }

@@ -19,15 +19,59 @@ const exRateTxt = document.querySelector("form .result");
     });
 });
 
-//function to get exchange rate from api
+// Configuration
+const API_BASE_URL = "https://your-backend.onrender.com"; // Replace with your actual Render backend URL
+const JWT_TOKEN = "PASTE_YOUR_JWT_TOKEN_HERE"; // Replace with actual JWT token from generate_token.py
+
+//function to get exchange rate from secure backend API
 
 async function getExchangeRate() {
     const amountVal = parseFloat(amount.value) || 1; // Ensure amount is a number
     exRateTxt.innerText = "Getting exchange rate...";
+    
     try {
-        const response = await fetch(`https://v6.exchangerate-api.com/v6/de1695208ebf652f2f84fe41/latest/${fromCur.value}`);
+        // Check if JWT token is configured
+        if (JWT_TOKEN === "PASTE_YOUR_JWT_TOKEN_HERE") {
+            exRateTxt.innerText = "⚠️ JWT token not configured. Please update the token.";
+            console.error("JWT token not configured. Please run generate_token.py and update JWT_TOKEN in cc.js");
+            return;
+        }
+
+        // Fetch from secure backend API
+        const response = await fetch(`${API_BASE_URL}/api/rates/${fromCur.value}?token=${JWT_TOKEN}`);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                exRateTxt.innerText = "🔒 Token expired. Please generate a new token.";
+                console.error("JWT token expired. Please run generate_token.py to get a new token.");
+                return;
+            } else if (response.status === 403) {
+                exRateTxt.innerText = "🚫 Invalid token. Please check your token.";
+                console.error("Invalid JWT token. Please verify your token.");
+                return;
+            } else if (response.status === 429) {
+                exRateTxt.innerText = "⏳ Rate limit exceeded. Please try again later.";
+                console.error("Rate limit exceeded. Please wait before making another request.");
+                return;
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        }
+
         const result = await response.json();
+        
+        // Check if API returned success
+        if (!result.success) {
+            throw new Error("API returned unsuccessful response");
+        }
+
         const exchangeRate = result.conversion_rates[toCur.value];
+        
+        if (!exchangeRate) {
+            exRateTxt.innerText = `❌ Exchange rate not available for ${toCur.value}`;
+            return;
+        }
+
         const totalExRate = (amountVal * exchangeRate).toFixed(2);
 
         // Format the totalExRate using Intl.NumberFormat
@@ -39,8 +83,21 @@ async function getExchangeRate() {
         });
 
         exRateTxt.innerText = `${amountVal.toFixed(2)} ${fromCur.value} = ${formatter.format(totalExRate)}`;
+        
+        // Log successful request for debugging
+        console.log(`✅ Exchange rate fetched: 1 ${fromCur.value} = ${exchangeRate} ${toCur.value}`);
+        
     } catch (error) {
-        exRateTxt.innerText = "Something went wrong...";
+        console.error("Exchange rate fetch error:", error);
+        
+        // Provide user-friendly error messages
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            exRateTxt.innerText = "🌐 Network error. Please check your connection.";
+        } else if (error.message.includes('timeout')) {
+            exRateTxt.innerText = "⏰ Request timeout. Please try again.";
+        } else {
+            exRateTxt.innerText = "❌ Something went wrong. Please try again.";
+        }
     }
 }
 

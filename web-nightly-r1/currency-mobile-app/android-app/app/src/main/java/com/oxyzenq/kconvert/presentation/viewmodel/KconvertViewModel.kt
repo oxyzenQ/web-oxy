@@ -41,13 +41,6 @@ class KconvertViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    // Auto update setting
-    val autoUpdateEnabled: StateFlow<Boolean> = appPreferences.autoUpdateOnLaunch
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
 
     // Haptics enabled setting
     val hapticsEnabled: StateFlow<Boolean> = appPreferences.hapticsEnabled
@@ -107,8 +100,6 @@ class KconvertViewModel @Inject constructor(
                         )
                     }
                     
-                    // Check for app updates automatically
-                    checkForUpdatesAutomatically()
                 }
                 
                 // Check for version updates and show welcome dialog
@@ -161,7 +152,9 @@ class KconvertViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                // Silent fail for automatic update check
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to check for updates: ${e.message}"
+                )
             }
         }
     }
@@ -400,32 +393,6 @@ class KconvertViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = "Delete error: ${e.message}"
-                )
-            }
-        }
-    }
-
-    /**
-     * Toggle auto update setting
-     */
-    fun toggleAutoUpdate() {
-        viewModelScope.launch {
-            try {
-                val currentSetting = autoUpdateEnabled.value
-                val newSetting = !currentSetting
-                
-                appPreferences.setAutoUpdateOnLaunch(newSetting)
-                
-                val message = if (newSetting) {
-                    "enable auto update on launch is on sir!"
-                } else {
-                    "auto update on launch is off sir!"
-                }
-                
-                showNotification(message, NotificationType.SUCCESS)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to toggle auto update: ${e.message}"
                 )
             }
         }

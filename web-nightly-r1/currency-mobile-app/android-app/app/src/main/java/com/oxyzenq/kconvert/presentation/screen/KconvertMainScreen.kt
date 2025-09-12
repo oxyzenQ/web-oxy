@@ -96,7 +96,6 @@ fun KconvertMainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currencies by viewModel.currencies.collectAsState()
-    val autoUpdateEnabled by viewModel.autoUpdateEnabled.collectAsState()
     val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
     
     // Notification system state
@@ -254,15 +253,14 @@ fun KconvertMainScreen(
                     ) {
                         FullControlPanelContent(
                             dataIndicator = uiState.dataIndicator,
-                            autoUpdateEnabled = autoUpdateEnabled,
                             isRefreshing = uiState.isRefreshing,
                             onRefreshData = {
                                 HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
-                                viewModel.showConfirmationDialog(ConfirmationType.REFRESH_DATA)
+                                viewModel.refreshData()
                             },
                             onDeleteData = {
-                                HapticHelper.performHaptic(context, HapticType.WARNING, hapticsEnabled)
-                                viewModel.showConfirmationDialog(ConfirmationType.DELETE_DATA)
+                                HapticHelper.performHaptic(context, HapticType.ERROR, hapticsEnabled)
+                                viewModel.deleteAllData()
                             }
                         )
                     }
@@ -773,26 +771,11 @@ private fun CalculatorConverterContent(
 @Composable
 private fun FullControlPanelContent(
     dataIndicator: String,
-    autoUpdateEnabled: Boolean,
     isRefreshing: Boolean,
     onRefreshData: () -> Unit,
     onDeleteData: () -> Unit
 ) {
     Column {
-        // Auto-update status indicator (styled same as data indicator)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color(0xFF374151),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text(
-                text = if (autoUpdateEnabled) "auto update is on" else "auto update is off",
-                modifier = Modifier.padding(12.dp),
-                style = MaterialTheme.typography.caption.copy(
-                    color = Color(0xFF94A3B8)
-                )
-            )
-        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
