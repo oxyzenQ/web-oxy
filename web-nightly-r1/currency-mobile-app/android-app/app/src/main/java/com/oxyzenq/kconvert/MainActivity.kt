@@ -58,8 +58,8 @@ class MainActivity : ComponentActivity() {
     
     override fun onResume() {
         super.onResume()
-        // Start automatic reminder system after main screen is shown
-        updateManager.startAutomaticReminders(this)
+        // Check for updates when activity resumes (after splash screen)
+        updateManager.maybeShowUpdateReminder(this)
     }
     
     override fun onDestroy() {

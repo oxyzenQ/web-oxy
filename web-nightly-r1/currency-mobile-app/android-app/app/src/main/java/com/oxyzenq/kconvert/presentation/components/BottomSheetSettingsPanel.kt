@@ -388,6 +388,7 @@ fun BottomSheetSettingsPanel(
                                 // Box 1 : App Settings Section
                                 item {
                                     AppSettingsSection(
+                                        autoUpdateEnabledDefault = false,
                                         darkModeEnabledDefault = false,
                                         hapticsEnabledDefault = hapticsEnabled,
                                         onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
@@ -979,6 +980,7 @@ private fun MaintenanceSection(
 
 @Composable
 private fun AppSettingsSection(
+    autoUpdateEnabledDefault: Boolean,
     darkModeEnabledDefault: Boolean,
     hapticsEnabledDefault: Boolean,
     onToggleHaptics: (Boolean) -> Unit,
@@ -1002,9 +1004,9 @@ private fun AppSettingsSection(
     val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
     var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
     
-    // Automatic reminder setting
+    // Auto-update setting
     val updateManager = remember { UpdateManager(context) }
-    var automaticReminderEnabled by remember { mutableStateOf(true) } // Default ON as requested
+    var autoUpdateEnabled by remember { mutableStateOf(updateManager.isAutoUpdateEnabled()) }
     
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
@@ -1080,11 +1082,18 @@ private fun AppSettingsSection(
             )
             
             SettingToggleRow(
-                title = "Automatic reminder apps to update",
-                isEnabled = automaticReminderEnabled,
+                title = "Automatic reminder to update every 10 seconds",
+                isEnabled = autoUpdateEnabled,
                 onToggle = { enabled ->
-                    automaticReminderEnabled = enabled
-                    updateManager.setAutomaticReminderEnabled(enabled, activity)
+                    autoUpdateEnabled = enabled
+                    updateManager.setAutoUpdateEnabled(enabled)
+                    // Start/stop engine immediately to reflect user choice and fix re-enable behavior
+                    val act = activity
+                    if (enabled && act != null) {
+                        updateManager.restartEngine(act)
+                    } else {
+                        updateManager.stopEngine()
+                    }
                     onAnyToggle()
                 }
             )
@@ -1153,6 +1162,16 @@ private fun AppSettingsSection(
                 }
             )
 
+            SettingToggleRow(
+                title = "Auto-update on launch",
+                isEnabled = autoUpdateEnabled,
+                onToggle = { enabled ->
+                    autoUpdateEnabled = enabled
+                    // persist immediately
+                    scope.launch { settingsStore.setAutoUpdate(enabled) }
+                    onAnyToggle()
+                }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             // Cache size indicator with proper state management
