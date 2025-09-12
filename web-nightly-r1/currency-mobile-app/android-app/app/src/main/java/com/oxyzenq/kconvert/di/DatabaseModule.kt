@@ -9,6 +9,7 @@ import androidx.room.Room
 import com.oxyzenq.kconvert.data.local.database.KconvertDatabase
 import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
 import com.oxyzenq.kconvert.data.local.dao.UserPreferencesDao
+import com.oxyzenq.kconvert.data.local.dao.NotifyDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,5 +38,10 @@ object DatabaseModule {
     @Provides
     fun provideUserPreferencesDao(database: KconvertDatabase): UserPreferencesDao {
         return database.userPreferencesDao()
+    }
+
+    @Provides
+    fun provideNotifyDao(database: KconvertDatabase): NotifyDao {
+        return database.notifyDao()
     }
 }

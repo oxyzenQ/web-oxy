@@ -104,6 +104,8 @@ fun BottomSheetSettingsPanel(
     onDarkLevelChange: (Int) -> Unit = {},
     navbarAutoHideEnabled: Boolean = true,
     onToggleNavbarAutoHide: (Boolean) -> Unit = {},
+    autoRemindEnabled: Boolean = true,
+    onToggleAutoRemind: (Boolean) -> Unit = {},
     isVisible: Boolean = false,
     securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
@@ -398,7 +400,9 @@ fun BottomSheetSettingsPanel(
                                         darkLevel = darkLevel,
                                         onDarkLevelChange = onDarkLevelChange,
                                         navbarAutoHideEnabled = navbarAutoHideEnabled,
-                                        onToggleNavbarAutoHide = onToggleNavbarAutoHide
+                                        onToggleNavbarAutoHide = onToggleNavbarAutoHide,
+                                        autoRemindEnabled = autoRemindEnabled,
+                                        onToggleAutoRemind = onToggleAutoRemind
                                     )
                                 }
                                 
@@ -990,7 +994,9 @@ private fun AppSettingsSection(
     darkLevel: Int = 0,
     onDarkLevelChange: (Int) -> Unit = {},
     navbarAutoHideEnabled: Boolean = true,
-    onToggleNavbarAutoHide: (Boolean) -> Unit = {}
+    onToggleNavbarAutoHide: (Boolean) -> Unit = {},
+    autoRemindEnabled: Boolean = true,
+    onToggleAutoRemind: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsStore = remember { SettingsDataStore(context) }
@@ -1004,9 +1010,9 @@ private fun AppSettingsSection(
     val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
     var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
     
-    // Automatic reminder setting
+    // Auto-update setting
     val updateManager = remember { UpdateManager(context) }
-    var reminderEnabled by remember { mutableStateOf(updateManager.isReminderEnabled()) }
+    var autoUpdateEnabled by remember { mutableStateOf(updateManager.isAutoUpdateEnabled()) }
     
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
@@ -1082,11 +1088,10 @@ private fun AppSettingsSection(
             )
             
             SettingToggleRow(
-                title = "Automatic Reminder Apps to Update",
-                isEnabled = reminderEnabled,
+                title = "Automatic check update when on main screen",
+                isEnabled = autoRemindEnabled,
                 onToggle = { enabled ->
-                    reminderEnabled = enabled
-                    updateManager.setReminderEnabled(enabled)
+                    onToggleAutoRemind(enabled)
                     onAnyToggle()
                 }
             )
@@ -1155,6 +1160,16 @@ private fun AppSettingsSection(
                 }
             )
 
+            SettingToggleRow(
+                title = "Auto-update on launch",
+                isEnabled = autoUpdateEnabled,
+                onToggle = { enabled ->
+                    autoUpdateEnabled = enabled
+                    // persist immediately
+                    scope.launch { settingsStore.setAutoUpdate(enabled) }
+                    onAnyToggle()
+                }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             // Cache size indicator with proper state management

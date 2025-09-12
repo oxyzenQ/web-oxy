@@ -94,7 +94,7 @@ object HapticHelper {
         } else {
             // For older devices, use simple vibration instead of deprecated pattern method
             @Suppress("DEPRECATION")
-            vibrator.vibrate(100) // Simple 100ms vibration
+            vibrator.vibrate(200) // 200ms vibration as fallback
         }
     }
     

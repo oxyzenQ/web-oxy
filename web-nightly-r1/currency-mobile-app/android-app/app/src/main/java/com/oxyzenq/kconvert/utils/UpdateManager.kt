@@ -31,7 +31,7 @@ class UpdateManager(private val context: Context) {
         private const val GITHUB_API_URL = "https://api.github.com/repos/oxyzenq/web-oxy/releases/latest"
         private const val GITHUB_RELEASES_URL = "https://github.com/oxyzenq/web-oxy/releases/latest"
         private const val REMINDER_INTERVAL_MS = 60_000L // 1 minute
-        private const val PREF_REMINDER_ENABLED = "automatic_reminder_enabled"
+        private const val PREF_AUTO_UPDATE_ENABLED = "auto_update_enabled"
         private const val PREF_LAST_DISMISSED_VERSION = "last_dismissed_version"
     }
     
@@ -91,38 +91,12 @@ class UpdateManager(private val context: Context) {
     }
     
     /**
-     * Start automatic reminder system after main screen loads
+     * Main entry point - check and show update reminder if needed
      */
-    fun startAutomaticReminder(activity: Activity) {
-        val reminderEnabled = prefs.getBoolean(PREF_REMINDER_ENABLED, true)
-        if (!reminderEnabled) {
-            Log.d(TAG, "Automatic reminder disabled by user")
-            return
-        }
-        
-        Log.d(TAG, "Starting automatic reminder system - will check in 1 minute")
-        scheduleReminderCheck(activity)
-    }
-    
-    /**
-     * Schedule the first reminder check after 1 minute
-     */
-    private fun scheduleReminderCheck(activity: Activity) {
-        stopReminders() // Clear any existing reminders
-        
-        reminderHandler = Handler(Looper.getMainLooper())
-        reminderHandler?.postDelayed({
-            checkAndShowReminder(activity)
-        }, REMINDER_INTERVAL_MS)
-    }
-    
-    /**
-     * Check for updates and show reminder if needed
-     */
-    private fun checkAndShowReminder(activity: Activity) {
-        val reminderEnabled = prefs.getBoolean(PREF_REMINDER_ENABLED, true)
-        if (!reminderEnabled) {
-            Log.d(TAG, "Reminder disabled, stopping checks")
+    fun maybeShowUpdateReminder(activity: Activity) {
+        val autoUpdateEnabled = prefs.getBoolean(PREF_AUTO_UPDATE_ENABLED, true)
+        if (!autoUpdateEnabled) {
+            Log.d(TAG, "Auto-update disabled by user")
             return
         }
         
@@ -132,31 +106,17 @@ class UpdateManager(private val context: Context) {
                 
                 // Don't show if user already dismissed this version
                 if (version != lastDismissedVersion) {
-                    showUpdateBottomSheet(activity, version, releaseNotes ?: "")
-                } else {
-                    // Schedule next check even if dismissed
-                    scheduleNextReminder(activity)
+                    showFloatingUpdateDialog(activity, version, releaseNotes ?: "")
+                    scheduleReminders(activity, version, releaseNotes ?: "")
                 }
-            } else {
-                // No update available, schedule next check
-                scheduleNextReminder(activity)
             }
         }
     }
     
     /**
-     * Schedule next reminder check
+     * Show premium floating update dialog
      */
-    private fun scheduleNextReminder(activity: Activity) {
-        reminderHandler?.postDelayed({
-            checkAndShowReminder(activity)
-        }, REMINDER_INTERVAL_MS)
-    }
-    
-    /**
-     * Show modern update dialog using Compose
-     */
-    private fun showUpdateBottomSheet(activity: Activity, version: String, releaseNotes: String) {
+    private fun showFloatingUpdateDialog(activity: Activity, version: String, releaseNotes: String) {
         try {
             val message = buildString {
                 append("🚀 New version $version is available!\n\n")
@@ -167,7 +127,6 @@ class UpdateManager(private val context: Context) {
                 }
             }
             
-            // Use AlertDialog with modern styling for simplicity and stability
             AlertDialog.Builder(activity)
                 .setTitle("✨ Kconvert Update Available")
                 .setMessage(message)
@@ -175,13 +134,10 @@ class UpdateManager(private val context: Context) {
                     openGitHubReleases(activity)
                     stopReminders()
                 }
-                .setNegativeButton("⏰ Remind in 1 Min") { _, _ ->
-                    // Schedule next reminder
-                    scheduleNextReminder(activity)
+                .setNegativeButton("⏰ Remind Later") { _, _ ->
+                    // Continue reminders
                 }
                 .setNeutralButton("❌ Don't Ask Again") { _, _ ->
-                    // Disable automatic reminder toggle
-                    setReminderEnabled(false)
                     dismissVersionPermanently(version)
                     stopReminders()
                 }
@@ -190,11 +146,30 @@ class UpdateManager(private val context: Context) {
                 
         } catch (e: Exception) {
             Log.e(TAG, "Error showing update dialog", e)
-            // Fallback to simple notification
-            Log.i(TAG, "Update available: $version")
         }
     }
     
+    /**
+     * Schedule recurring reminders every 1 minute
+     */
+    private fun scheduleReminders(activity: Activity, version: String, releaseNotes: String) {
+        stopReminders() // Clear any existing reminders
+        
+        reminderHandler = Handler(Looper.getMainLooper())
+        reminderHandler?.postDelayed(object : Runnable {
+            override fun run() {
+                val autoUpdateEnabled = prefs.getBoolean(PREF_AUTO_UPDATE_ENABLED, true)
+                val lastDismissedVersion = prefs.getString(PREF_LAST_DISMISSED_VERSION, "")
+                
+                if (autoUpdateEnabled && version != lastDismissedVersion) {
+                    showFloatingUpdateDialog(activity, version, releaseNotes)
+                    reminderHandler?.postDelayed(this, REMINDER_INTERVAL_MS)
+                } else {
+                    stopReminders()
+                }
+            }
+        }, REMINDER_INTERVAL_MS)
+    }
     
     /**
      * Stop all reminder timers
@@ -253,25 +228,25 @@ class UpdateManager(private val context: Context) {
     }
     
     /**
-     * Get automatic reminder preference
+     * Get auto-update preference
      */
-    fun isReminderEnabled(): Boolean {
-        return prefs.getBoolean(PREF_REMINDER_ENABLED, true)
+    fun isAutoUpdateEnabled(): Boolean {
+        return prefs.getBoolean(PREF_AUTO_UPDATE_ENABLED, true)
     }
     
     /**
-     * Set automatic reminder preference
+     * Set auto-update preference
      */
-    fun setReminderEnabled(enabled: Boolean) {
+    fun setAutoUpdateEnabled(enabled: Boolean) {
         prefs.edit()
-            .putBoolean(PREF_REMINDER_ENABLED, enabled)
+            .putBoolean(PREF_AUTO_UPDATE_ENABLED, enabled)
             .apply()
         
         if (!enabled) {
             stopReminders()
         }
         
-        Log.d(TAG, "Automatic reminder ${if (enabled) "enabled" else "disabled"}")
+        Log.d(TAG, "Auto-update ${if (enabled) "enabled" else "disabled"}")
     }
     
     /**

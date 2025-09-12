@@ -5,6 +5,7 @@
 package com.oxyzenq.kconvert.presentation.components
 
 import androidx.compose.animation.core.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +37,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Bottom Navigation Bar with iOS-style glassmorphism and auto-hide functionality
@@ -44,7 +47,9 @@ fun BottomNavBar(
     isVisible: Boolean,
     onExitClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onNotificationClick: () -> Unit = {},
     onResetAppClick: () -> Unit = {},
+    notificationCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -101,7 +106,7 @@ fun BottomNavBar(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -110,6 +115,12 @@ fun BottomNavBar(
                 icon = Icons.AutoMirrored.Filled.ExitToApp,
                 onClick = onExitClick,
                 contentDescription = "Exit App"
+            )
+            
+            // Notification Button with badge
+            NotificationButton(
+                onClick = onNotificationClick,
+                notificationCount = notificationCount
             )
             
             // Settings Button (Center) with rotation animation
@@ -182,6 +193,87 @@ fun NavBarButton(
                 .size(if (isCenter) 24.dp else 20.dp)
                 .rotate(rotationAngle)
         )
+    }
+}
+
+/**
+ * Notification button with badge for unread count
+ */
+@Composable
+fun NotificationButton(
+    onClick: () -> Unit,
+    notificationCount: Int,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+    val hasNotifications = notificationCount > 0
+    
+    // Animated color transition
+    val iconColor by animateColorAsState(
+        targetValue = if (hasNotifications) Color(0xFFEF4444) else Color.White.copy(alpha = 0.95f),
+        animationSpec = tween(300),
+        label = "notification_color"
+    )
+    
+    // Badge animation
+    val badgeScale by animateFloatAsState(
+        targetValue = if (hasNotifications) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "badge_scale"
+    )
+    
+    Box(
+        modifier = modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            }
+            .then(bouncyPress(interactionSource)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Notifications,
+            contentDescription = "Notifications",
+            tint = iconColor,
+            modifier = Modifier.size(20.dp)
+        )
+        
+        // Badge for notification count
+        if (hasNotifications) {
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .scale(badgeScale)
+                    .offset(x = 8.dp, y = (-8).dp)
+                    .background(
+                        Color(0xFFEF4444),
+                        CircleShape
+                    )
+                    .border(
+                        1.dp,
+                        Color.White.copy(alpha = 0.8f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (notificationCount > 99) "99+" else notificationCount.toString(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.caption.copy(
+                        fontSize = if (notificationCount > 9) 8.sp else 10.sp
+                    )
+                )
+            }
+        }
     }
 }
 

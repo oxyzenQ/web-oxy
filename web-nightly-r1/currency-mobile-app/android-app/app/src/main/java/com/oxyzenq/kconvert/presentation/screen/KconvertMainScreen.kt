@@ -61,6 +61,7 @@ import com.oxyzenq.kconvert.presentation.components.ConfirmationDialog
 import com.oxyzenq.kconvert.presentation.components.*
 import com.oxyzenq.kconvert.presentation.viewmodel.ConfirmationType
 import com.oxyzenq.kconvert.presentation.viewmodel.KconvertViewModel
+import com.oxyzenq.kconvert.presentation.viewmodel.NotificationViewModel
 import com.oxyzenq.kconvert.utils.StorageUtils
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -90,12 +91,19 @@ private fun bouncyPress(interactionSource: MutableInteractionSource, pressedScal
  */
 @Composable
 fun KconvertMainScreen(
-    viewModel: KconvertViewModel = hiltViewModel()
+    viewModel: KconvertViewModel = hiltViewModel(),
+    notificationViewModel: NotificationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currencies by viewModel.currencies.collectAsState()
     val autoUpdateEnabled by viewModel.autoUpdateEnabled.collectAsState()
     val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
+    
+    // Notification system state
+    val notifications by notificationViewModel.notifications.collectAsState()
+    val unreadCount by notificationViewModel.notificationCount.collectAsState()
+    val showNotificationSheet by notificationViewModel.isBottomSheetVisible.collectAsState()
+    val selectedMessage by notificationViewModel.selectedMessage.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -138,6 +146,9 @@ fun KconvertMainScreen(
     // Initialize app on first composition
     LaunchedEffect(Unit) {
         viewModel.initializeApp(context)
+        
+        // Mark notifications as read when screen is viewed
+        notificationViewModel.markAllAsRead()
         
         // Perform cache scan once on app startup
         val settingsStore = SettingsDataStore(context)
@@ -411,6 +422,11 @@ fun KconvertMainScreen(
                     )
                 }
             },
+            onNotificationClick = {
+                HapticHelper.performHaptic(context, HapticType.LIGHT, hapticsEnabled)
+                notificationViewModel.showBottomSheet()
+            },
+            notificationCount = unreadCount,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
         
@@ -425,8 +441,40 @@ fun KconvertMainScreen(
             onDarkLevelChange = { level -> darkLevel = level },
             navbarAutoHideEnabled = navbarAutoHideEnabled,
             onToggleNavbarAutoHide = { enabled -> navbarAutoHideEnabled = enabled },
+            autoRemindEnabled = notificationViewModel.autoRemindEnabled.collectAsState().value,
+            onToggleAutoRemind = { enabled -> notificationViewModel.setAutoRemindEnabled(enabled) },
             isVisible = showSettingsPanel
         )
+        
+        // Notification Bottom Sheet
+        if (showNotificationSheet) {
+            NotificationBottomSheet(
+                notifications = notifications,
+                onDismiss = { notificationViewModel.hideBottomSheet() },
+                onDeleteMessage = { messageId ->
+                    notificationViewModel.deleteMessage(messageId)
+                },
+                onManualRefresh = {
+                    HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
+                    notificationViewModel.performManualCheck()
+                },
+                hapticsEnabled = hapticsEnabled
+            )
+        }
+        
+        // Update Changelog Dialog
+        selectedMessage?.let { message ->
+            UpdateChangelogDialog(
+                message = message,
+                onDismiss = {
+                    notificationViewModel.hideChangelogDialog()
+                },
+                onDontAskAgain = {
+                    notificationViewModel.setAutoRemindEnabled(false)
+                    notificationViewModel.hideChangelogDialog()
+                }
+            )
+        }
     }
 }
 

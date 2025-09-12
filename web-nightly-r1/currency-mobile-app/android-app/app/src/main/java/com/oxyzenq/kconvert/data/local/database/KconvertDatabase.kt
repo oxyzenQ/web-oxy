@@ -10,6 +10,7 @@ import androidx.room.RoomDatabase
 import android.content.Context
 import com.oxyzenq.kconvert.data.local.dao.CurrencyDao
 import com.oxyzenq.kconvert.data.local.dao.UserPreferencesDao
+import com.oxyzenq.kconvert.data.local.dao.NotifyDao
 import com.oxyzenq.kconvert.data.local.entity.CurrencyEntity
 import com.oxyzenq.kconvert.data.local.entity.ExchangeRateEntity
 import com.oxyzenq.kconvert.data.local.entity.AppMetadataEntity
@@ -17,6 +18,7 @@ import com.oxyzenq.kconvert.data.local.entity.UserPreferencesEntity
 import com.oxyzenq.kconvert.data.local.entity.ConversionHistoryEntity
 import com.oxyzenq.kconvert.data.local.entity.FavoritePairEntity
 import com.oxyzenq.kconvert.data.local.entity.ApiCacheEntity
+import com.oxyzenq.kconvert.data.local.entity.NotifyMessage
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -31,15 +33,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         UserPreferencesEntity::class,
         ConversionHistoryEntity::class,
         FavoritePairEntity::class,
-        ApiCacheEntity::class
+        ApiCacheEntity::class,
+        NotifyMessage::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class KconvertDatabase : RoomDatabase() {
     
     abstract fun currencyDao(): CurrencyDao
     abstract fun userPreferencesDao(): UserPreferencesDao
+    abstract fun notifyDao(): NotifyDao
     
     companion object {
         @Volatile
@@ -90,6 +94,23 @@ abstract class KconvertDatabase : RoomDatabase() {
             }
         }
         
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create notify_messages table for version 3
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS notify_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT,
+                        body TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        read INTEGER NOT NULL DEFAULT 0,
+                        releaseUrl TEXT,
+                        messageType TEXT NOT NULL DEFAULT 'UPDATE'
+                    )
+                """)
+            }
+        }
+        
         fun getDatabase(context: Context): KconvertDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -97,7 +118,7 @@ abstract class KconvertDatabase : RoomDatabase() {
                     KconvertDatabase::class.java,
                     "kconvert_database"
                 )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

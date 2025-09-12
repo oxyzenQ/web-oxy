@@ -20,27 +20,29 @@ fun setImmersiveMode(activity: Activity, enabled: Boolean) {
     }
 
     val controller = WindowInsetsControllerCompat(window, window.decorView)
-    
-    // Set transparent system bars using modern API
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        // Use WindowCompat which is the modern approach
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-    } else {
-        @Suppress("DEPRECATION")
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-        @Suppress("DEPRECATION")
-        window.navigationBarColor = android.graphics.Color.TRANSPARENT
-    }
-    
     if (enabled) {
         // Full immersive - hide status and nav bars
         controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
         controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        // Keep bar surfaces transparent so when they transiently appear, wallpaper still shows
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            @Suppress("DEPRECATION") 
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        }
     } else {
         // Show bars but keep them transparent so the background remains visible
         controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-        // Ensure icons are legible on dark wallpaper
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        }
+        // Optional: ensure icons are legible on dark wallpaper (light status bar icons)
+        // You can adjust this based on theme if desired
         controller.isAppearanceLightStatusBars = false
         controller.isAppearanceLightNavigationBars = false
     }
