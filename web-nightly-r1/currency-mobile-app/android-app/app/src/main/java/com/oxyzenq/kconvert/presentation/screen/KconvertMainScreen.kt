@@ -38,6 +38,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.oxyzenq.kconvert.utils.HapticHelper
+import com.oxyzenq.kconvert.utils.HapticType
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -216,7 +218,7 @@ fun KconvertMainScreen(
                             onSourceCurrencySelect = viewModel::selectSourceCurrency,
                             onTargetCurrencySelect = viewModel::selectTargetCurrency,
                             onConvert = {
-                                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                HapticHelper.performHaptic(context, HapticType.SUCCESS, hapticsEnabled)
                                 viewModel.convertCurrency()
                             }
                         )
@@ -244,11 +246,11 @@ fun KconvertMainScreen(
                             autoUpdateEnabled = autoUpdateEnabled,
                             isRefreshing = uiState.isRefreshing,
                             onRefreshData = {
-                                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
                                 viewModel.showConfirmationDialog(ConfirmationType.REFRESH_DATA)
                             },
                             onDeleteData = {
-                                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                HapticHelper.performHaptic(context, HapticType.WARNING, hapticsEnabled)
                                 viewModel.showConfirmationDialog(ConfirmationType.DELETE_DATA)
                             }
                         )
@@ -392,7 +394,7 @@ fun KconvertMainScreen(
         BottomNavBar(
             isVisible = isNavbarVisible,
             onExitClick = {
-                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                HapticHelper.performHaptic(context, HapticType.ERROR, hapticsEnabled)
                 viewModel.showConfirmationDialog(ConfirmationType.EXIT_APP)
             },
             onSettingsClick = {
@@ -400,7 +402,7 @@ fun KconvertMainScreen(
             },
             onResetAppClick = {
                 // Reset app to default state and scroll to top
-                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
                 viewModel.resetAppToDefault()
                 coroutineScope.launch {
                     listState.animateScrollToItem(

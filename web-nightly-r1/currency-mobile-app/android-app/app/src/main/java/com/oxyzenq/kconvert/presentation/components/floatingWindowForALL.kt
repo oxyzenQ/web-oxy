@@ -28,7 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import com.oxyzenq.kconvert.data.model.Currency
+import com.oxyzenq.kconvert.utils.HapticHelper
+import com.oxyzenq.kconvert.utils.HapticType
 
 /**
  * Basic wrappers built on FloatingModal for common message types
@@ -43,7 +46,7 @@ fun InfoWindow(
     hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -73,7 +76,7 @@ fun CurrencyPickerWindow(
     strict: Boolean = true,
     hapticsEnabled: Boolean = true
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -127,7 +130,7 @@ fun CurrencyPickerWindow(
         // Close button
         Button(
             onClick = {
-                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                HapticHelper.performHaptic(context, HapticType.LIGHT, hapticsEnabled)
                 onDismiss()
             },
             modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -153,7 +156,7 @@ fun ErrorWindow(
     hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -180,7 +183,7 @@ fun SuccessWindow(
     hapticsEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -218,7 +221,7 @@ fun UpdateResultWindow(
     strict: Boolean = true,
     hapticsEnabled: Boolean = true
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val (icon, tint, backgroundColor) = when {
         updateError -> Triple(Icons.Default.Warning, Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.12f))
         uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.MISMATCH_WARNING -> Triple(
@@ -331,7 +334,7 @@ fun UpdateResultWindow(
                 
                 Button(
                     onClick = {
-                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        HapticHelper.performHaptic(context, HapticType.SUCCESS, hapticsEnabled)
                         if (isOutdated || uiState == com.oxyzenq.kconvert.data.repository.UpdateUIState.UPDATE_AVAILABLE) onOpenLatest() else onOpenReleases()
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -371,7 +374,7 @@ fun UpdateResultWindow(
             // Close button with iOS styling
             Button(
                 onClick = {
-                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    HapticHelper.performHaptic(context, HapticType.LIGHT, hapticsEnabled)
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -408,7 +411,7 @@ fun WelcomeWindow(
     strict: Boolean = true,
     hapticsEnabled: Boolean = true
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val (title, message, icon) = if (isFirstInstall) {
         Triple(
             "Welcome to Kconvert!",
@@ -487,7 +490,7 @@ fun WelcomeWindow(
             ) {
                 Button(
                     onClick = {
-                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        HapticHelper.performHaptic(context, HapticType.LIGHT, hapticsEnabled)
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f).height(44.dp),
@@ -502,7 +505,7 @@ fun WelcomeWindow(
                 
                 Button(
                     onClick = {
-                        if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        HapticHelper.performHaptic(context, HapticType.SUCCESS, hapticsEnabled)
                         onOpenGitHub()
                     },
                     modifier = Modifier.weight(1f).height(44.dp),
@@ -545,7 +548,7 @@ fun CacheManagementWindow(
     strict: Boolean = true,
     hapticsEnabled: Boolean = true
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     FloatingModal(
         visible = visible,
         onDismiss = onDismiss,
@@ -563,7 +566,7 @@ fun CacheManagementWindow(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
                 onClick = {
-                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    HapticHelper.performHaptic(context, HapticType.MEDIUM, hapticsEnabled)
                     onScan()
                 },
                 modifier = Modifier.weight(1f).height(44.dp),
@@ -579,7 +582,7 @@ fun CacheManagementWindow(
             }
             Button(
                 onClick = {
-                    if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    HapticHelper.performHaptic(context, HapticType.WARNING, hapticsEnabled)
                     onRequestClear()
                 },
                 modifier = Modifier.weight(1f).height(44.dp),
@@ -596,7 +599,7 @@ fun CacheManagementWindow(
         }
         Button(
             onClick = {
-                if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                HapticHelper.performHaptic(context, HapticType.LIGHT, hapticsEnabled)
                 onDismiss()
             },
             modifier = Modifier.fillMaxWidth().height(44.dp),
