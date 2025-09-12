@@ -92,9 +92,9 @@ object HapticHelper {
             val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
             vibrator.vibrate(effect)
         } else {
+            // For older devices, use simple vibration instead of deprecated pattern method
             @Suppress("DEPRECATION")
-            val pattern = longArrayOf(0, 40, 80, 40)
-            vibrator.vibrate(pattern, -1)
+            vibrator.vibrate(100) // Simple 100ms vibration
         }
     }
     

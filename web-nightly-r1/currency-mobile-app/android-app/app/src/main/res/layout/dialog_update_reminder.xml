@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bottom_sheet_background">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvUpdateTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="✨ Kconvert Update Available"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Message -->
+    <TextView
+        android:id="@+id/tvUpdateMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🚀 New version is available!"
+        android:textSize="16sp"
+        android:textColor="#E2E8F0"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Buttons Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="8dp">
+
+        <!-- Update Now Button -->
+        <Button
+            android:id="@+id/btnUpdate"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="🔄 Update Now"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="@drawable/button_primary_background"
+            android:layout_marginBottom="12dp"
+            android:elevation="2dp" />
+
+        <!-- Remind Later Button -->
+        <Button
+            android:id="@+id/btnRemindLater"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="⏰ Remind in 1 Minute"
+            android:textColor="#CBD5E1"
+            android:background="@drawable/button_secondary_background"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Don't Ask Again Button -->
+        <Button
+            android:id="@+id/btnDontAsk"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="❌ Don't Ask Again"
+            android:textColor="#F87171"
+            android:background="@drawable/button_danger_background" />
+
+    </LinearLayout>
+
+</LinearLayout>

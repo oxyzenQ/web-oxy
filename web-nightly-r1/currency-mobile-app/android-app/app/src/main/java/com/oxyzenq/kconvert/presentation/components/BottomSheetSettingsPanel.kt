@@ -1004,9 +1004,9 @@ private fun AppSettingsSection(
     val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
     var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
     
-    // Auto-update setting
+    // Automatic reminder setting
     val updateManager = remember { UpdateManager(context) }
-    var autoUpdateEnabled by remember { mutableStateOf(updateManager.isAutoUpdateEnabled()) }
+    var reminderEnabled by remember { mutableStateOf(updateManager.isReminderEnabled()) }
     
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
@@ -1082,18 +1082,11 @@ private fun AppSettingsSection(
             )
             
             SettingToggleRow(
-                title = "Automatic reminder to update every 10 seconds",
-                isEnabled = autoUpdateEnabled,
+                title = "Automatic Reminder Apps to Update",
+                isEnabled = reminderEnabled,
                 onToggle = { enabled ->
-                    autoUpdateEnabled = enabled
-                    updateManager.setAutoUpdateEnabled(enabled)
-                    // Start/stop engine immediately to reflect user choice and fix re-enable behavior
-                    val act = activity
-                    if (enabled && act != null) {
-                        updateManager.restartEngine(act)
-                    } else {
-                        updateManager.stopEngine()
-                    }
+                    reminderEnabled = enabled
+                    updateManager.setReminderEnabled(enabled)
                     onAnyToggle()
                 }
             )
@@ -1162,16 +1155,6 @@ private fun AppSettingsSection(
                 }
             )
 
-            SettingToggleRow(
-                title = "Auto-update on launch",
-                isEnabled = autoUpdateEnabled,
-                onToggle = { enabled ->
-                    autoUpdateEnabled = enabled
-                    // persist immediately
-                    scope.launch { settingsStore.setAutoUpdate(enabled) }
-                    onAnyToggle()
-                }
-            )
 
             Spacer(modifier = Modifier.height(8.dp))
             // Cache size indicator with proper state management

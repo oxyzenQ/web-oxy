@@ -30,16 +30,14 @@ class UpdateManager(private val context: Context) {
         private const val TAG = "UpdateManager"
         private const val GITHUB_API_URL = "https://api.github.com/repos/oxyzenq/web-oxy/releases/latest"
         private const val GITHUB_RELEASES_URL = "https://github.com/oxyzenq/web-oxy/releases/latest"
-        private const val REMINDER_INTERVAL_MS = 10_000L // 10 seconds per requirement
-        private const val PREF_AUTO_UPDATE_ENABLED = "auto_update_enabled" // single toggle, default ON
+        private const val REMINDER_INTERVAL_MS = 60_000L // 1 minute
+        private const val PREF_REMINDER_ENABLED = "automatic_reminder_enabled"
         private const val PREF_LAST_DISMISSED_VERSION = "last_dismissed_version"
     }
     
     private val prefs = context.getSharedPreferences("kconvert_prefs", Context.MODE_PRIVATE)
     private var reminderHandler: Handler? = null
     private var updateJob: Job? = null
-    private var isDialogShowing: Boolean = false
-    private var engineRunnable: Runnable? = null
     
     /**
      * Check for updates asynchronously with proper error handling
@@ -93,19 +91,73 @@ class UpdateManager(private val context: Context) {
     }
     
     /**
-     * Main entry point - check and show update reminder if needed
+     * Start automatic reminder system after main screen loads
      */
-    fun maybeShowUpdateReminder(activity: Activity) {
-        // Backwards compatibility: now delegates to engine start
-        startEngine(activity)
+    fun startAutomaticReminder(activity: Activity) {
+        val reminderEnabled = prefs.getBoolean(PREF_REMINDER_ENABLED, true)
+        if (!reminderEnabled) {
+            Log.d(TAG, "Automatic reminder disabled by user")
+            return
+        }
+        
+        Log.d(TAG, "Starting automatic reminder system - will check in 1 minute")
+        scheduleReminderCheck(activity)
     }
     
     /**
-     * Show premium floating update dialog
+     * Schedule the first reminder check after 1 minute
      */
-    private fun showFloatingUpdateDialog(activity: Activity, version: String, releaseNotes: String) {
+    private fun scheduleReminderCheck(activity: Activity) {
+        stopReminders() // Clear any existing reminders
+        
+        reminderHandler = Handler(Looper.getMainLooper())
+        reminderHandler?.postDelayed({
+            checkAndShowReminder(activity)
+        }, REMINDER_INTERVAL_MS)
+    }
+    
+    /**
+     * Check for updates and show reminder if needed
+     */
+    private fun checkAndShowReminder(activity: Activity) {
+        val reminderEnabled = prefs.getBoolean(PREF_REMINDER_ENABLED, true)
+        if (!reminderEnabled) {
+            Log.d(TAG, "Reminder disabled, stopping checks")
+            return
+        }
+        
+        checkForUpdates { updateAvailable, version, releaseNotes ->
+            if (updateAvailable && version != null) {
+                val lastDismissedVersion = prefs.getString(PREF_LAST_DISMISSED_VERSION, "")
+                
+                // Don't show if user already dismissed this version
+                if (version != lastDismissedVersion) {
+                    showUpdateBottomSheet(activity, version, releaseNotes ?: "")
+                } else {
+                    // Schedule next check even if dismissed
+                    scheduleNextReminder(activity)
+                }
+            } else {
+                // No update available, schedule next check
+                scheduleNextReminder(activity)
+            }
+        }
+    }
+    
+    /**
+     * Schedule next reminder check
+     */
+    private fun scheduleNextReminder(activity: Activity) {
+        reminderHandler?.postDelayed({
+            checkAndShowReminder(activity)
+        }, REMINDER_INTERVAL_MS)
+    }
+    
+    /**
+     * Show modern update dialog using Compose
+     */
+    private fun showUpdateBottomSheet(activity: Activity, version: String, releaseNotes: String) {
         try {
-            if (isDialogShowing) return
             val message = buildString {
                 append("🚀 New version $version is available!\n\n")
                 if (releaseNotes.isNotEmpty()) {
@@ -115,81 +167,41 @@ class UpdateManager(private val context: Context) {
                 }
             }
             
-            isDialogShowing = true
+            // Use AlertDialog with modern styling for simplicity and stability
             AlertDialog.Builder(activity)
                 .setTitle("✨ Kconvert Update Available")
                 .setMessage(message)
                 .setPositiveButton("🔄 Update Now") { _, _ ->
                     openGitHubReleases(activity)
-                    // Keep engine running; user may come back if not updated
-                    isDialogShowing = false
+                    stopReminders()
                 }
-                .setNegativeButton("⏰ Reject update") { _, _ ->
-                    // Dismiss now; engine will check again in 10s and show if still available
-                    isDialogShowing = false
+                .setNegativeButton("⏰ Remind in 1 Min") { _, _ ->
+                    // Schedule next reminder
+                    scheduleNextReminder(activity)
                 }
-                .setNeutralButton("❌ Don't ask again") { _, _ ->
-                    // Turn OFF the automatic reminder toggle and stop engine
-                    setAutoUpdateEnabled(false)
-                    stopEngine()
-                    isDialogShowing = false
+                .setNeutralButton("❌ Don't Ask Again") { _, _ ->
+                    // Disable automatic reminder toggle
+                    setReminderEnabled(false)
+                    dismissVersionPermanently(version)
+                    stopReminders()
                 }
                 .setCancelable(false)
                 .show()
                 
         } catch (e: Exception) {
             Log.e(TAG, "Error showing update dialog", e)
+            // Fallback to simple notification
+            Log.i(TAG, "Update available: $version")
         }
     }
     
-    /**
-     * Start the 10s background reminder engine. Safe to call multiple times.
-     */
-    fun startEngine(activity: Activity) {
-        val enabled = isAutoUpdateEnabled()
-        if (!enabled) {
-            Log.d(TAG, "Update engine not started (disabled)")
-            return
-        }
-        if (reminderHandler == null) {
-            reminderHandler = Handler(Looper.getMainLooper())
-        }
-        // Cancel existing runnable to avoid duplicates
-        engineRunnable?.let { reminderHandler?.removeCallbacks(it) }
-        engineRunnable = object : Runnable {
-            override fun run() {
-                if (!isAutoUpdateEnabled()) {
-                    // Stop if user disabled
-                    stopEngine()
-                    return
-                }
-                checkForUpdates { updateAvailable, version, releaseNotes ->
-                    if (updateAvailable && version != null) {
-                        showFloatingUpdateDialog(activity, version, releaseNotes ?: "")
-                    }
-                    // Schedule next tick regardless of result
-                    reminderHandler?.postDelayed(this, REMINDER_INTERVAL_MS)
-                }
-            }
-        }
-        // Kick off immediately after UI is shown
-        reminderHandler?.postDelayed(engineRunnable!!, REMINDER_INTERVAL_MS)
-        Log.d(TAG, "Update engine started (every ${REMINDER_INTERVAL_MS}ms)")
-    }
     
     /**
      * Stop all reminder timers
      */
-    fun stopEngine() {
-        engineRunnable?.let { reminderHandler?.removeCallbacks(it) }
-        engineRunnable = null
-        isDialogShowing = false
-        Log.d(TAG, "Update engine stopped")
-    }
-
-    fun restartEngine(activity: Activity) {
-        stopEngine()
-        startEngine(activity)
+    fun stopReminders() {
+        reminderHandler?.removeCallbacksAndMessages(null)
+        reminderHandler = null
     }
     
     /**
@@ -208,8 +220,10 @@ class UpdateManager(private val context: Context) {
      * Mark version as permanently dismissed
      */
     private fun dismissVersionPermanently(version: String) {
-        // No longer used: behavior changed to flexible "don't ask again" by disabling toggle
-        Log.d(TAG, "dismissVersionPermanently() deprecated. Version=$version")
+        prefs.edit()
+            .putString(PREF_LAST_DISMISSED_VERSION, version)
+            .apply()
+        Log.d(TAG, "Version $version dismissed permanently")
     }
     
     /**
@@ -239,23 +253,25 @@ class UpdateManager(private val context: Context) {
     }
     
     /**
-     * Get auto-update preference
+     * Get automatic reminder preference
      */
-    fun isAutoUpdateEnabled(): Boolean {
-        return prefs.getBoolean(PREF_AUTO_UPDATE_ENABLED, true)
+    fun isReminderEnabled(): Boolean {
+        return prefs.getBoolean(PREF_REMINDER_ENABLED, true)
     }
     
     /**
-     * Set auto-update preference
+     * Set automatic reminder preference
      */
-    fun setAutoUpdateEnabled(enabled: Boolean) {
+    fun setReminderEnabled(enabled: Boolean) {
         prefs.edit()
-            .putBoolean(PREF_AUTO_UPDATE_ENABLED, enabled)
+            .putBoolean(PREF_REMINDER_ENABLED, enabled)
             .apply()
         
-        // Engine lifecycle managed by caller via start/stop/restart
+        if (!enabled) {
+            stopReminders()
+        }
         
-        Log.d(TAG, "Auto-update ${if (enabled) "enabled" else "disabled"}")
+        Log.d(TAG, "Automatic reminder ${if (enabled) "enabled" else "disabled"}")
     }
     
     /**
@@ -263,6 +279,6 @@ class UpdateManager(private val context: Context) {
      */
     fun cleanup() {
         updateJob?.cancel()
-        stopEngine()
+        stopReminders()
     }
 }
