@@ -60,6 +60,7 @@ import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
 import com.oxyzenq.kconvert.presentation.viewmodel.SecurityViewModel
 import com.oxyzenq.kconvert.presentation.viewmodel.SettingsViewModel
 import com.oxyzenq.kconvert.utils.StorageUtils
+import com.oxyzenq.kconvert.utils.UpdateManager
 import com.oxyzenq.kconvert.data.repository.UpdateRepository
 import com.oxyzenq.kconvert.data.repository.VersionComparison
 import kotlinx.coroutines.launch
@@ -387,7 +388,6 @@ fun BottomSheetSettingsPanel(
                                 // Box 1 : App Settings Section
                                 item {
                                     AppSettingsSection(
-                                        autoUpdateEnabledDefault = false,
                                         darkModeEnabledDefault = false,
                                         hapticsEnabledDefault = hapticsEnabled,
                                         onToggleHaptics = { enabled -> onToggleHaptics(enabled) },
@@ -979,7 +979,6 @@ private fun MaintenanceSection(
 
 @Composable
 private fun AppSettingsSection(
-    autoUpdateEnabledDefault: Boolean,
     darkModeEnabledDefault: Boolean,
     hapticsEnabledDefault: Boolean,
     onToggleHaptics: (Boolean) -> Unit,
@@ -993,9 +992,6 @@ private fun AppSettingsSection(
 ) {
     val context = LocalContext.current
     val settingsStore = remember { SettingsDataStore(context) }
-    // Observe persisted values; fall back to defaults on first launch
-    val persistedAutoUpdate by settingsStore.autoUpdateFlow.collectAsState(initial = autoUpdateEnabledDefault)
-    var autoUpdateEnabled by remember(persistedAutoUpdate) { mutableStateOf(persistedAutoUpdate) }
     // Use the haptics state passed from ViewModel instead of local state
     val hapticsEnabled = hapticsEnabledDefault
     // Observe persisted value (default true)
@@ -1005,6 +1001,11 @@ private fun AppSettingsSection(
     // Meteor animation setting
     val persistedMeteorAnimation by settingsStore.meteorAnimationFlow.collectAsState(initial = true)
     var meteorAnimationEnabled by remember(persistedMeteorAnimation) { mutableStateOf(persistedMeteorAnimation) }
+    
+    // Automatic reminder setting
+    val updateManager = remember { UpdateManager(context) }
+    var automaticReminderEnabled by remember { mutableStateOf(true) } // Default ON as requested
+    
     val activity = (LocalContext.current as? Activity)
     val scope = rememberCoroutineScope()
 
@@ -1077,6 +1078,16 @@ private fun AppSettingsSection(
                     onAnyToggle()
                 }
             )
+            
+            SettingToggleRow(
+                title = "Automatic reminder apps to update",
+                isEnabled = automaticReminderEnabled,
+                onToggle = { enabled ->
+                    automaticReminderEnabled = enabled
+                    updateManager.setAutomaticReminderEnabled(enabled, activity)
+                    onAnyToggle()
+                }
+            )
 
             // Background dark level slider (0..100)
             Spacer(modifier = Modifier.height(8.dp))
@@ -1142,16 +1153,6 @@ private fun AppSettingsSection(
                 }
             )
 
-            SettingToggleRow(
-                title = "Auto-update on launch",
-                isEnabled = autoUpdateEnabled,
-                onToggle = { enabled ->
-                    autoUpdateEnabled = enabled
-                    // persist immediately
-                    scope.launch { settingsStore.setAutoUpdate(enabled) }
-                    onAnyToggle()
-                }
-            )
 
             Spacer(modifier = Modifier.height(8.dp))
             // Cache size indicator with proper state management

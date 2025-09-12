@@ -11,6 +11,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.oxyzenq.kconvert.data.local.SettingsDataStore
 import com.oxyzenq.kconvert.presentation.util.setImmersiveMode
+import com.oxyzenq.kconvert.utils.UpdateManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,8 +28,15 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    private lateinit var updateManager: UpdateManager
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize update manager
+        updateManager = UpdateManager(this)
+        
         // Apply persisted full screen setting ASAP
         val settingsStore = SettingsDataStore(this)
         lifecycleScope.launch {
@@ -46,6 +54,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Start automatic reminder system after main screen is shown
+        updateManager.startAutomaticReminders(this)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up update manager resources
+        updateManager.cleanup()
     }
 }
 
