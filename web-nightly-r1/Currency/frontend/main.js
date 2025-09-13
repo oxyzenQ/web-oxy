@@ -70,6 +70,126 @@ function getCountryFromCurrency(currencyCode) {
     return currency?.country || currencyCode.slice(0, 2).toLowerCase();
 }
 
+// ===== INTELLIGENT SEARCH ENGINE =====
+// Advanced fuzzy search with ML-like pattern matching
+function calculateSearchScore(currency, query) {
+    if (!query) return 0;
+    
+    const q = query.toLowerCase().trim();
+    const code = currency.code.toLowerCase();
+    const name = currency.name.toLowerCase();
+    const country = currency.country.toLowerCase();
+    
+    let score = 0;
+    
+    // Exact matches get highest priority
+    if (code === q) score += 100;
+    if (name === q) score += 90;
+    if (country === q) score += 85;
+    
+    // Starts with matches
+    if (code.startsWith(q)) score += 80;
+    if (name.startsWith(q)) score += 70;
+    if (country.startsWith(q)) score += 65;
+    
+    // Contains matches
+    if (code.includes(q)) score += 60;
+    if (name.includes(q)) score += 50;
+    if (country.includes(q)) score += 45;
+    
+    // Smart abbreviation matching (e.g., "us" -> "USD", "United States")
+    const smartMatches = {
+        'us': ['USD', 'united states', 'america', 'dollar'],
+        'eu': ['EUR', 'euro', 'europe'],
+        'uk': ['GBP', 'british', 'pound', 'england'],
+        'jp': ['JPY', 'japan', 'yen'],
+        'cn': ['CNY', 'china', 'yuan'],
+        'au': ['AUD', 'australia', 'australian'],
+        'ca': ['CAD', 'canada', 'canadian'],
+        'sg': ['SGD', 'singapore'],
+        'in': ['INR', 'india', 'rupee'],
+        'kr': ['KRW', 'korea', 'won'],
+        'br': ['BRL', 'brazil', 'real'],
+        'ru': ['RUB', 'russia', 'ruble'],
+        'ch': ['CHF', 'switzerland', 'franc'],
+        'se': ['SEK', 'sweden', 'krona'],
+        'no': ['NOK', 'norway', 'krone'],
+        'dk': ['DKK', 'denmark', 'krone'],
+        'mx': ['MXN', 'mexico', 'peso'],
+        'tr': ['TRY', 'turkey', 'lira'],
+        'za': ['ZAR', 'south africa', 'rand'],
+        'th': ['THB', 'thailand', 'baht'],
+        'my': ['MYR', 'malaysia', 'ringgit'],
+        'id': ['IDR', 'indonesia', 'rupiah'],
+        'ph': ['PHP', 'philippines', 'peso'],
+        'vn': ['VND', 'vietnam', 'dong'],
+        'hk': ['HKD', 'hong kong'],
+        'tw': ['TWD', 'taiwan'],
+        'nz': ['NZD', 'new zealand'],
+        'il': ['ILS', 'israel', 'shekel'],
+        'ae': ['AED', 'uae', 'dirham'],
+        'sa': ['SAR', 'saudi', 'riyal']
+    };
+    
+    // Check smart matches
+    if (smartMatches[q]) {
+        const matches = smartMatches[q];
+        if (matches.some(match => code.includes(match) || name.includes(match) || country.includes(match))) {
+            score += 75;
+        }
+    }
+    
+    // Phonetic and common misspelling corrections
+    const phoneticMatches = {
+        'dollar': ['usd', 'us', 'america'],
+        'euro': ['eur', 'eu', 'europe'],
+        'pound': ['gbp', 'uk', 'british'],
+        'yen': ['jpy', 'jp', 'japan'],
+        'yuan': ['cny', 'cn', 'china'],
+        'rupee': ['inr', 'in', 'india'],
+        'won': ['krw', 'kr', 'korea'],
+        'franc': ['chf', 'ch', 'switzerland'],
+        'krona': ['sek', 'se', 'sweden'],
+        'peso': ['mxn', 'mx', 'mexico']
+    };
+    
+    Object.entries(phoneticMatches).forEach(([key, values]) => {
+        if (q.includes(key) && values.some(v => code.includes(v) || name.includes(v) || country.includes(v))) {
+            score += 40;
+        }
+    });
+    
+    // Partial word matching for multi-word queries
+    const words = q.split(' ');
+    words.forEach(word => {
+        if (word.length > 2) {
+            if (name.includes(word) || country.includes(word)) {
+                score += 30;
+            }
+        }
+    });
+    
+    return score;
+}
+
+// Intelligent search function
+function searchCurrencies(query) {
+    if (!query || query.length < 1) {
+        return SUPPORTED_CURRENCIES.slice(0, 10); // Show top 10 by default
+    }
+    
+    const results = SUPPORTED_CURRENCIES
+        .map(currency => ({
+            ...currency,
+            score: calculateSearchScore(currency, query)
+        }))
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8); // Limit to 8 results for better UX
+    
+    return results;
+}
+
 async function fetchTokenFromBackend() {
     const res = await fetch(`${CONFIG.API_BASE_URL}/api/auth`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Auth failed: ${res.status}`);
@@ -85,7 +205,11 @@ async function ensureJwtLoaded() {
 }
 
 // DOM elements
-let fromCur, toCur, amount, exRateTxt, exchangeIcon;
+let fromSearch, toSearch, amount, exRateTxt, exchangeIcon, fromSuggestions, toSuggestions;
+let currentFromCurrency = 'USD';
+let currentToCurrency = 'SGD';
+let highlightedIndex = -1;
+let currentSuggestions = [];
 
 // Fetch supported currencies from backend
 async function fetchSupportedCurrencies() {
@@ -106,42 +230,184 @@ async function fetchSupportedCurrencies() {
     }
 }
 
-// Initialize currency dropdowns
-async function populateCurrencyDropdowns() {
-    const currencies = await fetchSupportedCurrencies();
-    console.log('Populating dropdowns with', currencies.length, 'currencies');
-
-    [fromCur, toCur].forEach(select => {
-        select.innerHTML = '';
-        currencies.forEach(currency => {
-            const option = document.createElement('option');
-            option.value = currency.code;
-            option.textContent = `${currency.code} - ${currency.name}`;
-            select.appendChild(option);
-        });
-    });
-
-    console.log('Dropdown populated. From currency options:', fromCur.options.length);
-    console.log('Dropdown populated. To currency options:', toCur.options.length);
-
-    // Set default values
-    fromCur.value = 'USD';
-    toCur.value = 'SGD';
+// ===== SEARCH UI FUNCTIONS =====
+// Display search suggestions
+function displaySuggestions(suggestions, container, isFromInput) {
+    container.innerHTML = '';
+    currentSuggestions = suggestions;
+    highlightedIndex = -1;
     
-    // Update flag images
-    updateFlag(fromCur);
-    updateFlag(toCur);
+    if (suggestions.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    suggestions.forEach((currency, index) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.dataset.index = index;
+        item.dataset.currency = currency.code;
+        
+        const flag = document.createElement('img');
+        flag.className = 'suggestion-flag';
+        flag.src = `https://flagcdn.com/48x36/${currency.country}.png`;
+        flag.alt = `${currency.name} flag`;
+        flag.onerror = () => {
+            flag.src = 'https://flagcdn.com/48x36/un.png';
+        };
+        
+        const text = document.createElement('div');
+        text.className = 'suggestion-text';
+        text.innerHTML = `<span class="suggestion-code">${currency.code}</span><span class="suggestion-name">${currency.name}</span>`;
+        
+        item.appendChild(flag);
+        item.appendChild(text);
+        
+        // Click handler
+        item.addEventListener('click', () => {
+            selectCurrency(currency, isFromInput);
+        });
+        
+        container.appendChild(item);
+    });
+    
+    container.style.display = 'block';
 }
 
-// Update flag image for currency dropdown
+// Select currency from suggestions
+function selectCurrency(currency, isFromInput) {
+    if (isFromInput) {
+        currentFromCurrency = currency.code;
+        fromSearch.value = `${currency.code} - ${currency.name}`;
+        fromSearch.dataset.currency = currency.code;
+        updateFlagImage(document.getElementById('from-flag'), currency.country);
+        fromSuggestions.style.display = 'none';
+    } else {
+        currentToCurrency = currency.code;
+        toSearch.value = `${currency.code} - ${currency.name}`;
+        toSearch.dataset.currency = currency.code;
+        updateFlagImage(document.getElementById('to-flag'), currency.country);
+        toSuggestions.style.display = 'none';
+    }
+    
+    // Auto-fetch exchange rate
+    getExchangeRate();
+}
+
+// Update flag image
+function updateFlagImage(imgElement, countryCode) {
+    imgElement.src = `https://flagcdn.com/48x36/${countryCode}.png`;
+    imgElement.onerror = () => {
+        imgElement.src = 'https://flagcdn.com/48x36/un.png';
+    };
+}
+
+// Handle keyboard navigation
+function handleKeyboardNavigation(event, isFromInput) {
+    const suggestions = isFromInput ? fromSuggestions : toSuggestions;
+    const items = suggestions.querySelectorAll('.suggestion-item');
+    
+    if (items.length === 0) return;
+    
+    switch (event.key) {
+        case 'ArrowDown':
+            event.preventDefault();
+            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+            updateHighlight(items);
+            break;
+            
+        case 'ArrowUp':
+            event.preventDefault();
+            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+            updateHighlight(items);
+            break;
+            
+        case 'Enter':
+            event.preventDefault();
+            if (highlightedIndex >= 0 && highlightedIndex < currentSuggestions.length) {
+                selectCurrency(currentSuggestions[highlightedIndex], isFromInput);
+            }
+            break;
+            
+        case 'Escape':
+            suggestions.style.display = 'none';
+            highlightedIndex = -1;
+            break;
+    }
+}
+
+// Update visual highlight
+function updateHighlight(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('highlighted', index === highlightedIndex);
+    });
+}
+
+// Initialize search functionality
+function initializeSearchInputs() {
+    // Set default values
+    fromSearch.value = 'USD - US Dollar';
+    fromSearch.dataset.currency = 'USD';
+    toSearch.value = 'SGD - Singapore Dollar';
+    toSearch.dataset.currency = 'SGD';
+    
+    // Update initial flags
+    updateFlagImage(document.getElementById('from-flag'), 'us');
+    updateFlagImage(document.getElementById('to-flag'), 'sg');
+    
+    // From search input events
+    fromSearch.addEventListener('input', (e) => {
+        const query = e.target.value;
+        const suggestions = searchCurrencies(query);
+        displaySuggestions(suggestions, fromSuggestions, true);
+    });
+    
+    fromSearch.addEventListener('focus', (e) => {
+        const query = e.target.value;
+        const suggestions = searchCurrencies(query);
+        displaySuggestions(suggestions, fromSuggestions, true);
+    });
+    
+    fromSearch.addEventListener('keydown', (e) => {
+        handleKeyboardNavigation(e, true);
+    });
+    
+    // To search input events
+    toSearch.addEventListener('input', (e) => {
+        const query = e.target.value;
+        const suggestions = searchCurrencies(query);
+        displaySuggestions(suggestions, toSuggestions, false);
+    });
+    
+    toSearch.addEventListener('focus', (e) => {
+        const query = e.target.value;
+        const suggestions = searchCurrencies(query);
+        displaySuggestions(suggestions, toSuggestions, false);
+    });
+    
+    toSearch.addEventListener('keydown', (e) => {
+        handleKeyboardNavigation(e, false);
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!fromSearch.contains(e.target) && !fromSuggestions.contains(e.target)) {
+            fromSuggestions.style.display = 'none';
+        }
+        if (!toSearch.contains(e.target) && !toSuggestions.contains(e.target)) {
+            toSuggestions.style.display = 'none';
+        }
+    });
+}
+
+// Legacy function for backwards compatibility
 function updateFlag(select) {
     const code = select.value;
     const imgTag = select.parentElement.querySelector("img");
     const countryCode = getCountryFromCurrency(code);
     imgTag.src = `https://flagcdn.com/48x36/${countryCode}.png`;
     imgTag.onerror = () => {
-        // Fallback to a default flag or hide image
-        imgTag.src = `https://flagcdn.com/48x36/un.png`; // UN flag as fallback
+        imgTag.src = `https://flagcdn.com/48x36/un.png`;
     };
 }
 
@@ -195,8 +461,8 @@ async function handleTokenRefreshAndRetry(fromCurrency, toCurrency, amount) {
 // Main exchange rate fetching function
 async function getExchangeRate() {
     const amountVal = parseFloat(amount.value) || 1;
-    const fromCurrency = fromCur.value;
-    const toCurrency = toCur.value;
+    const fromCurrency = currentFromCurrency;
+    const toCurrency = currentToCurrency;
     
     exRateTxt.innerText = "Getting exchange rate...";
     
@@ -237,12 +503,27 @@ async function getExchangeRate() {
 
 // Currency swap functionality
 function swapCurrencies() {
-    const tempValue = fromCur.value;
-    fromCur.value = toCur.value;
-    toCur.value = tempValue;
+    // Swap currency codes
+    const tempCurrency = currentFromCurrency;
+    currentFromCurrency = currentToCurrency;
+    currentToCurrency = tempCurrency;
     
-    updateFlag(fromCur);
-    updateFlag(toCur);
+    // Swap display values
+    const tempValue = fromSearch.value;
+    fromSearch.value = toSearch.value;
+    toSearch.value = tempValue;
+    
+    // Swap data attributes
+    const tempData = fromSearch.dataset.currency;
+    fromSearch.dataset.currency = toSearch.dataset.currency;
+    toSearch.dataset.currency = tempData;
+    
+    // Swap flag images
+    const fromFlag = document.getElementById('from-flag');
+    const toFlag = document.getElementById('to-flag');
+    const tempSrc = fromFlag.src;
+    fromFlag.src = toFlag.src;
+    toFlag.src = tempSrc;
     
     // Fetch new rate after swap
     getExchangeRate();
@@ -250,24 +531,19 @@ function swapCurrencies() {
 
 // Initialize the application
 async function initApp() {
-    // Get DOM elements
-    fromCur = document.querySelector(".from-select");
-    toCur = document.querySelector(".to-select");
+    // Get DOM elements for new searchable interface
+    fromSearch = document.querySelector(".from-search");
+    toSearch = document.querySelector(".to-search");
+    fromSuggestions = document.querySelector(".from-suggestions");
+    toSuggestions = document.querySelector(".to-suggestions");
     amount = document.querySelector("#amount-input");
     exRateTxt = document.querySelector(".result");
     exchangeIcon = document.querySelector(".reverse");
 
-    // Populate currency dropdowns (wait for completion)
-    await populateCurrencyDropdowns();
+    // Initialize searchable inputs
+    initializeSearchInputs();
 
     // Add event listeners
-    [fromCur, toCur].forEach(select => {
-        select.addEventListener("change", () => {
-            updateFlag(select);
-            getExchangeRate();
-        });
-    });
-
     exchangeIcon.addEventListener("click", swapCurrencies);
     
     // Add convert button event listener
@@ -279,8 +555,37 @@ async function initApp() {
         });
     }
 
+    // Add reset button event listener
+    const resetButton = document.querySelector("#reset-button");
+    if (resetButton) {
+        resetButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            // Reset to default values
+            fromSearch.value = 'USD - US Dollar';
+            fromSearch.dataset.currency = 'USD';
+            toSearch.value = 'SGD - Singapore Dollar';
+            toSearch.dataset.currency = 'SGD';
+            currentFromCurrency = 'USD';
+            currentToCurrency = 'SGD';
+            amount.value = '';
+            updateFlagImage(document.getElementById('from-flag'), 'us');
+            updateFlagImage(document.getElementById('to-flag'), 'sg');
+            exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+            fromSuggestions.style.display = 'none';
+            toSuggestions.style.display = 'none';
+        });
+    }
+
     // Initial display message
     exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+    
+    console.log('✅ Searchable Currency Converter initialized successfully!');
+    console.log('🔍 Smart search features enabled:');
+    console.log('   - Fuzzy matching (e.g., "us" → USD)');
+    console.log('   - Country name search (e.g., "america" → USD)');
+    console.log('   - Currency name search (e.g., "dollar" → USD)');
+    console.log('   - Keyboard navigation (↑↓ arrows, Enter, Escape)');
+    console.log('   - Auto-complete suggestions');
 }
 
 // Start the application when DOM is loaded

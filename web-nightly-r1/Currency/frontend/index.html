@@ -24,11 +24,14 @@
             <div class="convert-box">
                 <div class="from">
                     <p>From</p>
-                    <div class="select-input">
-                        <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag">
-                        <select class="from-select" aria-label="From currency">
-                            <!-- Options will be populated dynamically -->
-                        </select>
+                    <div class="search-input-container">
+                        <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag" class="flag-indicator">
+                        <input type="text" class="currency-search from-search" 
+                               placeholder="Type here to find flags" 
+                               aria-label="Search from currency"
+                               data-currency="USD"
+                               autocomplete="off">
+                        <div class="search-suggestions from-suggestions" style="display: none;"></div>
                     </div>
                 </div>
                 <div class="reverse" aria-label="Swap currencies">
@@ -36,11 +39,14 @@
                 </div>
                 <div class="to">
                     <p>To</p>
-                    <div class="select-input">
-                        <img id="to-flag" src="https://flagcdn.com/48x36/sgd.png" alt="To currency flag">
-                        <select class="to-select" aria-label="To currency">
-                            <!-- Options will be populated dynamically -->
-                        </select>
+                    <div class="search-input-container">
+                        <img id="to-flag" src="https://flagcdn.com/48x36/sg.png" alt="To currency flag" class="flag-indicator">
+                        <input type="text" class="currency-search to-search" 
+                               placeholder="Type here to find flags" 
+                               aria-label="Search to currency"
+                               data-currency="SGD"
+                               autocomplete="off">
+                        <div class="search-suggestions to-suggestions" style="display: none;"></div>
                     </div>
                 </div>
                 <div class="result" aria-live="polite">Getting Exchange Rate...</div>
