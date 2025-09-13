@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET", "your-super-secret-jwt-key-change-this")
+SECRET_KEY = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 
 def generate_token(duration_minutes=10):
@@ -30,7 +30,7 @@ def generate_token(duration_minutes=10):
     expiration_time = current_time + (duration_minutes * 60)
     
     payload = {
-        "owner": "kirai",
+        "owner": "oxchin",
         "iat": current_time,  # issued at
         "exp": expiration_time,  # expiration
         "purpose": "currency_api_access"
@@ -55,7 +55,7 @@ def main():
             sys.exit(1)
     
     # Check if JWT_SECRET is properly configured
-    if SECRET_KEY == "your-super-secret-jwt-key-change-this":
+    if SECRET_KEY :
         print("⚠️  WARNING: Using default JWT_SECRET. Please set a secure secret in .env file!")
     
     # Generate token
