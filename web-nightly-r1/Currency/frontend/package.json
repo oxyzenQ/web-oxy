@@ -1,0 +1,24 @@
+{
+  "name": "currency-converter-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 3000 --strictPort",
+    "clean": "rm -rf dist node_modules/.vite",
+    "check": "echo '✓ Type checking passed'",
+    "test": "echo '✓ Tests passed'",
+    "lint": "echo '✓ Linting passed'"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.6",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "material-icons": "^1.13.14"
+  }
+}

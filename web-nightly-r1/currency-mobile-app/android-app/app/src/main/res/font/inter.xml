@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- Variable font (wght axis 100..900) -->
+    <font
+        app:font="@font/intervariable"
+        app:fontStyle="normal" />
+    <font
+        app:font="@font/intervariable_italic"
+        app:fontStyle="italic" />
+</font-family>

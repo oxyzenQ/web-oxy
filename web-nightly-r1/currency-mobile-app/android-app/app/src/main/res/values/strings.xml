@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kconvert</string>
+    <string name="amount_label">Amount</string>
+    <string name="from_currency">From</string>
+    <string name="to_currency">To</string>
+    <string name="convert_button">Get Exchange Rate</string>
+    <string name="reset_button">Reset</string>
+    <string name="swap_currencies">Swap Currencies</string>
+    <string name="enter_amount">Enter amount</string>
+    <string name="getting_exchange_rate">Getting exchange rate...</string>
+    <string name="conversion_error">Something went wrong...</string>
+    <string name="no_internet">No internet connection</string>
+    <string name="invalid_amount">Please enter a valid amount</string>
+    <string name="favorites">Favorites</string>
+    <string name="history">History</string>
+    <string name="settings">Settings</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="light_mode">Light Mode</string>
+    <string name="system_mode">System</string>
+</resources>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/kconvert-logo-orig.png">
+    <title>A simple & fast currency converter</title>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Kconvert</h2>
+        <p>A app for currency converter</p>
+        <div class="A">
+            <p>Amount</p>
+        </div>
+        <form id="converter-form">
+            <div class="amount">
+                <input type="number" id="amount-input" step="0.01" min="0" max="1000000" 
+                aria-label="Amount to convert" placeholder="Enter amount">
+            </div>
+
+            <div class="convert-box">
+                <div class="from">
+                    <p>From</p>
+                    <div class="select-input">
+                        <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag">
+                        <select class="from-select" aria-label="From currency">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="reverse" aria-label="Swap currencies">
+                    <span class="material-icons">swap_horiz</span>
+                </div>
+                <div class="to">
+                    <p>To</p>
+                    <div class="select-input">
+                        <img id="to-flag" src="https://flagcdn.com/48x36/sgd.png" alt="To currency flag">
+                        <select class="to-select" aria-label="To currency">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="result" aria-live="polite">Getting Exchange Rate...</div>
+                <button type="submit" id="convert-button">Get Exchange Rate</button>
+                <button type="reset" id="reset-button">Reset</button> <!-- Menggunakan type="reset" -->
+            </div>
+        </form>
+    </div>
+
+    <footer>
+        <p>
+            <a href="https://github.com/oxyzenq">
+                <span class="material-icons">code</span>
+            </a>
+        </p>
+        <p>&copy; 2024-2025 oxyzenQ. All rights reserved.</p>
+    </footer>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

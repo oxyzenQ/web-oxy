@@ -1,0 +1,389 @@
+/* In 2025, I changed the style of the website to be more elegant but lightweight for any device */
+/* Author: rezky_nightly 2025 */
+
+:root {
+  /* Font Settings */
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1; /* Fix Chrome */
+
+  /* Background Colors */
+  --main-bg-color: #070a1c; /* Deep Space Blue */
+  --secondary-bg-color: #040717; /* Dark Galactic Black */
+  --accent-bg-color: #1b1f3a; /* Distant Nebula Blue */
+
+  /* Plasma & Glow Colors */
+  --plasma-blue: #4285f4; /* Electric Plasma Blue */
+  --plasma-purple: #9b59b6; /* Cosmic Purple */
+  --star-glow: #f4e542; /* Soft Yellow Star Glow */
+  --nebula-glow: #7f7fd5; /* Ethereal Nebula Glow */
+
+  /* Text Colors */
+  --text-color: #e0e0e0; /* Soft White */
+  --subtext-color: #c5c8e6; /* Light Bluish White */
+
+  /* Borders & Shadows */
+  --container-border: rgba(66, 133, 244, 0.5); /* Subtle Plasma Blue */
+  --shadow-color: rgba(7, 10, 28, 0.7); /* Deep Space Shadow */
+
+  /* Button Gradient */
+  --button-gradient: linear-gradient(135deg, var(--plasma-blue), var(--plasma-purple));
+
+  /* Container */
+  --container-bg: rgba(15, 20, 40, 0.85);
+  --container-border: rgba(255, 255, 255, 0.15);
+    --icon-1: rgba(128, 128, 128); /* Neutral icon color */
+}
+
+/* Variable Font Support */
+@supports (font-variation-settings: normal) {
+    :root {
+        font-family: InterVariable, sans-serif;
+    }
+}
+  
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit; /* Warisi dari :root */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    scroll-behavior: smooth;
+    height: auto;
+    overflow: auto;
+    margin: 0;
+    padding: 0
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: auto;
+    /* ✨ Gradient Background */
+    background: radial-gradient(circle at 40% 80%, var(--main-bg-color) 10%, var(--accent-bg-color) 40%, var(--secondary-bg-color) 100%);
+    color: var(--text-color);
+    position: relative;
+}
+
+
+.container {
+    /*max-height: 90vh; 
+    min-height: 300px; 
+    width: clamp(300px, 50%, 600px); */
+    max-width: 550px;
+    min-width: 400px;
+    max-height: 780px;
+
+    
+    /* 🎨 Efek Transparan + Gradient */
+    background: rgba(0, 0, 0, 0.4); /* Soft transparent */
+    border-radius: 1rem;
+    
+    border-top: 1.5px solid var(--container-border);
+    border-right: 1.5px solid var(--container-border);
+    border-left: 1.5px solid var(--container-border);
+
+    margin: 35px 0 90px 0;
+    
+    /* ⚡ Flexbox untuk Layout Optimal */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* @keyframes scaleUp {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.2);
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+    }
+}
+/* Additional responsive adjustments */
+@media (min-width: 1440px) {
+    .container {
+        width: 50%;
+        padding: 30px;
+    }
+    .A, .container h2 {
+        font-size: 1.5rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 1.2rem;
+    }
+}
+
+@media (min-width: 1080px) {
+    .container {
+        width: 50%;
+        padding: 20px;
+    }
+    .A, .container h2 {
+        font-size: 1.4rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 50%;
+        padding: 15px;
+    }
+    .A, .container h2 {
+        font-size: 1.3rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 50%;
+        padding: 10px;
+    }
+    .A, .container h2 {
+        font-size: 1.2rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 280px) {
+    .container {
+        width: 50%;
+        padding: 5px;
+    }
+    .A, .container h2 {
+        font-size: 1.1rem;
+    }
+    .container form p, .container form input, .convert-box {
+        font-size: 0.7rem;
+    }
+}
+
+.A {
+    font-size: 1rem;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.container h2 {
+    font-size: 1.6rem;
+    font-weight: bold;
+    text-align: center;
+    margin: 30px 0 15px 0;
+}
+
+.amount {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.container form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.container form p {
+    font-size: 1rem;
+    margin: 10px 0 20px;
+    text-align: center;
+}
+
+.container form input {
+    height: 40px;
+    width: 100%;  /* Makes input flexible and responsive */
+    max-width: 200px;  /* You can adjust this based on the desired maximum width */
+    border-radius: 1rem;
+    font-size: 1rem;
+    padding: 0 15px;
+    background: transparent;
+    color: darkgrey;
+    border: 0.5px solid darkgrey;
+    transition: border-color 0.3s ease;
+}
+
+
+#amount-input::placeholder{
+    text-align: center;
+    color: grey;
+}
+
+.container form input:hover,
+.container form input:focus {
+    border-color: var(--container-border);
+    outline: none;
+}
+
+.convert-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.select-input {
+    display: flex;
+    align-items: center;
+    border: 0.5px solid darkgrey;
+    height: 40px;
+    border-radius: 1rem;
+    padding: 0 20px;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.from, .to{
+    max-width: 140px;
+    width: 100%;
+}
+
+.select-input:hover {
+    border-color: var(--container-border);
+}
+
+.select-input img {
+    width: 24px; /* Sesuaikan dengan ukuran yang pas */
+    height: auto; /* Biarkan proporsional */
+    margin-right: 10px;
+}
+
+.select-input select {
+    width: 100%;
+    background: transparent;
+    color: whitesmoke;
+    font-size: 1rem;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.select-input select option {
+    color: whitesmoke;
+    background: black;
+}
+
+.reverse {
+    border: 1px solid darkgrey;
+    border-radius: 50%;
+    color: darkgray;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 22px;
+    transition: transform 0.3s ease;
+    margin-top: 32px;
+}
+
+.reverse:hover {
+    transform: scale(1.5);
+    border-color: yellow;
+    color: yellow;
+}
+
+.reverse:active {
+    transform: scale(0.90);
+}
+
+.result {
+    font-size: 1rem;
+    margin: 20px 0;
+    text-align: center;
+}
+
+button {
+    width: 100%;
+    max-width: 200px;
+    height: 42px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+/* Exchange Rate + Reset Button */
+button#reset-button {
+    background: #1e1e1e;
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: medium;
+    border-radius: 1rem;
+    border: 1px solid var(--container-border);
+    transition: background 0.3s, border-color 0.3s, transform 0.1s;
+    margin-bottom: 30px;
+}
+
+button#reset-button:hover {
+    background: #3a3a3a;
+    border-color: var(--container-border);
+    transform: scale(1.05); 
+}
+
+button#reset-button:active {
+    background: var(--container-bg);
+    border-color: var(--container-border);
+    transform: scale(0.90);
+}
+
+
+button#convert-button {
+    background: rgba(0, 128, 0, 0.4);
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: medium;
+    border-radius: 1rem;
+    border: 1px solid var(--container-border);
+    transition: background 0.3s, border-color 0.3s, transform 0.1s;
+}
+
+button#convert-button:hover {
+    background: green;
+    border-color: var(--container-border);
+    transform: scale(1.05);
+}
+
+button#convert-button:active {
+    background: var(--container-bg);
+    border-color: var(--container-border);
+    transform: scale(0.90);
+}
+
+/* Footer */
+footer {
+    position: relative;
+    text-align: center;
+    bottom: 0;
+    width: 100%;
+    margin-bottom: 50px;
+}
+
+footer p {
+    margin: 35px 0 0 0;
+    color: grey;
+}
+
+.fi-xnsuxl-github {
+    font-size: 1.2rem;
+    color: grey;
+}
+
+.result {
+    color: rgb(212, 212, 157);
+    padding: 5px;
+}
