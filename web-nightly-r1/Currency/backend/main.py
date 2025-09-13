@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 from dotenv import load_dotenv
@@ -84,7 +84,7 @@ async def root():
 @app.get("/api/rates/{base_currency}")
 @limiter.limit("30/minute")  # Rate limit: 30 requests per minute per IP
 async def get_exchange_rates(
-    request,
+    request: Request,
     base_currency: str,
     token: str = Query(..., description="JWT authentication token")
 ):

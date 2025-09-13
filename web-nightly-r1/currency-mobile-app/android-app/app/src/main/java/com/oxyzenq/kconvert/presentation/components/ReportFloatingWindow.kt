@@ -32,9 +32,6 @@ import kotlinx.coroutines.delay
 @Composable
 fun ReportFloatingWindow(
     isVisible: Boolean,
-    reportMessage: String,
-    reportIcon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.CheckCircle,
-    iconColor: Color = Color(0xFF10B981),
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -110,8 +107,8 @@ fun ReportFloatingWindow(
                                 .background(
                                     brush = Brush.radialGradient(
                                         colors = listOf(
-                                            iconColor.copy(alpha = 0.3f),
-                                            iconColor.copy(alpha = 0.1f)
+                                            Color(0xFF10B981).copy(alpha = 0.3f),
+                                            Color(0xFF10B981).copy(alpha = 0.1f)
                                         ),
                                         radius = 30.dp.value
                                     ),
@@ -120,48 +117,60 @@ fun ReportFloatingWindow(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = reportIcon,
+                                imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = iconColor,
+                                tint = Color(0xFF10B981),
                                 modifier = Modifier.size(32.dp)
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Report message
+                        // Title
                         Text(
-                            text = reportMessage,
+                            text = "Report",
+                            style = MaterialTheme.typography.h6.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 20.sp
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Description
+                        Text(
+                            text = "Reporting has been send to inbox notify",
                             style = MaterialTheme.typography.body1.copy(
                                 fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                                fontSize = 16.sp
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 14.sp
                             ),
                             textAlign = TextAlign.Center
                         )
                         
                         Spacer(modifier = Modifier.height(20.dp))
                         
-                        // Close button
+                        // Close Button
                         Button(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onDismiss()
-                            },
+                            onClick = onDismiss,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(44.dp),
+                                .height(48.dp),
                             colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFF8B5CF6)
+                                backgroundColor = Color.White.copy(alpha = 0.2f),
+                                contentColor = Color.White
                             ),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             elevation = ButtonDefaults.elevation(0.dp)
                         ) {
                             Text(
                                 text = "Close",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.button.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp
+                                )
                             )
                         }
                     }

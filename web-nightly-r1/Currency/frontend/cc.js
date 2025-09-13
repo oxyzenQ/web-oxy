@@ -20,8 +20,8 @@ const exRateTxt = document.querySelector("form .result");
 });
 
 // Configuration
-const API_BASE_URL = "https://your-backend.onrender.com"; // Replace with your actual Render backend URL
-const JWT_TOKEN = "PASTE_YOUR_JWT_TOKEN_HERE"; // Replace with actual JWT token from generate_token.py
+const API_BASE_URL = "http://localhost:8000"; // Local development backend
+const JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImtpcmFpIiwiaWF0IjoxNzU3NzU2ODQ1LjA5NDE2NzUsImV4cCI6MTc1Nzc1ODY0NS4wOTQxNjc1LCJwdXJwb3NlIjoiY3VycmVuY3lfYXBpX2FjY2VzcyJ9.xev2_oHMPgkeDX7-NIo0Rj9skLOirSp9g5qDH_29mAQ"; // Valid for 30 minutes
 
 //function to get exchange rate from secure backend API
 

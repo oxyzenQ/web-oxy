@@ -214,6 +214,13 @@ class UpdateEngine @Inject constructor(
         currentSessionId = System.currentTimeMillis()
         prefs.edit().remove(KEY_LAST_CHECK_SESSION).apply()
     }
+    
+    /**
+     * Disable engine to reduce overhead after first check
+     */
+    fun disableEngine() {
+        prefs.edit().putBoolean(KEY_AUTO_REMIND, false).apply()
+    }
 }
 
 enum class UpdateCheckResult {

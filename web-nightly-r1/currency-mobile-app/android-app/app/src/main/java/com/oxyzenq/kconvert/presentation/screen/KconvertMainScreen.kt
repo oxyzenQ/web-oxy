@@ -144,11 +144,8 @@ fun KconvertMainScreen(
     }
     // hapticsEnabled persisted in DataStore via ViewModel; no local state needed
     
-    // Update engine check on main screen entry with report floating window
+    // Update engine check on main screen entry with simplified report floating window
     var showReportWindow by remember { mutableStateOf(false) }
-    var reportMessage by remember { mutableStateOf("") }
-    var reportIcon by remember { mutableStateOf(Icons.Default.CheckCircle) }
-    var reportIconColor by remember { mutableStateOf(Color(0xFF10B981)) }
     
     // Use existing UpdateEngine from NotificationViewModel
     val updateEngine = remember { 
@@ -158,30 +155,12 @@ fun KconvertMainScreen(
     LaunchedEffect(Unit) {
         val result = updateEngine.checkOnceAndNotifyIfNeeded()
         
-        // Show report floating window based on result
+        // Show report floating window for all scenarios except disabled/already checked
         when (result) {
-            UpdateCheckResult.UPDATE_AVAILABLE -> {
-                reportMessage = "Update available - Report sent to inbox notify"
-                reportIcon = Icons.Default.SystemUpdate
-                reportIconColor = Color(0xFF3B82F6) // Blue
-                showReportWindow = true
-            }
-            UpdateCheckResult.UP_TO_DATE -> {
-                reportMessage = "Update not available - Report sent to inbox notify"
-                reportIcon = Icons.Default.CheckCircle
-                reportIconColor = Color(0xFF10B981) // Green
-                showReportWindow = true
-            }
-            UpdateCheckResult.VERSION_MISMATCH -> {
-                reportMessage = "Caution mismatch version - Report sent to inbox notify"
-                reportIcon = Icons.Default.Warning
-                reportIconColor = Color(0xFFF59E0B) // Orange
-                showReportWindow = true
-            }
+            UpdateCheckResult.UPDATE_AVAILABLE,
+            UpdateCheckResult.UP_TO_DATE,
+            UpdateCheckResult.VERSION_MISMATCH,
             UpdateCheckResult.ERROR -> {
-                reportMessage = "Update check failed - Report sent to inbox notify"
-                reportIcon = Icons.Default.Error
-                reportIconColor = Color(0xFFEF4444) // Red
                 showReportWindow = true
             }
             else -> {
@@ -527,10 +506,11 @@ fun KconvertMainScreen(
         // Report floating window
         ReportFloatingWindow(
             isVisible = showReportWindow,
-            reportMessage = reportMessage,
-            reportIcon = reportIcon,
-            iconColor = reportIconColor,
-            onDismiss = { showReportWindow = false }
+            onDismiss = { 
+                showReportWindow = false
+                // Disable engine after first check to reduce overhead
+                updateEngine.disableEngine()
+            }
         )
     }
 }

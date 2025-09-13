@@ -1,3 +1,158 @@
-# Custom
-#countrys.js
-#style.css
+# =============================================================================
+# Currency Converter - Enhanced .gitignore
+# =============================================================================
+
+# Environment Variables & Secrets
+# ================================
+*.env
+.env*
+!.env.example
+secrets/
+config/secrets/
+
+# Backend (Python/FastAPI)
+# ========================
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# FastAPI/Uvicorn
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Frontend (Static Files)
+# =======================
+# Node.js (if using build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+
+# IDE & Editor Files
+# ==================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# OS Generated Files
+# ==================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs & Debugging
+# ================
+logs/
+*.log
+debug.log
+error.log
+
+# Temporary Files
+# ===============
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Database Files
+# ==============
+*.db
+*.sqlite
+*.sqlite3
+
+# Deployment & CI/CD
+# ==================
+.vercel/
+.netlify/
+.render/
+.docker/
+
+# Security & Keys
+# ===============
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+jwt_secret.txt
+api_keys.txt
+
+# Testing
+# =======
+test-results/
+playwright-report/
+coverage/
+.nyc_output/
+
+# Documentation Build
+# ===================
+docs/_build/
+site/
+
+# Package Manager Locks (optional - uncomment if needed)
+# =====================================================
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Project Specific
+# ================
+# Add any project-specific ignores here
