@@ -5,7 +5,7 @@
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
-import 'material-icons/iconfont/material-icons.css';
+import '@fortawesome/fontawesome-free/css/all.css';
 
 // Configuration (Vite-native env)
 const CONFIG = {
@@ -13,10 +13,11 @@ const CONFIG = {
     REQUEST_TIMEOUT: 10000,
     RETRY_ATTEMPTS: 3,
     CURRENCY_UPDATE_INTERVAL: 60000,
+    DEBUG_MODE: import.meta?.env?.MODE === 'development',
     FEATURES: {
         RATE_LIMITING_UI: true,
         ERROR_REPORTING: true,
-        DEBUG_LOGGING: true
+        DEBUG_LOGGING: import.meta?.env?.MODE === 'development'
     }
 };
 window.APP_CONFIG = CONFIG;
@@ -211,17 +212,81 @@ let currentToCurrency = 'SGD';
 let highlightedIndex = -1;
 let currentSuggestions = [];
 
-// Fetch supported currencies from backend
+// Parallel fetch for multiple API endpoints
+async function fetchMultipleEndpoints(endpoints) {
+    try {
+        const promises = endpoints.map(async (endpoint) => {
+            const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint.url}`);
+            if (!response.ok) {
+                throw new Error(`${endpoint.name} failed: ${response.status}`);
+            }
+            const data = await response.json();
+            return { name: endpoint.name, data, success: true };
+        });
+        
+        const results = await Promise.allSettled(promises);
+        const successful = results
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value);
+        
+        const failed = results
+            .filter(result => result.status === 'rejected')
+            .map(result => result.reason.message);
+        
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`✅ Parallel fetch completed: ${successful.length}/${endpoints.length} successful`);
+            if (failed.length > 0) {
+                console.warn('Failed endpoints:', failed);
+            }
+        }
+        
+        return { successful, failed };
+    } catch (error) {
+        console.error('Parallel fetch error:', error);
+        throw error;
+    }
+}
+
+// Enhanced currency fetching with parallel support
 async function fetchSupportedCurrencies() {
     try {
-        console.log('Fetching currencies from:', `${CONFIG.API_BASE_URL}/api/currencies`);
-        const response = await fetch(`${CONFIG.API_BASE_URL}/api/currencies`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch currencies: ${response.status}`);
+        if (CONFIG.DEBUG_MODE) {
+            console.log('Fetching currencies from:', `${CONFIG.API_BASE_URL}/api/currencies`);
         }
-        const data = await response.json();
-        console.log('Fetched currencies from backend:', data.currencies.length, 'currencies');
-        return data.currencies;
+        
+        // Parallel fetch currencies and regions for better performance
+        const endpoints = [
+            { name: 'currencies', url: '/api/currencies' },
+            { name: 'regions', url: '/api/regions' }
+        ];
+        
+        const { successful } = await fetchMultipleEndpoints(endpoints);
+        
+        const currenciesResult = successful.find(r => r.name === 'currencies');
+        const regionsResult = successful.find(r => r.name === 'regions');
+        
+        if (currenciesResult) {
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`Fetched ${currenciesResult.data.currencies.length} currencies from enhanced backend`);
+            }
+            
+            // Store regions data for future use
+            if (regionsResult) {
+                window.CURRENCY_REGIONS = regionsResult.data.regions;
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`Fetched ${regionsResult.data.total_regions} regions`);
+                }
+            }
+            
+            return currenciesResult.data.currencies.map(curr => ({
+                code: curr.code,
+                name: curr.name,
+                country: getCountryFromCurrency(curr.code)
+            }));
+        }
+        
+        throw new Error('No currency data received');
+        
     } catch (error) {
         console.error('Error fetching currencies from backend:', error);
         console.warn('Using fallback currency list (35 currencies)');
@@ -412,16 +477,17 @@ function updateFlag(select) {
 }
 
 // ===== EXCHANGE RATE FUNCTIONS =====
-// Format currency display
+// Format currency display with consistent thousand separators
 function formatCurrencyDisplay(amount, fromCurrency, toCurrency, rate) {
     const totalAmount = (amount * rate).toFixed(2);
-    const formatter = new Intl.NumberFormat('en-US', { 
-        style: 'currency', 
-        currency: toCurrency, 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-    });
-    return `${amount.toFixed(2)} ${fromCurrency} = ${formatter.format(totalAmount)}`;
+    
+    // Format left side (input amount) with thousand separators
+    const formattedAmount = formatNumberDisplay(amount.toFixed(2));
+    
+    // Format right side (result) with thousand separators - no currency symbol
+    const formattedTotal = formatNumberDisplay(totalAmount);
+    
+    return `${formattedAmount} ${fromCurrency} = ${toCurrency} ${formattedTotal}`;
 }
 
 // Handle API response and display result
@@ -437,7 +503,9 @@ function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
     }
 
     exRateTxt.innerText = formatCurrencyDisplay(amount, fromCurrency, toCurrency, exchangeRate);
-    console.log(`✅ Exchange rate fetched: 1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`);
+    if (CONFIG.DEBUG_MODE) {
+        console.log(`✅ Exchange rate fetched: 1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`);
+    }
     return true;
 }
 
@@ -445,7 +513,7 @@ function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
 async function handleTokenRefreshAndRetry(fromCurrency, toCurrency, amount) {
     try {
         await fetchTokenFromBackend();
-        const retry = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}`, {
+        const retry = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}?token=${jwtToken}`, {
             headers: { 'Authorization': `Bearer ${jwtToken}` }
         });
         if (!retry.ok) throw new Error(`HTTP ${retry.status}`);
@@ -458,17 +526,65 @@ async function handleTokenRefreshAndRetry(fromCurrency, toCurrency, amount) {
     }
 }
 
-// Main exchange rate fetching function
-async function getExchangeRate() {
-    const amountVal = parseFloat(amount.value) || 1;
+// Parallel batch fetching for multiple currencies
+async function fetchBatchExchangeRates(currencies) {
+    try {
+        const JWT_TOKEN = await ensureJwtLoaded();
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/rates/batch?token=${JWT_TOKEN}`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${JWT_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ currencies: currencies })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Batch request failed: ${response.status}`);
+        }
+
+        
+        const result = await response.json();
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`✅ Batch exchange rates fetched for ${result.successful_count}/${result.total_requested} currencies in ${result.response_time_ms}ms`);
+        }
+        return result;
+    } catch (error) {
+        console.error("Error fetching batch exchange rates:", error);
+        throw error;
+    }
+}
+
+// Enhanced exchange rate fetching with parallel support
+async function getExchangeRateOptimized(targetCurrencies = null) {
+    const amountVal = parseFloat(parseNumberInput(amount.value)) || 1;
     const fromCurrency = currentFromCurrency;
     const toCurrency = currentToCurrency;
     
     exRateTxt.innerText = "Getting exchange rate...";
     
     try {
+        // If multiple target currencies are specified, use batch API
+        if (targetCurrencies && targetCurrencies.length > 1) {
+            const batchResult = await fetchBatchExchangeRates([fromCurrency]);
+            if (batchResult.successful_count > 0) {
+                const rates = batchResult.results[fromCurrency];
+                if (rates && rates.conversion_rates[toCurrency]) {
+                    const exchangeRate = rates.conversion_rates[toCurrency];
+                    exRateTxt.innerText = formatCurrencyDisplay(amountVal, fromCurrency, toCurrency, exchangeRate);
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log(`✅ Batch exchange rate: 1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`);
+                    }
+                    return;
+                }
+            }
+        }
+        
+        // Fallback to single currency API with parallel target filtering
         const JWT_TOKEN = await ensureJwtLoaded();
-        const response = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}`, {
+        const targetParam = targetCurrencies ? `?targets=${targetCurrencies.join(',')}` : '';
+        const tokenParam = targetParam ? `${targetParam}&token=${JWT_TOKEN}` : `?token=${JWT_TOKEN}`;
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}${tokenParam}`, {
             headers: { 'Authorization': `Bearer ${JWT_TOKEN}` }
         });
         
@@ -491,6 +607,11 @@ async function getExchangeRate() {
         const result = await response.json();
         handleExchangeRateResponse(result, amountVal, fromCurrency, toCurrency);
         
+        // Log performance metrics if available
+        if (result.response_time_ms && CONFIG.DEBUG_MODE) {
+            console.log(`⚡ API response time: ${result.response_time_ms}ms (${result.cache_hit ? 'cached' : 'fresh'})`);
+        }
+        
     } catch (error) {
         console.error("Error fetching exchange rate:", error);
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
@@ -499,6 +620,11 @@ async function getExchangeRate() {
             exRateTxt.innerText = `❌ Error: ${error.message}`;
         }
     }
+}
+
+// Main exchange rate fetching function (backwards compatible)
+async function getExchangeRate() {
+    return await getExchangeRateOptimized();
 }
 
 // Currency swap functionality
@@ -529,8 +655,12 @@ function swapCurrencies() {
     getExchangeRate();
 }
 
-// Initialize the application
+// Initialize the application with parallel loading
 async function initApp() {
+    if (CONFIG.DEBUG_MODE) {
+        console.log('🚀 Initializing Enhanced Currency Converter...');
+    }
+    
     // Get DOM elements for new searchable interface
     fromSearch = document.querySelector(".from-search");
     toSearch = document.querySelector(".to-search");
@@ -538,10 +668,63 @@ async function initApp() {
     toSuggestions = document.querySelector(".to-suggestions");
     amount = document.querySelector("#amount-input");
     exRateTxt = document.querySelector(".result");
+    
+    // Initialize number formatting for amount input
+    initializeNumberFormatting();
     exchangeIcon = document.querySelector(".reverse");
 
-    // Initialize searchable inputs
-    initializeSearchInputs();
+    // Parallel initialization tasks
+    const initTasks = [
+        // Task 1: Load currency data from backend
+        fetchSupportedCurrencies().then(currencies => {
+            if (currencies && currencies.length > 35) {
+                // Update global currency list with backend data
+                SUPPORTED_CURRENCIES.length = 0;
+                SUPPORTED_CURRENCIES.push(...currencies);
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`✅ Updated currency list: ${currencies.length} currencies loaded`);
+                }
+            }
+            return currencies;
+        }),
+        
+        // Task 2: Pre-fetch JWT token
+        ensureJwtLoaded().then(token => {
+            if (CONFIG.DEBUG_MODE) {
+                console.log('✅ JWT token pre-loaded');
+            }
+            return token;
+        }).catch(err => {
+            if (CONFIG.DEBUG_MODE) {
+                console.warn('⚠️ JWT pre-load failed, will fetch on demand:', err.message);
+            }
+            return null;
+        }),
+        
+        // Task 3: Initialize UI components
+        Promise.resolve().then(() => {
+            initializeSearchInputs();
+            if (CONFIG.DEBUG_MODE) {
+                console.log('✅ Search UI initialized');
+            }
+            return true;
+        })
+    ];
+    
+    // Execute all initialization tasks in parallel
+    try {
+        const [currencyData, jwtToken, uiReady] = await Promise.allSettled(initTasks);
+        
+        if (CONFIG.DEBUG_MODE) {
+            console.log('📊 Parallel initialization results:');
+            console.log(`   - Currency data: ${currencyData.status === 'fulfilled' ? '✅' : '❌'}`);
+            console.log(`   - JWT token: ${jwtToken.status === 'fulfilled' ? '✅' : '⚠️'}`);
+            console.log(`   - UI components: ${uiReady.status === 'fulfilled' ? '✅' : '❌'}`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Initialization error:', error);
+    }
 
     // Add event listeners
     exchangeIcon.addEventListener("click", swapCurrencies);
@@ -579,13 +762,85 @@ async function initApp() {
     // Initial display message
     exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
     
-    console.log('✅ Searchable Currency Converter initialized successfully!');
-    console.log('🔍 Smart search features enabled:');
-    console.log('   - Fuzzy matching (e.g., "us" → USD)');
-    console.log('   - Country name search (e.g., "america" → USD)');
-    console.log('   - Currency name search (e.g., "dollar" → USD)');
-    console.log('   - Keyboard navigation (↑↓ arrows, Enter, Escape)');
-    console.log('   - Auto-complete suggestions');
+    if (CONFIG.DEBUG_MODE) {
+        console.log('✅ Enhanced Currency Converter initialized successfully!');
+        console.log('🚀 Performance features enabled:');
+        console.log('   - Parallel API loading (currencies + regions + JWT)');
+        console.log('   - Batch exchange rate fetching');
+        console.log('   - Optimized target currency filtering');
+        console.log('   - Enhanced caching and performance monitoring');
+        console.log('🔍 Smart search features enabled:');
+        console.log('   - Fuzzy matching (e.g., "us" → USD)');
+        console.log('   - Country name search (e.g., "america" → USD)');
+        console.log('   - Currency name search (e.g., "dollar" → USD)');
+        console.log('   - Keyboard navigation (↑↓ arrows, Enter, Escape)');
+        console.log('   - Auto-complete suggestions');
+    }
+}
+
+// ===== NUMBER FORMATTING FUNCTIONS =====
+// Initialize number formatting for amount input
+function initializeNumberFormatting() {
+    if (!amount) return;
+    
+    amount.addEventListener('input', (e) => {
+        let value = e.target.value;
+        
+        // Remove all characters except digits and dots
+        value = value.replace(/[^0-9.]/g, "");
+        
+        // Prevent multiple decimal points
+        const dotCount = (value.match(/\./g) || []).length;
+        if (dotCount > 1) {
+            // Keep only the first dot
+            const firstDotIndex = value.indexOf('.');
+            value = value.substring(0, firstDotIndex + 1) + value.substring(firstDotIndex + 1).replace(/\./g, '');
+        }
+        
+        // Split into integer and decimal parts
+        let [integerPart, decimalPart] = value.split(".");
+        
+        // Format integer part with thousand separators
+        if (integerPart && integerPart.length > 0) {
+            // Remove leading zeros except for single zero
+            integerPart = integerPart.replace(/^0+/, '') || '0';
+            
+            // Add thousand separators using Intl.NumberFormat
+            if (integerPart !== '0' || value === '0') {
+                integerPart = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
+            }
+        }
+        
+        // Reconstruct the value
+        e.target.value = decimalPart !== undefined ? `${integerPart}.${decimalPart}` : integerPart;
+    });
+    
+    // Handle paste events
+    amount.addEventListener('paste', (e) => {
+        setTimeout(() => {
+            // Trigger input event after paste
+            amount.dispatchEvent(new Event('input'));
+        }, 0);
+    });
+}
+
+// Parse formatted number input (remove commas) for calculations
+function parseNumberInput(formattedValue) {
+    if (!formattedValue) return '';
+    // Remove thousand separators (commas) but keep decimal point
+    return formattedValue.replace(/,/g, '');
+}
+
+// Format number for display with thousand separators
+function formatNumberDisplay(number) {
+    if (!number && number !== 0) return '';
+    
+    const numStr = String(number);
+    const [integerPart, decimalPart] = numStr.split('.');
+    
+    const formattedInteger = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
+    
+    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
 // Start the application when DOM is loaded

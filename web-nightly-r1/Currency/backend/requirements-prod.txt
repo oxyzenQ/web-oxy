@@ -1,0 +1,18 @@
+# Production-only dependencies
+# Install with: pip install -r requirements.txt -r requirements-prod.txt
+
+# Production monitoring and logging
+structlog==24.4.0
+sentry-sdk[fastapi]==2.15.0
+
+# Production database (if needed)
+# asyncpg==0.29.0  # PostgreSQL
+# redis==5.1.1     # Redis caching
+
+# Production deployment
+gunicorn==23.0.0
+supervisor==4.2.5
+
+# Security enhancements
+cryptography==43.0.1
+bcrypt==4.2.0

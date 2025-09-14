@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
+    host: true,
     open: false
   },
   preview: {
@@ -17,12 +18,23 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'esbuild',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
     rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['@fontsource/inter']
+        }
+      },
       input: 'index.html'
     }
   },
   esbuild: {
-    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
+    drop: ['console', 'debugger']
   }
 })

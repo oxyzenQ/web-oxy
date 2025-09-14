@@ -73,9 +73,9 @@ def main():
     print("\n📋 Usage Instructions:")
     print("1. Copy the token above")
     print("2. Use it in your frontend API calls:")
-    print(f"   fetch('https://your-backend.onrender.com/api/rates/USD?token={token[:20]}...')")
+    print(f"   fetch('https://your-backend.leapcell.com/api/rates/USD?token={token[:20]}...')")
     print("3. Or test with curl:")
-    print(f"   curl 'https://your-backend.onrender.com/api/rates/USD?token={token[:20]}...'")
+    print(f"   curl 'https://your-backend.leapcell.com/api/rates/USD?token={token[:20]}...'")
     print("\n⚠️  Keep this token secure and don't share it publicly!")
 
 if __name__ == "__main__":
