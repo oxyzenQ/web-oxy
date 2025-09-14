@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "preview": "vite preview --port 3000 --strictPort",
-    "clean": "rm -rf dist node_modules/.vite",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "serve": "vite preview --host 0.0.0.0 --port 4173",
+    "analyze": "vite build --mode analyze",
+    "vercel-build": "vite build",
     "check": "echo '✓ Type checking passed'",
     "test": "echo '✓ Tests passed'",
     "lint": "echo '✓ Linting passed'",
-    "build:prod": "NODE_ENV=production vite build",
-    "analyze": "vite build --mode analyze"
+    "build:prod": "NODE_ENV=production vite build"
   },
   "devDependencies": {
     "vite": "^5.4.0",
