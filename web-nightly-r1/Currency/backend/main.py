@@ -125,7 +125,7 @@ app.add_middleware(
 )
 
 # JWT and API configuration
-SECRET_KEY = os.getenv("JWT_SECRET")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 TOKEN_EXP_MINUTES = int(os.getenv("TOKEN_EXP_MINUTES", "10"))
 EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
@@ -133,8 +133,8 @@ BASE_URL = "https://v6.exchangerate-api.com/v6"
 
 # Enhanced validation
 if not SECRET_KEY:
-    logger.error("JWT_SECRET not found in environment variables!")
-    raise ValueError("JWT_SECRET is required for secure operation")
+    logger.error("JWT_SECRET_KEY not found in environment variables!")
+    raise ValueError("JWT_SECRET_KEY is required for secure operation")
 
 if not EXCHANGE_API_KEY:
     logger.error("EXCHANGE_API_KEY not found in environment variables!")

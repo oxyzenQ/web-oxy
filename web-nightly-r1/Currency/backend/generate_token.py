@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 
 def generate_token(duration_minutes=10):
@@ -54,9 +54,9 @@ def main():
             print("❌ Invalid duration. Please provide a number.")
             sys.exit(1)
     
-    # Check if JWT_SECRET is properly configured
+    # Check if JWT_SECRET_KEY is properly configured
     if SECRET_KEY :
-        print("⚠️  WARNING: Using default JWT_SECRET. Please set a secure secret in .env file!")
+        print("⚠️  WARNING: Using default JWT_SECRET_KEY. Please set a secure secret in .env file!")
     
     # Generate token
     token = generate_token(duration)
