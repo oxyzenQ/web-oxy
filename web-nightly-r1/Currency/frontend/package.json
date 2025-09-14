@@ -10,15 +10,27 @@
     "clean": "rm -rf dist node_modules/.vite",
     "check": "echo '✓ Type checking passed'",
     "test": "echo '✓ Tests passed'",
-    "lint": "echo '✓ Linting passed'"
+    "lint": "echo '✓ Linting passed'",
+    "build:prod": "NODE_ENV=production vite build",
+    "analyze": "vite build --mode analyze"
   },
   "devDependencies": {
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "terser": "^5.19.0",
+    "@vitejs/plugin-legacy": "^5.4.2",
+    "rollup-plugin-visualizer": "^5.12.0"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.6",
-    "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
-    "material-icons": "^1.13.14"
-  }
+    "@fortawesome/fontawesome-free": "^6.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

@@ -1,0 +1,25 @@
+# Development and testing dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Testing framework
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+
+# Code formatting and linting
+black==24.8.0
+flake8==7.1.1
+isort==5.13.2
+mypy==1.11.2
+
+# Development tools
+pre-commit==4.0.1
+bandit==1.7.10  # Security linting
+
+# Documentation
+mkdocs==1.6.1
+mkdocs-material==9.5.39
+
+# Load testing
+locust==2.32.2
