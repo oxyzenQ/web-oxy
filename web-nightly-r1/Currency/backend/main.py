@@ -113,8 +113,8 @@ LOCAL_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
-SERVERFRONTEND = os.getenv("SERVERFRONTEND")
-origins = [SERVERFRONTEND] + LOCAL_ORIGINS if SERVERFRONTEND else LOCAL_ORIGINS
+OTHER_ORIGINS = os.getenv("OTHER_ORIGINS")
+origins = [OTHER_ORIGINS] + LOCAL_ORIGINS if OTHER_ORIGINS else LOCAL_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
