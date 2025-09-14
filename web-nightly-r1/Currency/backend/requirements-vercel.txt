@@ -1,0 +1,8 @@
+# Vercel-optimized FastAPI dependencies
+fastapi==0.116.1
+python-jose[cryptography]==3.5.0
+python-dotenv==1.1.1
+httpx==0.28.1
+slowapi==0.1.9
+python-multipart==0.0.20
+passlib[bcrypt]==1.7.4
