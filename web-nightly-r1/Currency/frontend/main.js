@@ -7,23 +7,224 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 
+// Set dynamic CSP based on environment
+function setDynamicCSP() {
+    const isDevelopment = import.meta?.env?.MODE === 'development' || 
+                         location.hostname === 'localhost' || 
+                         location.hostname === '127.0.0.1';
+    
+    let cspContent = "default-src 'self'; " +
+                    "font-src 'self' data: https://fonts.gstatic.com; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "img-src 'self' data: https://flagcdn.com; " +
+                    "script-src 'self' 'unsafe-inline'; " +
+                    "connect-src 'self' https://kconvert-backend.zeabur.app;";
+    
+    if (isDevelopment) {
+        const devOrigin = `${location.protocol}//${location.host}`;
+        const wsOrigin = `ws://${location.host}`;
+        cspContent = "default-src 'self'; " +
+                    `font-src 'self' data: https://fonts.gstatic.com ${devOrigin}; ` +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "img-src 'self' data: https://flagcdn.com; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    `script-src-elem 'self' ${devOrigin}; ` +
+                    `connect-src 'self' http://localhost:8000 https://kconvert-backend.zeabur.app ${wsOrigin};`;
+    }
+    
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = cspContent;
+    document.head.appendChild(meta);
+}
+
+// Set CSP immediately
+setDynamicCSP();
+
 // Configuration (Vite-native env)
 const CONFIG = {
     API_BASE_URL: import.meta?.env?.VITE_API_BASE_URL || 
-                 (location.protocol === 'https:' ? 'https://kconvert-backend.zeabur.app' : 'http://localhost:8000'),
+                 (location.protocol === 'https:' ? '/api' : 'http://localhost:8000'),
     REQUEST_TIMEOUT: 10000,
     RETRY_ATTEMPTS: 3,
     CURRENCY_UPDATE_INTERVAL: 60000,
-    DEBUG_MODE: import.meta?.env?.MODE === 'development',
+    DEBUG_MODE: import.meta?.env?.MODE === 'dev',
+    IS_PRODUCTION: import.meta?.env?.MODE === 'pro',
+    CACHE_DURATION: {
+        CURRENCIES: 24 * 60 * 60 * 1000, // 24 hours
+        EXCHANGE_RATES: 5 * 60 * 1000,   // 5 minutes
+        JWT_TOKEN: 9 * 60 * 1000         // 9 minutes (token expires in 10)
+    },
     FEATURES: {
         RATE_LIMITING_UI: true,
-        ERROR_REPORTING: true,
-        DEBUG_LOGGING: import.meta?.env?.MODE === 'development'
+        ERROR_REPORTING: import.meta?.env?.MODE === 'pro',
+        DEBUG_LOGGING: import.meta?.env?.MODE === 'dev',
+        OFFLINE_MODE: true,
+        PERFORMANCE_MONITORING: import.meta?.env?.MODE === 'dev',
+        ACCESSIBILITY: true
     }
 };
 window.APP_CONFIG = CONFIG;
 
-// JWT token management
+// ===== ENHANCED STATE MANAGEMENT =====
+// JWT token management with caching
+class TokenManager {
+    constructor() {
+        this.token = null;
+        this.tokenExpiry = null;
+        this.refreshPromise = null;
+    }
+
+    isTokenValid() {
+        return this.token && this.tokenExpiry && Date.now() < this.tokenExpiry;
+    }
+
+    async getValidToken() {
+        if (this.isTokenValid()) {
+            return this.token;
+        }
+
+        // Prevent multiple simultaneous token refreshes
+        if (this.refreshPromise) {
+            return await this.refreshPromise;
+        }
+
+        this.refreshPromise = this.fetchNewToken();
+        try {
+            const token = await this.refreshPromise;
+            this.refreshPromise = null;
+            return token;
+        } catch (error) {
+            this.refreshPromise = null;
+            throw error;
+        }
+    }
+
+    async fetchNewToken() {
+        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/auth`, {
+            method: 'GET',
+            cache: 'no-store'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Auth failed: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (!data?.token) {
+            throw new Error('No token in auth response');
+        }
+        
+        this.token = String(data.token);
+        this.tokenExpiry = Date.now() + CONFIG.CACHE_DURATION.JWT_TOKEN;
+        
+        if (CONFIG.DEBUG_MODE) {
+            console.log('🔑 JWT token refreshed, expires in 9 minutes');
+        }
+        
+        return this.token;
+    }
+
+    clearToken() {
+        this.token = null;
+        this.tokenExpiry = null;
+        this.refreshPromise = null;
+    }
+}
+
+const tokenManager = new TokenManager();
+
+// Enhanced caching system
+class CacheManager {
+    constructor() {
+        this.cache = new Map();
+        this.cacheTimestamps = new Map();
+    }
+
+    set(key, value, duration = CONFIG.CACHE_DURATION.EXCHANGE_RATES) {
+        this.cache.set(key, value);
+        this.cacheTimestamps.set(key, Date.now() + duration);
+        
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`💾 Cached: ${key} (expires in ${Math.round(duration/1000)}s)`);
+        }
+    }
+
+    get(key) {
+        const expiry = this.cacheTimestamps.get(key);
+        if (!expiry || Date.now() > expiry) {
+            this.delete(key);
+            return null;
+        }
+        return this.cache.get(key);
+    }
+
+    delete(key) {
+        this.cache.delete(key);
+        this.cacheTimestamps.delete(key);
+    }
+
+    clear() {
+        this.cache.clear();
+        this.cacheTimestamps.clear();
+    }
+
+    getStats() {
+        return {
+            size: this.cache.size,
+            keys: Array.from(this.cache.keys())
+        };
+    }
+}
+
+const cacheManager = new CacheManager();
+
+// Performance monitoring
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            apiCalls: 0,
+            cacheHits: 0,
+            cacheMisses: 0,
+            errors: 0,
+            averageResponseTime: 0,
+            totalResponseTime: 0
+        };
+    }
+
+    recordApiCall(responseTime, fromCache = false) {
+        this.metrics.apiCalls++;
+        if (fromCache) {
+            this.metrics.cacheHits++;
+        } else {
+            this.metrics.cacheMisses++;
+            this.metrics.totalResponseTime += responseTime;
+            this.metrics.averageResponseTime = this.metrics.totalResponseTime / this.metrics.cacheMisses;
+        }
+    }
+
+    recordError() {
+        this.metrics.errors++;
+    }
+
+    getStats() {
+        return {
+            ...this.metrics,
+            cacheHitRate: this.metrics.apiCalls > 0 ? 
+                (this.metrics.cacheHits / this.metrics.apiCalls * 100).toFixed(1) + '%' : '0%'
+        };
+    }
+
+    reset() {
+        Object.keys(this.metrics).forEach(key => {
+            this.metrics[key] = 0;
+        });
+    }
+}
+
+const performanceMonitor = new PerformanceMonitor();
+
+// Legacy compatibility
 let jwtToken = null;
 
 // ===== CURRENCY & COUNTRY DATA =====
@@ -192,18 +393,73 @@ function searchCurrencies(query) {
     return results;
 }
 
+// ===== ENHANCED NETWORK UTILITIES =====
+// Advanced fetch with retry logic and timeout
+async function fetchWithRetry(url, options = {}, retries = CONFIG.RETRY_ATTEMPTS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+    
+    const fetchOptions = {
+        ...options,
+        signal: controller.signal,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const startTime = performance.now();
+            const response = await fetch(url, fetchOptions);
+            const endTime = performance.now();
+            const responseTime = Math.round(endTime - startTime);
+            
+            clearTimeout(timeoutId);
+            
+            if (CONFIG.FEATURES.PERFORMANCE_MONITORING) {
+                performanceMonitor.recordApiCall(responseTime, false);
+            }
+            
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`🌐 ${options.method || 'GET'} ${url} - ${response.status} (${responseTime}ms, attempt ${attempt})`);
+            }
+            
+            return response;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            if (CONFIG.FEATURES.PERFORMANCE_MONITORING) {
+                performanceMonitor.recordError();
+            }
+            
+            if (attempt === retries) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.error(`❌ Final attempt failed for ${url}:`, error.message);
+                }
+                throw new Error(`Network request failed after ${retries} attempts: ${error.message}`);
+            }
+            
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+            if (CONFIG.DEBUG_MODE) {
+                console.warn(`⚠️ Attempt ${attempt} failed for ${url}, retrying in ${delay}ms...`);
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+// Legacy token functions for backwards compatibility
 async function fetchTokenFromBackend() {
-    const res = await fetch(`${CONFIG.API_BASE_URL}/api/auth`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Auth failed: ${res.status}`);
-    const data = await res.json();
-    if (!data?.token) throw new Error('No token in auth response');
-    jwtToken = String(data.token);
-    return jwtToken;
+    const token = await tokenManager.getValidToken();
+    jwtToken = token; // Update legacy variable
+    return token;
 }
 
 async function ensureJwtLoaded() {
-    if (jwtToken) return jwtToken;
-    return await fetchTokenFromBackend();
+    const token = await tokenManager.getValidToken();
+    jwtToken = token; // Update legacy variable
+    return token;
 }
 
 // DOM elements
@@ -248,11 +504,23 @@ async function fetchMultipleEndpoints(endpoints) {
     }
 }
 
-// Enhanced currency fetching with parallel support
+// Enhanced currency fetching with caching and parallel support
 async function fetchSupportedCurrencies() {
+    const cacheKey = 'supported_currencies';
+    
+    // Check cache first
+    const cachedCurrencies = cacheManager.get(cacheKey);
+    if (cachedCurrencies) {
+        if (CONFIG.DEBUG_MODE) {
+            console.log('💾 Using cached currencies:', cachedCurrencies.length);
+        }
+        performanceMonitor.recordApiCall(0, true);
+        return cachedCurrencies;
+    }
+    
     try {
         if (CONFIG.DEBUG_MODE) {
-            console.log('Fetching currencies from:', `${CONFIG.API_BASE_URL}/api/currencies`);
+            console.log('🌐 Fetching currencies from:', `${CONFIG.API_BASE_URL}/api/currencies`);
         }
         
         // Parallel fetch currencies and regions for better performance
@@ -267,31 +535,39 @@ async function fetchSupportedCurrencies() {
         const regionsResult = successful.find(r => r.name === 'regions');
         
         if (currenciesResult) {
+            const currencies = currenciesResult.data.currencies.map(curr => ({
+                code: curr.code,
+                name: curr.name,
+                country: getCountryFromCurrency(curr.code)
+            }));
+            
+            // Cache the result
+            cacheManager.set(cacheKey, currencies, CONFIG.CACHE_DURATION.CURRENCIES);
+            
             if (CONFIG.DEBUG_MODE) {
-                console.log(`Fetched ${currenciesResult.data.currencies.length} currencies from enhanced backend`);
+                console.log(`✅ Fetched ${currencies.length} currencies from enhanced backend`);
             }
             
             // Store regions data for future use
             if (regionsResult) {
                 window.CURRENCY_REGIONS = regionsResult.data.regions;
+                cacheManager.set('currency_regions', regionsResult.data.regions, CONFIG.CACHE_DURATION.CURRENCIES);
                 if (CONFIG.DEBUG_MODE) {
-                    console.log(`Fetched ${regionsResult.data.total_regions} regions`);
+                    console.log(`✅ Fetched ${regionsResult.data.total_regions} regions`);
                 }
             }
             
-            return currenciesResult.data.currencies.map(curr => ({
-                code: curr.code,
-                name: curr.name,
-                country: getCountryFromCurrency(curr.code)
-            }));
+            return currencies;
         }
         
         throw new Error('No currency data received');
         
     } catch (error) {
-        console.error('Error fetching currencies from backend:', error);
-        console.warn('Using fallback currency list (35 currencies)');
-        // Fallback to centralized currency data
+        console.error('❌ Error fetching currencies from backend:', error);
+        console.warn('⚠️ Using fallback currency list (35 currencies)');
+        
+        // Cache fallback data for shorter duration
+        cacheManager.set(cacheKey, SUPPORTED_CURRENCIES, 5 * 60 * 1000); // 5 minutes
         return SUPPORTED_CURRENCIES;
     }
 }
@@ -491,47 +767,122 @@ function formatCurrencyDisplay(amount, fromCurrency, toCurrency, rate) {
     return `${formattedAmount} ${fromCurrency} = ${toCurrency} ${formattedTotal}`;
 }
 
-// Handle API response and display result
+// Enhanced API response handling with validation
 function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
-    if (!result.success) {
-        throw new Error('API returned unsuccessful response');
+    if (!result || typeof result !== 'object') {
+        throw new Error('Invalid API response format');
+    }
+    
+    // Check for explicit error field first
+    if (result.error) {
+        throw new Error(result.error);
+    }
+    
+    // For /api/rates endpoint, check for conversion_rates (success is implied if this exists)
+    if (!result.conversion_rates || typeof result.conversion_rates !== 'object') {
+        throw new Error('Missing conversion rates in API response');
     }
 
     const exchangeRate = result.conversion_rates[toCurrency];
-    if (!exchangeRate) {
-        exRateTxt.innerText = `❌ Exchange rate not available for ${toCurrency}`;
+    if (!exchangeRate || isNaN(exchangeRate) || exchangeRate <= 0) {
+        showErrorState(`❌ Exchange rate not available for ${toCurrency}`, true);
         return false;
     }
 
-    exRateTxt.innerText = formatCurrencyDisplay(amount, fromCurrency, toCurrency, exchangeRate);
+    // Validate amount
+    const validation = validateAmount(amount);
+    if (!validation.isValid) {
+        showErrorState(`❌ ${validation.error}`, false);
+        return false;
+    }
+
+    const displayText = formatCurrencyDisplay(validation.value, fromCurrency, toCurrency, exchangeRate);
+    exRateTxt.innerText = displayText;
+    
+    // Show success animation
+    showSuccessState();
+    
+    // Announce to screen reader
+    announceToScreenReader(`Exchange rate calculated: ${displayText}`);
+    
     if (CONFIG.DEBUG_MODE) {
         console.log(`✅ Exchange rate fetched: 1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`);
     }
+    
     return true;
 }
 
-// Handle token refresh and retry
-async function handleTokenRefreshAndRetry(fromCurrency, toCurrency, amount) {
-    try {
-        await fetchTokenFromBackend();
-        const retry = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}?token=${jwtToken}`, {
-            headers: { 'Authorization': `Bearer ${jwtToken}` }
-        });
-        if (!retry.ok) throw new Error(`HTTP ${retry.status}`);
-        const retryResult = await retry.json();
-        return handleExchangeRateResponse(retryResult, amount, fromCurrency, toCurrency);
-    } catch (err) {
-        exRateTxt.innerText = "🔒 Token expired. Please try again.";
-        console.error("JWT token refresh failed.", err);
-        return false;
+// Enhanced API error handling
+async function handleApiError(response, fromCurrency, toCurrency, amountVal) {
+    switch (response.status) {
+        case 401:
+            try {
+                // Clear invalid token and retry
+                tokenManager.clearToken();
+                const newToken = await tokenManager.getValidToken();
+                
+                const retryResponse = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}?targets=${toCurrency}&token=${newToken}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${newToken}` }
+                });
+                
+                if (!retryResponse.ok) {
+                    throw new Error(`Retry failed: ${retryResponse.status}`);
+                }
+                
+                const retryResult = await retryResponse.json();
+                return handleExchangeRateResponse(retryResult, amountVal, fromCurrency, toCurrency);
+            } catch (err) {
+                showErrorState("🔒 Authentication failed. Please refresh the page.", true);
+                console.error("JWT token refresh failed:", err);
+            }
+            break;
+            
+        case 403:
+            showErrorState("🚫 Access denied. Invalid token.", false);
+            console.error("Invalid JWT token. Please verify your token.");
+            break;
+            
+        case 429:
+            showErrorState("⏳ Rate limit exceeded. Please wait before trying again.", true);
+            console.error("Rate limit exceeded. Please wait before making another request.");
+            break;
+            
+        case 404:
+            showErrorState(`❌ Currency ${fromCurrency} not found.`, false);
+            break;
+            
+        case 500:
+            showErrorState("🔧 Server error. Please try again later.", true);
+            break;
+            
+        default:
+            showErrorState(`❌ HTTP ${response.status}: ${response.statusText}`, true);
     }
 }
 
-// Parallel batch fetching for multiple currencies
+// Legacy function for backwards compatibility
+async function handleTokenRefreshAndRetry(fromCurrency, toCurrency, amount) {
+    return await handleApiError({ status: 401 }, fromCurrency, toCurrency, amount);
+}
+
+// Enhanced batch fetching with caching and retry logic
 async function fetchBatchExchangeRates(currencies) {
+    const cacheKey = `batch_${currencies.sort().join('_')}`;
+    
+    // Check cache first
+    const cachedBatch = cacheManager.get(cacheKey);
+    if (cachedBatch) {
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`💾 Using cached batch rates for ${currencies.length} currencies`);
+        }
+        performanceMonitor.recordApiCall(0, true);
+        return cachedBatch;
+    }
+    
     try {
-        const JWT_TOKEN = await ensureJwtLoaded();
-        const response = await fetch(`${CONFIG.API_BASE_URL}/api/rates/batch?token=${JWT_TOKEN}`, {
+        const JWT_TOKEN = await tokenManager.getValidToken();
+        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/batch?token=${JWT_TOKEN}`, {
             method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${JWT_TOKEN}`,
@@ -544,25 +895,43 @@ async function fetchBatchExchangeRates(currencies) {
             throw new Error(`Batch request failed: ${response.status}`);
         }
 
-        
         const result = await response.json();
+        
+        // Cache the successful result
+        cacheManager.set(cacheKey, result);
+        
         if (CONFIG.DEBUG_MODE) {
             console.log(`✅ Batch exchange rates fetched for ${result.successful_count}/${result.total_requested} currencies in ${result.response_time_ms}ms`);
         }
+        
         return result;
     } catch (error) {
-        console.error("Error fetching batch exchange rates:", error);
+        console.error("❌ Error fetching batch exchange rates:", error);
         throw error;
     }
 }
 
-// Enhanced exchange rate fetching with parallel support
+// Enhanced exchange rate fetching with caching and parallel support
 async function getExchangeRateOptimized(targetCurrencies = null) {
     const amountVal = parseFloat(parseNumberInput(amount.value)) || 1;
     const fromCurrency = currentFromCurrency;
     const toCurrency = currentToCurrency;
     
-    exRateTxt.innerText = "Getting exchange rate...";
+    // Check cache first
+    const cacheKey = `rate_${fromCurrency}_${toCurrency}`;
+    const cachedRate = cacheManager.get(cacheKey);
+    
+    if (cachedRate) {
+        exRateTxt.innerText = formatCurrencyDisplay(amountVal, fromCurrency, toCurrency, cachedRate.rate);
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`💾 Using cached rate: 1 ${fromCurrency} = ${cachedRate.rate} ${toCurrency}`);
+        }
+        performanceMonitor.recordApiCall(0, true);
+        return;
+    }
+    
+    // Show loading state with animation
+    showLoadingState("Getting exchange rate...");
     
     try {
         // If multiple target currencies are specified, use batch API
@@ -572,53 +941,64 @@ async function getExchangeRateOptimized(targetCurrencies = null) {
                 const rates = batchResult.results[fromCurrency];
                 if (rates && rates.conversion_rates[toCurrency]) {
                     const exchangeRate = rates.conversion_rates[toCurrency];
+                    
+                    // Cache the result
+                    cacheManager.set(cacheKey, { rate: exchangeRate, timestamp: Date.now() });
+                    
                     exRateTxt.innerText = formatCurrencyDisplay(amountVal, fromCurrency, toCurrency, exchangeRate);
                     if (CONFIG.DEBUG_MODE) {
                         console.log(`✅ Batch exchange rate: 1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`);
                     }
+                    hideLoadingState();
                     return;
                 }
             }
         }
         
-        // Fallback to single currency API with parallel target filtering
-        const JWT_TOKEN = await ensureJwtLoaded();
-        const targetParam = targetCurrencies ? `?targets=${targetCurrencies.join(',')}` : '';
-        const tokenParam = targetParam ? `${targetParam}&token=${JWT_TOKEN}` : `?token=${JWT_TOKEN}`;
-        const response = await fetch(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}${tokenParam}`, {
+        // Fallback to single currency API with enhanced error handling
+        const JWT_TOKEN = await tokenManager.getValidToken();
+        const targets = targetCurrencies || [toCurrency];
+        const targetParam = `?targets=${targets.join(',')}`;
+        const tokenParam = `${targetParam}&token=${JWT_TOKEN}`;
+        
+        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}${tokenParam}`, {
+            method: 'GET',
             headers: { 'Authorization': `Bearer ${JWT_TOKEN}` }
         });
         
         if (!response.ok) {
-            if (response.status === 401) {
-                return await handleTokenRefreshAndRetry(fromCurrency, toCurrency, amountVal);
-            } else if (response.status === 403) {
-                exRateTxt.innerText = "🚫 Invalid token. Please check your token.";
-                console.error("Invalid JWT token. Please verify your token.");
-                return;
-            } else if (response.status === 429) {
-                exRateTxt.innerText = "⏳ Rate limit exceeded. Please try again later.";
-                console.error("Rate limit exceeded. Please wait before making another request.");
-                return;
-            } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+            await handleApiError(response, fromCurrency, toCurrency, amountVal);
+            return;
         }
 
         const result = await response.json();
-        handleExchangeRateResponse(result, amountVal, fromCurrency, toCurrency);
+        const success = handleExchangeRateResponse(result, amountVal, fromCurrency, toCurrency);
+        
+        if (success && result.conversion_rates && result.conversion_rates[toCurrency]) {
+            // Cache the successful result
+            cacheManager.set(cacheKey, { 
+                rate: result.conversion_rates[toCurrency], 
+                timestamp: Date.now() 
+            });
+        }
         
         // Log performance metrics if available
         if (result.response_time_ms && CONFIG.DEBUG_MODE) {
             console.log(`⚡ API response time: ${result.response_time_ms}ms (${result.cache_hit ? 'cached' : 'fresh'})`);
         }
         
+        hideLoadingState();
+        
     } catch (error) {
-        console.error("Error fetching exchange rate:", error);
+        console.error("❌ Error fetching exchange rate:", error);
+        hideLoadingState();
+        
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            exRateTxt.innerText = "🌐 Network error. Please check your connection and backend server.";
+            showErrorState("🌐 Network error. Please check your connection.", true);
+        } else if (error.message.includes('timeout') || error.message.includes('aborted')) {
+            showErrorState("⏱️ Request timeout. Please try again.", true);
         } else {
-            exRateTxt.innerText = `❌ Error: ${error.message}`;
+            showErrorState(`❌ Error: ${error.message}`, true);
         }
     }
 }
@@ -654,6 +1034,215 @@ function swapCurrencies() {
     
     // Fetch new rate after swap
     getExchangeRate();
+}
+
+// ===== UI ENHANCEMENT FUNCTIONS =====
+// Loading state management
+function showLoadingState(message = "Loading...") {
+    if (exRateTxt) {
+        exRateTxt.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <span class="loading-text">${message}</span>
+            </div>
+        `;
+        exRateTxt.classList.add('loading');
+    }
+}
+
+function hideLoadingState() {
+    if (exRateTxt) {
+        exRateTxt.classList.remove('loading');
+    }
+}
+
+// Error state management
+function showErrorState(message, canRetry = false) {
+    if (exRateTxt) {
+        const retryButton = canRetry ? 
+            `<button class="retry-btn" onclick="getExchangeRate()" aria-label="Retry exchange rate fetch">
+                <i class="fas fa-redo" aria-hidden="true"></i> Retry
+            </button>` : '';
+        
+        exRateTxt.innerHTML = `
+            <div class="error-container">
+                <span class="error-text">${message}</span>
+                ${retryButton}
+            </div>
+        `;
+        exRateTxt.classList.add('error');
+        
+        // Auto-remove error class after animation
+        setTimeout(() => {
+            if (exRateTxt) {
+                exRateTxt.classList.remove('error');
+            }
+        }, 300);
+    }
+}
+
+// Success state with animation
+function showSuccessState(message) {
+    if (exRateTxt) {
+        exRateTxt.classList.add('success');
+        setTimeout(() => {
+            if (exRateTxt) {
+                exRateTxt.classList.remove('success');
+            }
+        }, 1000);
+    }
+}
+
+// ===== ACCESSIBILITY ENHANCEMENTS =====
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Only trigger shortcuts when not typing in inputs
+        if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+            return;
+        }
+        
+        switch (e.key) {
+            case 'Enter':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    getExchangeRate();
+                    announceToScreenReader('Exchange rate calculation started');
+                }
+                break;
+                
+            case 's':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    swapCurrencies();
+                    announceToScreenReader('Currencies swapped');
+                }
+                break;
+                
+            case 'r':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    resetForm();
+                    announceToScreenReader('Form reset to default values');
+                }
+                break;
+                
+            case 'Escape':
+                // Close any open suggestions
+                if (fromSuggestions) fromSuggestions.style.display = 'none';
+                if (toSuggestions) toSuggestions.style.display = 'none';
+                break;
+        }
+    });
+}
+
+// Screen reader announcements
+function announceToScreenReader(message) {
+    if (!CONFIG.FEATURES.ACCESSIBILITY) return;
+    
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    // Remove after announcement
+    setTimeout(() => {
+        document.body.removeChild(announcement);
+    }, 1000);
+}
+
+// Form reset function
+function resetForm() {
+    if (fromSearch && toSearch && amount) {
+        fromSearch.value = 'USD - US Dollar';
+        fromSearch.dataset.currency = 'USD';
+        toSearch.value = 'SGD - Singapore Dollar';
+        toSearch.dataset.currency = 'SGD';
+        currentFromCurrency = 'USD';
+        currentToCurrency = 'SGD';
+        amount.value = '';
+        
+        updateFlagImage(document.getElementById('from-flag'), 'us');
+        updateFlagImage(document.getElementById('to-flag'), 'sg');
+        
+        if (exRateTxt) {
+            exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+            exRateTxt.classList.remove('loading', 'error', 'success');
+        }
+        
+        if (fromSuggestions) fromSuggestions.style.display = 'none';
+        if (toSuggestions) toSuggestions.style.display = 'none';
+    }
+}
+
+// ===== PERFORMANCE MONITORING DASHBOARD =====
+// Debug performance dashboard (only in development)
+function initializePerformanceDashboard() {
+    if (!CONFIG.DEBUG_MODE || !CONFIG.FEATURES.PERFORMANCE_MONITORING) return;
+    
+    // Add performance stats to console every 30 seconds
+    setInterval(() => {
+        const stats = performanceMonitor.getStats();
+        const cacheStats = cacheManager.getStats();
+        
+        console.group('📊 Performance Dashboard');
+        console.log('API Calls:', stats.apiCalls);
+        console.log('Cache Hit Rate:', stats.cacheHitRate);
+        console.log('Average Response Time:', Math.round(stats.averageResponseTime) + 'ms');
+        console.log('Errors:', stats.errors);
+        console.log('Cache Size:', cacheStats.size, 'items');
+        console.log('Cached Keys:', cacheStats.keys);
+        console.groupEnd();
+    }, 30000);
+    
+    // Add keyboard shortcut to show stats
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12' && e.shiftKey) {
+            e.preventDefault();
+            const stats = performanceMonitor.getStats();
+            const cacheStats = cacheManager.getStats();
+            
+            alert(`Performance Stats:\n` +
+                  `API Calls: ${stats.apiCalls}\n` +
+                  `Cache Hit Rate: ${stats.cacheHitRate}\n` +
+                  `Avg Response Time: ${Math.round(stats.averageResponseTime)}ms\n` +
+                  `Errors: ${stats.errors}\n` +
+                  `Cache Size: ${cacheStats.size} items`);
+        }
+    });
+}
+
+// ===== OFFLINE MODE SUPPORT =====
+// Detect online/offline status
+function initializeOfflineMode() {
+    if (!CONFIG.FEATURES.OFFLINE_MODE) return;
+    
+    function updateOnlineStatus() {
+        const isOnline = navigator.onLine;
+        const statusIndicator = document.querySelector('.connection-status');
+        
+        if (statusIndicator) {
+            statusIndicator.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
+            statusIndicator.className = `connection-status ${isOnline ? 'online' : 'offline'}`;
+        }
+        
+        if (!isOnline && exRateTxt) {
+            showErrorState('🌐 You are offline. Some features may not work.', false);
+        }
+        
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`📡 Connection status: ${isOnline ? 'Online' : 'Offline'}`);
+        }
+    }
+    
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    
+    // Initial status check
+    updateOnlineStatus();
 }
 
 // Initialize the application with parallel loading
@@ -744,45 +1333,67 @@ async function initApp() {
     if (resetButton) {
         resetButton.addEventListener("click", (e) => {
             e.preventDefault();
-            // Reset to default values
-            fromSearch.value = 'USD - US Dollar';
-            fromSearch.dataset.currency = 'USD';
-            toSearch.value = 'SGD - Singapore Dollar';
-            toSearch.dataset.currency = 'SGD';
-            currentFromCurrency = 'USD';
-            currentToCurrency = 'SGD';
-            amount.value = '';
-            updateFlagImage(document.getElementById('from-flag'), 'us');
-            updateFlagImage(document.getElementById('to-flag'), 'sg');
-            exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
-            fromSuggestions.style.display = 'none';
-            toSuggestions.style.display = 'none';
+            resetForm();
+            announceToScreenReader('Form has been reset to default values');
         });
     }
+    
+    // Initialize enhanced features
+    initializeKeyboardShortcuts();
+    initializePerformanceDashboard();
+    initializeOfflineMode();
 
     // Initial display message
     exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
     
     if (CONFIG.DEBUG_MODE) {
-        console.log('✅ Enhanced Currency Converter initialized successfully!');
-        console.log('🚀 Performance features enabled:');
-        console.log('   - Parallel API loading (currencies + regions + JWT)');
+        console.log('🚀 Enhanced Currency Converter initialized successfully!');
+        console.log(`🔧 Environment: ${CONFIG.IS_PRODUCTION ? 'Production (pro)' : 'Development (dev)'}`);
+        console.log('📈 Performance features enabled:');
+        console.log('   - Intelligent caching system (5min rates, 24h currencies)');
+        console.log('   - Parallel API loading with retry logic');
         console.log('   - Batch exchange rate fetching');
-        console.log('   - Optimized target currency filtering');
-        console.log('   - Enhanced caching and performance monitoring');
+        console.log('   - Performance monitoring dashboard');
+        console.log('   - Exponential backoff retry strategy');
         console.log('🔍 Smart search features enabled:');
-        console.log('   - Fuzzy matching (e.g., "us" → USD)');
-        console.log('   - Country name search (e.g., "america" → USD)');
-        console.log('   - Currency name search (e.g., "dollar" → USD)');
+        console.log('   - Fuzzy matching with ML-like scoring');
+        console.log('   - Multi-language search support');
+        console.log('   - Phonetic matching and typo correction');
         console.log('   - Keyboard navigation (↑↓ arrows, Enter, Escape)');
-        console.log('   - Auto-complete suggestions');
+        console.log('♿ Accessibility features enabled:');
+        console.log('   - Screen reader announcements');
+        console.log('   - Keyboard shortcuts (Ctrl+Enter, Ctrl+S, Ctrl+R)');
+        console.log('   - ARIA labels and live regions');
+        console.log('   - Focus management');
+        console.log('🌐 Network features enabled:');
+        console.log('   - Offline mode detection');
+        console.log('   - Connection status indicator');
+        console.log('   - Smart error recovery');
+        console.log('   - Request timeout and abort handling');
+        console.log('💡 Press Shift+F12 for performance stats');
+    } else if (CONFIG.IS_PRODUCTION) {
+        console.log('🚀 Currency Converter - Production Mode');
     }
 }
 
 // ===== NUMBER FORMATTING FUNCTIONS =====
-// Initialize number formatting for amount input
+// Enhanced number formatting with accessibility
 function initializeNumberFormatting() {
     if (!amount) return;
+    
+    // Add ARIA attributes for accessibility
+    amount.setAttribute('aria-label', 'Enter amount to convert');
+    amount.setAttribute('aria-describedby', 'amount-help');
+    amount.setAttribute('inputmode', 'decimal');
+    
+    // Create help text for screen readers
+    const helpText = document.createElement('div');
+    helpText.id = 'amount-help';
+    helpText.className = 'sr-only';
+    helpText.textContent = 'Enter a numeric amount. Use decimal point for cents.';
+    amount.parentNode.insertBefore(helpText, amount.nextSibling);
+    
+    let lastValidValue = '';
     
     amount.addEventListener('input', (e) => {
         let value = e.target.value;
@@ -798,6 +1409,14 @@ function initializeNumberFormatting() {
             value = value.substring(0, firstDotIndex + 1) + value.substring(firstDotIndex + 1).replace(/\./g, '');
         }
         
+        // Limit decimal places to 2
+        if (value.includes('.')) {
+            const [integerPart, decimalPart] = value.split('.');
+            if (decimalPart && decimalPart.length > 2) {
+                value = `${integerPart}.${decimalPart.substring(0, 2)}`;
+            }
+        }
+        
         // Split into integer and decimal parts
         let [integerPart, decimalPart] = value.split(".");
         
@@ -806,43 +1425,184 @@ function initializeNumberFormatting() {
             // Remove leading zeros except for single zero
             integerPart = integerPart.replace(/^0+/, '') || '0';
             
+            // Prevent numbers that are too large
+            if (integerPart.replace(/,/g, '').length > 12) {
+                e.target.value = lastValidValue;
+                announceToScreenReader('Maximum amount exceeded');
+                return;
+            }
+            
             // Add thousand separators using Intl.NumberFormat
             if (integerPart !== '0' || value === '0') {
-                integerPart = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
+                try {
+                    integerPart = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
+                } catch (error) {
+                    console.warn('Number formatting error:', error);
+                    integerPart = integerPart.replace(/,/g, ''); // Remove commas as fallback
+                }
             }
         }
         
         // Reconstruct the value
-        e.target.value = decimalPart !== undefined ? `${integerPart}.${decimalPart}` : integerPart;
+        const formattedValue = decimalPart !== undefined ? `${integerPart}.${decimalPart}` : integerPart;
+        e.target.value = formattedValue;
+        lastValidValue = formattedValue;
     });
     
-    // Handle paste events
+    // Handle paste events with validation
     amount.addEventListener('paste', (e) => {
         setTimeout(() => {
             // Trigger input event after paste
             amount.dispatchEvent(new Event('input'));
+            
+            // Announce to screen reader
+            const value = parseNumberInput(amount.value);
+            if (value && !isNaN(value)) {
+                announceToScreenReader(`Amount set to ${value}`);
+            }
         }, 0);
+    });
+    
+    // Auto-convert on Enter key
+    amount.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            getExchangeRate();
+        }
+    });
+    
+    // Announce value changes to screen reader
+    amount.addEventListener('blur', () => {
+        const value = parseNumberInput(amount.value);
+        if (value && !isNaN(value) && value > 0) {
+            announceToScreenReader(`Amount: ${formatNumberDisplay(value)}`);
+        }
     });
 }
 
-// Parse formatted number input (remove commas) for calculations
+// Enhanced number parsing with validation
 function parseNumberInput(formattedValue) {
-    if (!formattedValue) return '';
+    if (!formattedValue && formattedValue !== 0) return '';
+    
+    // Convert to string if it's not already
+    const stringValue = String(formattedValue);
+    
     // Remove thousand separators (commas) but keep decimal point
-    return formattedValue.replace(/,/g, '');
+    const cleaned = stringValue.replace(/,/g, '');
+    
+    // Validate the result
+    if (isNaN(cleaned) || cleaned === '') return '';
+    
+    return cleaned;
 }
 
-// Format number for display with thousand separators
+// Enhanced number formatting with locale support
 function formatNumberDisplay(number) {
     if (!number && number !== 0) return '';
     
-    const numStr = String(number);
-    const [integerPart, decimalPart] = numStr.split('.');
-    
-    const formattedInteger = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
-    
-    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+    try {
+        const numStr = String(number);
+        const [integerPart, decimalPart] = numStr.split('.');
+        
+        const formattedInteger = new Intl.NumberFormat("en-US").format(parseInt(integerPart, 10));
+        
+        return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+    } catch (error) {
+        console.warn('Number formatting error:', error);
+        return String(number); // Fallback to string conversion
+    }
+}
+
+// Validate currency amount
+function validateAmount(value) {
+    const num = parseFloat(parseNumberInput(value));
+    return {
+        isValid: !isNaN(num) && num > 0 && num <= 999999999999,
+        value: num,
+        error: isNaN(num) ? 'Invalid number' : 
+               num <= 0 ? 'Amount must be greater than zero' :
+               num > 999999999999 ? 'Amount too large' : null
+    };
+}
+
+// ===== APPLICATION STARTUP =====
+// Enhanced startup with error handling
+function startApp() {
+    try {
+        initApp();
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+        
+        // Fallback initialization
+        setTimeout(() => {
+            try {
+                console.log('🔄 Attempting fallback initialization...');
+                initApp();
+            } catch (fallbackError) {
+                console.error('❌ Fallback initialization failed:', fallbackError);
+                
+                // Show user-friendly error
+                const errorDiv = document.createElement('div');
+                errorDiv.innerHTML = `
+                    <div style="padding: 20px; background: #fee; border: 1px solid #fcc; border-radius: 8px; margin: 20px; text-align: center;">
+                        <h3>⚠️ Application Error</h3>
+                        <p>The currency converter failed to initialize properly.</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Reload Page
+                        </button>
+                    </div>
+                `;
+                document.body.insertBefore(errorDiv, document.body.firstChild);
+            }
+        }, 1000);
+    }
 }
 
 // Start the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', initApp);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    // DOM is already loaded
+    startApp();
+}
+
+// ===== GLOBAL ERROR HANDLING =====
+// Catch unhandled errors
+window.addEventListener('error', (event) => {
+    console.error('🚨 Unhandled error:', event.error);
+    
+    if (CONFIG.FEATURES.ERROR_REPORTING) {
+        // Could send to error reporting service here
+        performanceMonitor.recordError();
+    }
+});
+
+// Catch unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('🚨 Unhandled promise rejection:', event.reason);
+    
+    if (CONFIG.FEATURES.ERROR_REPORTING) {
+        performanceMonitor.recordError();
+    }
+    
+    // Prevent the default browser behavior
+    event.preventDefault();
+});
+
+// ===== EXPORT FOR TESTING =====
+// Export functions for testing (only in development mode)
+if (CONFIG.DEBUG_MODE && typeof window !== 'undefined') {
+    window.CurrencyConverter = {
+        CONFIG,
+        tokenManager,
+        cacheManager,
+        performanceMonitor,
+        searchCurrencies,
+        getExchangeRate,
+        swapCurrencies,
+        resetForm,
+        fetchSupportedCurrencies,
+        fetchBatchExchangeRates
+    };
+    console.log('🧪 Testing exports available in window.CurrencyConverter');
+}

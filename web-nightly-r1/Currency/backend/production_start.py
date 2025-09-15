@@ -14,7 +14,7 @@ load_dotenv('.env.production')
 if __name__ == "__main__":
     # Production-optimized uvicorn configuration
     uvicorn.run(
-        "main:app",
+        "main_optimized:app",
         host="0.0.0.0",
         port=int(os.getenv("PORT", 8000)),
         workers=int(os.getenv("WORKERS", 4)),  # Multi-process for better performance
