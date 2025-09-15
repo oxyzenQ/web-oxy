@@ -7,63 +7,16 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 
-// Set dynamic CSP based on environment
-function setDynamicCSP() {
-    const isDevelopment = import.meta?.env?.MODE === 'development' || 
-                         location.hostname === 'localhost' || 
-                         location.hostname === '127.0.0.1';
-    
-    let cspContent = "default-src 'self'; " +
-                    "font-src 'self' data: https://fonts.gstatic.com; " +
-                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                    "img-src 'self' data: https://flagcdn.com; " +
-                    "script-src 'self' 'unsafe-inline'; " +
-                    "connect-src 'self' https://kconvert-backend.zeabur.app;";
-    
-    if (isDevelopment) {
-        const devOrigin = `${location.protocol}//${location.host}`;
-        const wsOrigin = `ws://${location.host}`;
-        cspContent = "default-src 'self'; " +
-                    `font-src 'self' data: https://fonts.gstatic.com ${devOrigin}; ` +
-                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                    "img-src 'self' data: https://flagcdn.com; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                    `script-src-elem 'self' ${devOrigin}; ` +
-                    `connect-src 'self' http://localhost:8000 https://kconvert-backend.zeabur.app ${wsOrigin};`;
-    }
-    
-    const meta = document.createElement('meta');
-    meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = cspContent;
-    document.head.appendChild(meta);
-}
+// Import secure configuration
+import { CONFIG, setDynamicCSP } from './config.js';
+
+// Import chart functionality
+import { initializeExchangeChart, updateChartCurrencyPair, addChartConversionData } from './chart.js';
 
 // Set CSP immediately
 setDynamicCSP();
 
-// Configuration (Vite-native env)
-const CONFIG = {
-    API_BASE_URL: import.meta?.env?.VITE_API_BASE_URL || 
-                 (location.protocol === 'https:' ? '/api' : 'http://localhost:8000'),
-    REQUEST_TIMEOUT: 10000,
-    RETRY_ATTEMPTS: 3,
-    CURRENCY_UPDATE_INTERVAL: 60000,
-    DEBUG_MODE: import.meta?.env?.MODE === 'dev',
-    IS_PRODUCTION: import.meta?.env?.MODE === 'pro',
-    CACHE_DURATION: {
-        CURRENCIES: 24 * 60 * 60 * 1000, // 24 hours
-        EXCHANGE_RATES: 5 * 60 * 1000,   // 5 minutes
-        JWT_TOKEN: 9 * 60 * 1000         // 9 minutes (token expires in 10)
-    },
-    FEATURES: {
-        RATE_LIMITING_UI: true,
-        ERROR_REPORTING: import.meta?.env?.MODE === 'pro',
-        DEBUG_LOGGING: import.meta?.env?.MODE === 'dev',
-        OFFLINE_MODE: true,
-        PERFORMANCE_MONITORING: import.meta?.env?.MODE === 'dev',
-        ACCESSIBILITY: true
-    }
-};
+// Configuration is now imported from secure config file
 window.APP_CONFIG = CONFIG;
 
 // ===== ENHANCED STATE MANAGEMENT =====
@@ -466,6 +419,10 @@ async function ensureJwtLoaded() {
 let fromSearch, toSearch, amount, exRateTxt, exchangeIcon, fromSuggestions, toSuggestions;
 let currentFromCurrency = 'USD';
 let currentToCurrency = 'SGD';
+
+// Make currency variables globally accessible for HTML modal
+window.currentFromCurrency = currentFromCurrency;
+window.currentToCurrency = currentToCurrency;
 let highlightedIndex = -1;
 let currentSuggestions = [];
 
@@ -620,17 +577,25 @@ function displaySuggestions(suggestions, container, isFromInput) {
 function selectCurrency(currency, isFromInput) {
     if (isFromInput) {
         currentFromCurrency = currency.code;
+        window.currentFromCurrency = currency.code; // Sync with global
         fromSearch.value = `${currency.code} - ${currency.name}`;
         fromSearch.dataset.currency = currency.code;
         updateFlagImage(document.getElementById('from-flag'), currency.country);
         fromSuggestions.style.display = 'none';
     } else {
         currentToCurrency = currency.code;
+        window.currentToCurrency = currency.code; // Sync with global
         toSearch.value = `${currency.code} - ${currency.name}`;
         toSearch.dataset.currency = currency.code;
         updateFlagImage(document.getElementById('to-flag'), currency.country);
         toSuggestions.style.display = 'none';
     }
+    
+    console.log(`✅ Currency updated: ${isFromInput ? 'FROM' : 'TO'} = ${currency.code}`);
+    console.log(`📊 Current pair: ${currentFromCurrency} → ${currentToCurrency}`);
+    
+    // Update chart currency pair display immediately
+    updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
     
     // Auto-fetch exchange rate
     getExchangeRate();
@@ -799,6 +764,12 @@ function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
     const displayText = formatCurrencyDisplay(validation.value, fromCurrency, toCurrency, exchangeRate);
     exRateTxt.innerText = displayText;
     
+    // Calculate converted amount
+    const convertedAmount = validation.value * exchangeRate;
+    
+    // Add conversion data to chart
+    addChartConversionData(fromCurrency, toCurrency, exchangeRate, validation.value, convertedAmount);
+    
     // Show success animation
     showSuccessState();
     
@@ -914,8 +885,17 @@ async function fetchBatchExchangeRates(currencies) {
 // Enhanced exchange rate fetching with caching and parallel support
 async function getExchangeRateOptimized(targetCurrencies = null) {
     const amountVal = parseFloat(parseNumberInput(amount.value)) || 1;
-    const fromCurrency = currentFromCurrency;
-    const toCurrency = currentToCurrency;
+    // Use window globals to ensure we get the latest values
+    const fromCurrency = window.currentFromCurrency || currentFromCurrency;
+    const toCurrency = window.currentToCurrency || currentToCurrency;
+    
+    // Update local variables to match globals
+    currentFromCurrency = fromCurrency;
+    currentToCurrency = toCurrency;
+    
+    if (CONFIG.DEBUG_MODE) {
+        console.log(`🔄 Converting: ${amountVal} ${fromCurrency} → ${toCurrency}`);
+    }
     
     // Check cache first
     const cacheKey = `rate_${fromCurrency}_${toCurrency}`;
@@ -1019,6 +999,9 @@ function swapCurrencies() {
     const tempValue = fromSearch.value;
     fromSearch.value = toSearch.value;
     toSearch.value = tempValue;
+    
+    // Update chart currency pair display immediately
+    updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
     
     // Swap data attributes
     const tempData = fromSearch.dataset.currency;
@@ -1173,6 +1156,23 @@ function resetForm() {
             exRateTxt.classList.remove('loading', 'error', 'success');
         }
         
+        // Clear chart data and reset currency pair display
+        if (typeof addChartConversionData !== 'undefined') {
+            // Clear chart data
+            const chartFromDisplay = document.querySelector('.chart-from');
+            const chartToDisplay = document.querySelector('.chart-to');
+            const chartCurrentRate = document.querySelector('.chart-current-rate');
+            
+            if (chartFromDisplay) chartFromDisplay.textContent = '--';
+            if (chartToDisplay) chartToDisplay.textContent = '--';
+            if (chartCurrentRate) chartCurrentRate.textContent = '0.000000';
+            
+            // Clear chart data if chart exists
+            if (window.exchangeChart) {
+                window.exchangeChart.clearChartData();
+            }
+        }
+        
         if (fromSuggestions) fromSuggestions.style.display = 'none';
         if (toSuggestions) toSuggestions.style.display = 'none';
     }
@@ -1294,8 +1294,10 @@ async function initApp() {
         // Task 3: Initialize UI components
         Promise.resolve().then(() => {
             initializeSearchInputs();
+            initializeExchangeChart();
+            updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
             if (CONFIG.DEBUG_MODE) {
-                console.log('✅ Search UI initialized');
+                console.log('✅ Search UI and Chart initialized');
             }
             return true;
         })

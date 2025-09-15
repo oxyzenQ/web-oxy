@@ -73,7 +73,29 @@
         </form>
     </div>
 
-    <!-- Second Container: What is converter? -->
+    <!-- Second Container: Chart Graphics -->
+    <div class="container chart-container">
+        <h2 class="section-title">Exchange Rate Chart</h2>
+        <div class="chart-controls">
+            <button class="time-range-btn active" data-range="12H">12H</button>
+            <button class="time-range-btn" data-range="1D">1D</button>
+            <button class="time-range-btn" data-range="1W">1W</button>
+            <button class="time-range-btn" data-range="1M">1M</button>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="exchangeRateChart"></canvas>
+        </div>
+        <div class="chart-info">
+            <div class="chart-currency-pair">
+                <span class="chart-from">--</span>
+                <i class="fas fa-arrow-right"></i>
+                <span class="chart-to">--</span>
+            </div>
+            <div class="chart-current-rate">0.000000</div>
+        </div>
+    </div>
+
+    <!-- Third Container: What is converter? -->
     <div class="container info-container">
         <h2 class="section-title">What is converter?</h2>
         <div class="section-content">
@@ -81,7 +103,7 @@
         </div>
     </div>
 
-    <!-- Third Container: About Kconvert App -->
+    <!-- Four Container: About Kconvert App -->
     <div class="container about-container">
         <h2 class="section-title">About the Kconvert app</h2>
         <div class="section-content">
@@ -175,19 +197,46 @@
       let currentSearchType = null;
       let currentSearchInput = null;
 
-      // Sample currency data - main.js should replace this with real data
-      const sampleCurrencies = [
-        { code: 'USD', name: 'United States Dollar', flag: 'us' },
-        { code: 'EUR', name: 'Euro', flag: 'eu' },
-        { code: 'GBP', name: 'British Pound Sterling', flag: 'gb' },
-        { code: 'JPY', name: 'Japanese Yen', flag: 'jp' },
-        { code: 'SGD', name: 'Singapore Dollar', flag: 'sg' },
-        { code: 'AUD', name: 'Australian Dollar', flag: 'au' },
-        { code: 'CAD', name: 'Canadian Dollar', flag: 'ca' },
-        { code: 'CHF', name: 'Swiss Franc', flag: 'ch' },
-        { code: 'CNY', name: 'Chinese Yuan', flag: 'cn' },
-        { code: 'INR', name: 'Indian Rupee', flag: 'in' }
-      ];
+      // Enhanced currency data with 100+ countries - loaded from backend
+      let availableCurrencies = [];
+      
+      // Country code mapping for flags
+      const currencyToCountry = {
+        'USD': 'us', 'EUR': 'eu', 'GBP': 'gb', 'JPY': 'jp', 'AUD': 'au', 'CAD': 'ca',
+        'CHF': 'ch', 'CNY': 'cn', 'SEK': 'se', 'NZD': 'nz', 'MXN': 'mx', 'SGD': 'sg',
+        'HKD': 'hk', 'NOK': 'no', 'TRY': 'tr', 'RUB': 'ru', 'INR': 'in', 'BRL': 'br',
+        'ZAR': 'za', 'KRW': 'kr', 'PLN': 'pl', 'THB': 'th', 'MYR': 'my', 'AED': 'ae',
+        'SAR': 'sa', 'ILS': 'il', 'CLP': 'cl', 'COP': 'co', 'ARS': 'ar', 'TWD': 'tw',
+        'DKK': 'dk', 'CZK': 'cz', 'HUF': 'hu', 'RON': 'ro', 'BGN': 'bg', 'HRK': 'hr',
+        'ISK': 'is', 'PHP': 'ph', 'IDR': 'id', 'VND': 'vn', 'EGP': 'eg', 'NGN': 'ng',
+        'KES': 'ke', 'GHS': 'gh', 'MAD': 'ma', 'TND': 'tn', 'LKR': 'lk', 'BDT': 'bd',
+        'PKR': 'pk', 'NPR': 'np', 'MMK': 'mm', 'KHR': 'kh', 'LAK': 'la', 'UZS': 'uz',
+        'KZT': 'kz', 'GEL': 'ge', 'AMD': 'am', 'AZN': 'az', 'BYN': 'by', 'UAH': 'ua'
+      };
+      
+      // Load currencies from backend API
+      async function loadCurrencies() {
+        try {
+          const response = await fetch('http://localhost:8000/api/currencies');
+          const data = await response.json();
+          availableCurrencies = data.currencies.map(currency => ({
+            code: currency.code,
+            name: currency.name,
+            flag: currencyToCountry[currency.code] || 'un'
+          }));
+          console.log(`✅ Loaded ${availableCurrencies.length} currencies from backend`);
+        } catch (error) {
+          console.error('❌ Failed to load currencies from backend:', error);
+          // Fallback to basic currencies
+          availableCurrencies = [
+            { code: 'USD', name: 'US Dollar', flag: 'us' },
+            { code: 'EUR', name: 'Euro', flag: 'eu' },
+            { code: 'GBP', name: 'British Pound', flag: 'gb' },
+            { code: 'JPY', name: 'Japanese Yen', flag: 'jp' },
+            { code: 'SGD', name: 'Singapore Dollar', flag: 'sg' }
+          ];
+        }
+      }
 
       function openCurrencyModal(type, inputElement) {
         currentSearchType = type;
@@ -201,7 +250,7 @@
         searchBackdrop.style.display = 'block';
         modalSearchInput.value = '';
         modalSearchInput.focus();
-        renderCurrencyList(sampleCurrencies);
+        renderCurrencyList(availableCurrencies);
       }
 
       function closeCurrencyModal() {
@@ -216,15 +265,30 @@
       }
 
       function renderCurrencyList(currencies) {
-        modalCurrencyList.innerHTML = currencies.map(currency => `
-          <div class="suggestion-item" data-currency="${currency.code}" data-name="${currency.name}" data-flag="${currency.flag}">
-            <img class="suggestion-flag" src="https://flagcdn.com/20x15/${currency.flag}.png" alt="${currency.name} flag">
+        modalCurrencyList.innerHTML = currencies.map((currency, index) => `
+          <div class="suggestion-item" data-currency="${currency.code}" data-name="${currency.name}" data-flag="${currency.flag}" style="animation-delay: ${index * 0.02}s">
+            <img class="suggestion-flag" src="https://flagcdn.com/20x15/${currency.flag}.png" alt="${currency.name} flag" onerror="this.src='https://flagcdn.com/20x15/un.png'">
             <div class="suggestion-text">
               <div class="suggestion-code">${currency.code}</div>
               <div class="suggestion-name">${currency.name}</div>
             </div>
           </div>
         `).join('');
+      }
+      
+      // Enhanced search functionality
+      function searchCurrencies(query) {
+        if (!query.trim()) {
+          renderCurrencyList(availableCurrencies);
+          return;
+        }
+        
+        const filtered = availableCurrencies.filter(currency => 
+          currency.code.toLowerCase().includes(query.toLowerCase()) ||
+          currency.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        renderCurrencyList(filtered);
       }
 
       function selectCurrency(code, name, flag) {
@@ -239,6 +303,23 @@
           if (flagImg) {
             flagImg.src = `https://flagcdn.com/48x36/${flag}.png`;
             flagImg.alt = `${name} flag`;
+          }
+          
+          // Update global currency variables and call main.js function
+          if (window.CurrencyConverter && window.CurrencyConverter.selectCurrency) {
+            const currency = { code: code, name: name, country: flag };
+            const isFromInput = currentSearchType === 'from';
+            console.log(`🔄 Modal selecting currency: ${code} for ${isFromInput ? 'FROM' : 'TO'}`);
+            window.CurrencyConverter.selectCurrency(currency, isFromInput);
+          } else {
+            console.error('❌ window.CurrencyConverter.selectCurrency not available');
+            // Fallback: directly update global variables
+            if (currentSearchType === 'from') {
+              window.currentFromCurrency = code;
+            } else {
+              window.currentToCurrency = code;
+            }
+            console.log(`🔄 Fallback: Set ${currentSearchType} currency to ${code}`);
           }
         }
         closeCurrencyModal();
@@ -265,8 +346,20 @@
         if (e.target.closest('.modal-close-btn')) {
           closeCurrencyModal();
         }
-        
-        // Prevent any other clicks from closing modal
+      });
+      
+      // Add search input event listener
+      modalSearchInput.addEventListener('input', (e) => {
+        searchCurrencies(e.target.value);
+      });
+      
+      // Load currencies when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        loadCurrencies();
+      });  
+      
+      // Prevent any other clicks from closing modal
+      document.addEventListener('click', (e) => {
         if (currencyModal.style.display === 'flex') {
           e.preventDefault();
           e.stopPropagation();
