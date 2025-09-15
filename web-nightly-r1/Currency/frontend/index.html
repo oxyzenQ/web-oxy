@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSP will be set dynamically by JavaScript based on environment -->
+    <!-- Fonts: Inter + JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/kconvert-logo-orig.png">
     <title>A simple & fast currency converter</title>
@@ -11,8 +15,16 @@
 
 <body>
     <div class="container">
-        <h2>Kconvert</h2>
-        <p>A app for currency converter</p>
+        <!-- Animated Logo Header -->
+        <div class="brand">
+            <div class="brand-ring ring-outer"></div>
+            <div class="brand-ring ring-inner"></div>
+            <div class="brand-logo">
+                <img src="assets/kconvert-logo-orig.png" alt="Kconvert logo" />
+            </div>
+        </div>
+        <h2 class="app-title">Kconvert App</h2>
+        <p class="app-subtitle">A app for currency converter</p>
         <div class="A">
             <p>Amount</p>
         </div>
@@ -25,13 +37,15 @@
             <div class="convert-box">
                 <div class="from">
                     <p>From</p>
-                    <div class="search-input-container">
+                    <div class="search-input-container" data-type="from">
                         <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag" class="flag-indicator">
                         <input type="text" class="currency-search from-search" 
-                               placeholder="Type here to find flags" 
+                               placeholder="USD - United States Dollar" 
                                aria-label="Search from currency"
                                data-currency="USD"
-                               autocomplete="off">
+                               data-full-name="USD - United States Dollar"
+                               autocomplete="off"
+                               readonly>
                         <div class="search-suggestions from-suggestions" style="display: none;"></div>
                     </div>
                 </div>
@@ -40,32 +54,305 @@
                 </div>
                 <div class="to">
                     <p>To</p>
-                    <div class="search-input-container">
+                    <div class="search-input-container" data-type="to">
                         <img id="to-flag" src="https://flagcdn.com/48x36/sg.png" alt="To currency flag" class="flag-indicator">
                         <input type="text" class="currency-search to-search" 
-                               placeholder="Type here to find flags" 
+                               placeholder="SGD - Singapore Dollar" 
                                aria-label="Search to currency"
                                data-currency="SGD"
-                               autocomplete="off">
+                               data-full-name="SGD - Singapore Dollar"
+                               autocomplete="off"
+                               readonly>
                         <div class="search-suggestions to-suggestions" style="display: none;"></div>
                     </div>
                 </div>
-                <div class="result" aria-live="polite">Getting Exchange Rate...</div>
-                <button type="submit" id="convert-button">Get Exchange Rate</button>
-                <button type="reset" id="reset-button">Reset</button> <!-- Menggunakan type="reset" -->
+                <div class="result" aria-live="polite">Ready to convert</div>
+                <button type="submit" id="convert-button">Convert</button>
+                <button type="reset" id="reset-button">Reset</button> <!-- Keep inside container -->
             </div>
         </form>
     </div>
 
+    <!-- Second Container: What is converter? -->
+    <div class="container info-container">
+        <h2 class="section-title">What is converter?</h2>
+        <div class="section-content">
+            <p>A currency converter is an essential financial tool that allows users to calculate the equivalent value of one currency in terms of another currency. This powerful utility uses real-time exchange rates from global financial markets to provide accurate conversions between different international currencies. Whether you're planning international travel, conducting business across borders, making online purchases from foreign retailers, or simply staying informed about global economic trends, a currency converter serves as your gateway to understanding monetary values worldwide. Modern currency converters leverage advanced APIs and financial data sources to ensure precision and reliability, making complex foreign exchange calculations accessible to everyone from casual travelers to professional traders and international business professionals.</p>
+        </div>
+    </div>
+
+    <!-- Third Container: About Kconvert App -->
+    <div class="container about-container">
+        <h2 class="section-title">About the Kconvert app</h2>
+        <div class="section-content">
+            <p>Is an app for converter, not like traditional other, this project apps to make simple but modern look that function, this project leader by oxchin UI/UX by rezky_nightky. with license MIT you can use, modify, and distribute this software freely. The project emphasizes clean design principles, user-friendly interfaces, and reliable functionality while maintaining open-source accessibility for developers worldwide.</p>
+            
+            <div class="project-info">
+                <div class="info-item">
+                    <i class="fas fa-tag"></i>
+                    <span class="info-label">Version:</span>
+                    <span class="info-value">Stellar-1.5</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-code-branch"></i>
+                    <span class="info-label">Type Apps:</span>
+                    <span class="info-value">Open Source Project</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-wrench"></i>
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">Maintenance</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-balance-scale"></i>
+                    <span class="info-label">License:</span>
+                    <span class="info-value">MIT</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Currency Search Modal -->
+    <div class="search-modal-backdrop" id="search-backdrop"></div>
+    <div class="currency-search-modal" id="currency-modal">
+        <div class="search-modal-header">
+            <input type="text" class="search-modal-input" id="modal-search-input" placeholder="Search currency (e.g. US, America, USD)..." autocomplete="off">
+            <button class="modal-close-btn" id="modal-close-btn" aria-label="Close currency search">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="search-modal-list" id="modal-currency-list">
+            <!-- Currency list will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Glass Notify Modal -->
+    <dialog id="notify-modal" class="glass-modal">
+        <div class="modal-content">
+            <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="modal-text">
+                <h3 id="modal-title">Warning</h3>
+                <p id="modal-message">Something needs your attention.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn" id="modal-close">Close</button>
+            </div>
+        </div>
+    </dialog>
+
     <footer>
         <p>
-            <a href="https://github.com/oxyzenq">
-                <i class="fab fa-github"></i>
+            <a class="footer-gh" href="https://github.com/oxyzenq" aria-label="GitHub profile" rel="noopener" target="_blank">
+                <i class="fa-brands fa-github"></i>
             </a>
         </p>
-        <p>&copy; 2024-2025 oxyzenQ. All rights reserved.</p>
+        <p>&copy; 2024-2025 oxyzenQ. Licensed under <a class="mit" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a>.</p>
     </footer>
 
     <script type="module" src="./main.js"></script>
+    <script>
+      // Minimal modal close behavior to avoid blocking UX; main.js can extend this
+      const modal = document.getElementById('notify-modal');
+      const closeBtn = document.getElementById('modal-close');
+      if (modal && closeBtn) {
+        closeBtn.addEventListener('click', () => modal.close());
+      }
+      // Expose a simple API for main.js to open with custom message
+      window.KconvertModal = {
+        open({title = 'Notice', message = ''} = {}) {
+          document.getElementById('modal-title').textContent = title;
+          document.getElementById('modal-message').textContent = message;
+          modal.showModal();
+        },
+        close(){ modal.close(); }
+      }
+
+      // Currency Search Modal Functionality
+      const currencyModal = document.getElementById('currency-modal');
+      const searchBackdrop = document.getElementById('search-backdrop');
+      const modalSearchInput = document.getElementById('modal-search-input');
+      const modalCurrencyList = document.getElementById('modal-currency-list');
+      let currentSearchType = null;
+      let currentSearchInput = null;
+
+      // Sample currency data - main.js should replace this with real data
+      const sampleCurrencies = [
+        { code: 'USD', name: 'United States Dollar', flag: 'us' },
+        { code: 'EUR', name: 'Euro', flag: 'eu' },
+        { code: 'GBP', name: 'British Pound Sterling', flag: 'gb' },
+        { code: 'JPY', name: 'Japanese Yen', flag: 'jp' },
+        { code: 'SGD', name: 'Singapore Dollar', flag: 'sg' },
+        { code: 'AUD', name: 'Australian Dollar', flag: 'au' },
+        { code: 'CAD', name: 'Canadian Dollar', flag: 'ca' },
+        { code: 'CHF', name: 'Swiss Franc', flag: 'ch' },
+        { code: 'CNY', name: 'Chinese Yuan', flag: 'cn' },
+        { code: 'INR', name: 'Indian Rupee', flag: 'in' }
+      ];
+
+      function openCurrencyModal(type, inputElement) {
+        currentSearchType = type;
+        currentSearchInput = inputElement;
+        
+        // Prevent body scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        currencyModal.style.display = 'flex';
+        searchBackdrop.style.display = 'block';
+        modalSearchInput.value = '';
+        modalSearchInput.focus();
+        renderCurrencyList(sampleCurrencies);
+      }
+
+      function closeCurrencyModal() {
+        // Restore body scrolling when modal is closed
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        
+        currencyModal.style.display = 'none';
+        searchBackdrop.style.display = 'none';
+        currentSearchType = null;
+        currentSearchInput = null;
+      }
+
+      function renderCurrencyList(currencies) {
+        modalCurrencyList.innerHTML = currencies.map(currency => `
+          <div class="suggestion-item" data-currency="${currency.code}" data-name="${currency.name}" data-flag="${currency.flag}">
+            <img class="suggestion-flag" src="https://flagcdn.com/20x15/${currency.flag}.png" alt="${currency.name} flag">
+            <div class="suggestion-text">
+              <div class="suggestion-code">${currency.code}</div>
+              <div class="suggestion-name">${currency.name}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function selectCurrency(code, name, flag) {
+        if (currentSearchInput) {
+          const fullName = `${code} - ${name}`;
+          currentSearchInput.value = fullName;
+          currentSearchInput.setAttribute('data-currency', code);
+          currentSearchInput.setAttribute('data-full-name', fullName);
+          
+          // Update flag
+          const flagImg = currentSearchInput.parentElement.querySelector('.flag-indicator');
+          if (flagImg) {
+            flagImg.src = `https://flagcdn.com/48x36/${flag}.png`;
+            flagImg.alt = `${name} flag`;
+          }
+        }
+        closeCurrencyModal();
+      }
+
+      // Event listeners
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.search-input-container') && currencyModal.style.display !== 'flex') {
+          const container = e.target.closest('.search-input-container');
+          const type = container.getAttribute('data-type');
+          const input = container.querySelector('.currency-search');
+          openCurrencyModal(type, input);
+        }
+        
+        if (e.target.closest('.suggestion-item')) {
+          const item = e.target.closest('.suggestion-item');
+          const code = item.getAttribute('data-currency');
+          const name = item.getAttribute('data-name');
+          const flag = item.getAttribute('data-flag');
+          selectCurrency(code, name, flag);
+        }
+        
+        // ONLY allow closing via X button - block all other methods
+        if (e.target.closest('.modal-close-btn')) {
+          closeCurrencyModal();
+        }
+        
+        // Prevent any other clicks from closing modal
+        if (currencyModal.style.display === 'flex') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+
+      // Search functionality
+      modalSearchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = sampleCurrencies.filter(currency => 
+          currency.code.toLowerCase().includes(query) ||
+          currency.name.toLowerCase().includes(query)
+        );
+        renderCurrencyList(filtered);
+      });
+
+      // Keyboard navigation - DISABLE ESC key closing
+      document.addEventListener('keydown', (e) => {
+        if (currencyModal.style.display === 'flex') {
+          // Block ESC key from closing modal
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+
+      // Auto-clean functionality for currency inputs
+      document.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('currency-search') && currencyModal.style.display !== 'flex') {
+          const originalValue = e.target.getAttribute('data-full-name');
+          e.target.setAttribute('data-original-value', originalValue || e.target.value);
+          e.target.value = '';
+          e.target.removeAttribute('readonly');
+        }
+      });
+
+      document.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('currency-search') && currencyModal.style.display !== 'flex') {
+          if (!e.target.value.trim()) {
+            const originalValue = e.target.getAttribute('data-original-value');
+            e.target.value = originalValue || e.target.getAttribute('data-full-name') || '';
+          }
+          e.target.setAttribute('readonly', 'true');
+        }
+      });
+
+      // Restrict all inputs when modal is open
+      document.addEventListener('keydown', (e) => {
+        if (currencyModal.style.display === 'flex') {
+          // Only allow input in the modal search field and close button
+          if (!e.target.closest('.currency-search-modal') && e.target.id !== 'modal-search-input' && !e.target.closest('.modal-close-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+
+      document.addEventListener('input', (e) => {
+        if (currencyModal.style.display === 'flex') {
+          // Only allow input in the modal search field
+          if (!e.target.closest('.currency-search-modal') && e.target.id !== 'modal-search-input') {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+
+      // Block all touch/pointer events outside modal except X button
+      document.addEventListener('touchstart', (e) => {
+        if (currencyModal.style.display === 'flex') {
+          if (!e.target.closest('.currency-search-modal') && !e.target.closest('.modal-close-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+
+      document.addEventListener('pointerdown', (e) => {
+        if (currencyModal.style.display === 'flex') {
+          if (!e.target.closest('.currency-search-modal') && !e.target.closest('.modal-close-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+    </script>
 </body>
 </html>
