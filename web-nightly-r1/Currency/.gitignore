@@ -2,6 +2,10 @@
 # Currency Converter - Enhanced .gitignore
 # =============================================================================
 
+# Specific
+KconvertFlowchart.tex
+ReportKconvertApp.md
+
 # Environment Variables & Secrets
 # ================================
 *.env

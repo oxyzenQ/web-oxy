@@ -1,5 +1,10 @@
-// Currency Exchange Rate Chart Module
-// Real-time line chart visualization for currency exchange rates
+/*
+ * Kconvert - Chart Visualization Module
+ * Real-time line chart visualization for currency exchange rates
+ * 
+ * Copyright (c) 2025 Team 6
+ * All rights reserved.
+ */
 
 import Chart from 'chart.js/auto';
 

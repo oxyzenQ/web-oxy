@@ -2,6 +2,9 @@
 """
 Kconvert - Ultra-Optimized Currency Converter API
 Core functionality only - maximum performance, minimal complexity
+
+Copyright (c) 2025 Team 6
+All rights reserved.
 """
 
 from fastapi import FastAPI, HTTPException, Query, Request, Header

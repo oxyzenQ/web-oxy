@@ -1,5 +1,11 @@
-// Currency Converter - Consolidated Main JS File
-// All functionality in one file for easy maintenance
+/*
+ * Kconvert - Frontend Main Application
+ * Currency Converter - Consolidated Main JS File
+ * All functionality in one file for easy maintenance
+ * 
+ * Copyright (c) 2025 Team 6
+ * All rights reserved.
+ */
 
 // Import fonts and icons
 import '@fontsource/inter/400.css';

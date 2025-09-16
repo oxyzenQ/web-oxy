@@ -1,7 +1,11 @@
 #!/bin/bash
-
-# Currency Converter Development Server Manager
+#
+# Kconvert - Development Server Manager
 # Usage: ./dev-server.sh [start|stop|restart|status]
+# 
+# Copyright (c) 2025 Team 6
+# All rights reserved.
+#
 
 # Resolve paths relative to this script, regardless of caller's CWD
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,5 +1,10 @@
-/* In 2025, I changed the style of the website to be more elegant but lightweight for any device */
-/* Author: rezky_nightly 2025 */
+/*
+ * Kconvert - Frontend Styles
+ * Elegant and lightweight styling for all devices
+ * 
+ * Copyright (c) 2025 Team 6
+ * All rights reserved.
+ */
 
 /* Import Inter font from local npm package for offline usage */
 @import '@fontsource/inter/400.css'; /* Regular weight for body text */

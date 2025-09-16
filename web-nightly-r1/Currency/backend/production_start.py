@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Kconvert - Production Server Starter
+
+Copyright (c) 2025 Team 6
+All rights reserved.
+"""
+"""
 Production-optimized startup script for Currency Converter API
 Configures uvicorn with maximum performance settings
 """

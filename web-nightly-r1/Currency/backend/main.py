@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Kconvert - Currency Converter API
+
+Copyright (c) 2025 Team 6
+All rights reserved.
+"""
+"""
 Main entry point for Currency Converter API
 Simple ASGI app export for deployment platforms like Zeabur
 """

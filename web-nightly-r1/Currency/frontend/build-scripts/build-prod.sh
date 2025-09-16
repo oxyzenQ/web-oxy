@@ -1,6 +1,11 @@
 #!/bin/bash
-# Production Build Script for Kconvert Currency Converter
+#
+# Kconvert - Production Build Script
 # LTS-optimized build process with comprehensive checks
+# 
+# Copyright (c) 2025 Team 6
+# All rights reserved.
+#
 
 set -e  # Exit on any error
 

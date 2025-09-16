@@ -1,3 +1,10 @@
+/*
+ * Kconvert - Vite Build Configuration
+ * 
+ * Copyright (c) 2025 Team 6
+ * All rights reserved.
+ */
+
 import { defineConfig, loadEnv } from 'vite'
 import legacy from '@vitejs/plugin-legacy'
 import { visualizer } from 'rollup-plugin-visualizer'

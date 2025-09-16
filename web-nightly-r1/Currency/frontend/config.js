@@ -1,3 +1,9 @@
+/*
+ * Kconvert - Frontend Configuration
+ * 
+ * Copyright (c) 2025 Team 6
+ * All rights reserved.
+ */
 // Configuration file for Currency Converter
 // Handles environment-specific settings and API endpoints
 

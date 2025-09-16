@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Kconvert - Development Server Starter
+
+Copyright (c) 2025 Team 6
+All rights reserved.
+"""
+"""
 Development startup script for Currency Converter API
 Configures uvicorn with development-friendly settings
 """
