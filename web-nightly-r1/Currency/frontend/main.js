@@ -19,6 +19,12 @@ import { CONFIG, setDynamicCSP } from './config.js';
 // Helper function to build API URLs correctly
 function buildApiUrl(endpoint) {
     const apiBase = CONFIG.API_BASE_URL;
+    
+    // Debug logging
+    if (CONFIG.DEBUG_MODE) {
+        console.log('🔧 buildApiUrl debug:', { endpoint, apiBase, CONFIG });
+    }
+    
     if (!apiBase || apiBase === '/api') {
         return endpoint; // Use relative path for same-origin
     }
@@ -30,10 +36,18 @@ function buildApiUrl(endpoint) {
     const baseUrl = apiBase.includes('/api') ? apiBase : `${apiBase}/api`;
     
     try {
-        return new URL(cleanEndpoint, `${baseUrl}/`).toString();
+        const fullUrl = new URL(cleanEndpoint, `${baseUrl}/`).toString();
+        if (CONFIG.DEBUG_MODE) {
+            console.log('🌐 Built API URL:', fullUrl);
+        }
+        return fullUrl;
     } catch (e) {
         const base = String(baseUrl).replace(/\/$/, '');
-        return `${base}/${cleanEndpoint}`;
+        const fallbackUrl = `${base}/${cleanEndpoint}`;
+        if (CONFIG.DEBUG_MODE) {
+            console.log('🌐 Fallback API URL:', fallbackUrl);
+        }
+        return fallbackUrl;
     }
 }
 

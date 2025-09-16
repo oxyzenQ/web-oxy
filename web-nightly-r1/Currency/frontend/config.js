@@ -72,8 +72,8 @@ export const CONFIG = {
     RETRY_ATTEMPTS: API_CONFIG.RETRY_ATTEMPTS,
     CURRENCY_UPDATE_INTERVAL: 60000,
     // DEBUG_MODE is aligned with DEBUG_LOGGING flag
-    DEBUG_MODE: (import.meta?.env?.ENABLE_DEBUG === 'true') ? true
-               : (import.meta?.env?.ENABLE_DEBUG === 'false') ? false
+    DEBUG_MODE: (import.meta?.env?.VITE_ENABLE_DEBUG === 'true') ? true
+               : (import.meta?.env?.VITE_ENABLE_DEBUG === 'false') ? false
                : isDevelopment,
     IS_PRODUCTION: isProduction,
     CACHE_DURATION: API_CONFIG.CACHE_DURATION,
