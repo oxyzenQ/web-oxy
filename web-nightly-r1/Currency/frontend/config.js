@@ -59,7 +59,10 @@ const CSP_CONFIG = {
 const FEATURES = {
     RATE_LIMITING_UI: true,
     ERROR_REPORTING: isProduction,
-    DEBUG_LOGGING: isDevelopment,
+    // Allow overriding debug via env: ENABLE_DEBUG=true/false
+    DEBUG_LOGGING: (import.meta?.env?.ENABLE_DEBUG === 'true') ? true
+                   : (import.meta?.env?.ENABLE_DEBUG === 'false') ? false
+                   : isDevelopment,
     OFFLINE_MODE: true,
     PERFORMANCE_MONITORING: isDevelopment,
     ACCESSIBILITY: true,
@@ -75,7 +78,10 @@ export const CONFIG = {
     REQUEST_TIMEOUT: API_CONFIG.REQUEST_TIMEOUT,
     RETRY_ATTEMPTS: API_CONFIG.RETRY_ATTEMPTS,
     CURRENCY_UPDATE_INTERVAL: 60000,
-    DEBUG_MODE: isDevelopment,
+    // DEBUG_MODE is aligned with DEBUG_LOGGING flag
+    DEBUG_MODE: (import.meta?.env?.ENABLE_DEBUG === 'true') ? true
+               : (import.meta?.env?.ENABLE_DEBUG === 'false') ? false
+               : isDevelopment,
     IS_PRODUCTION: isProduction,
     CACHE_DURATION: API_CONFIG.CACHE_DURATION,
     FEATURES: FEATURES

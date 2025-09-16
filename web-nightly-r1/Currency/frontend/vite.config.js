@@ -6,7 +6,6 @@
  */
 
 import { defineConfig, loadEnv } from 'vite'
-import legacy from '@vitejs/plugin-legacy'
 import { visualizer } from 'rollup-plugin-visualizer'
 import replace from '@rollup/plugin-replace'
 
@@ -42,27 +41,6 @@ export default defineConfig(({ command, mode }) => {
     
     // Plugin configuration
     plugins: [
-      // Legacy browser support for LTS stability
-      legacy({
-        targets: [
-          'Chrome >= 88',
-          'Firefox >= 78', 
-          'Safari >= 14',
-          'Edge >= 88',
-          '> 0.5%',
-          'not dead',
-          'not IE 11'
-        ],
-        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
-        renderLegacyChunks: true,
-        polyfills: [
-          'es.symbol',
-          'es.array.filter',
-          'es.promise',
-          'es.promise.finally'
-        ]
-      }),
-      
       // Environment variable replacement
       replace({
         __MODE__: JSON.stringify(mode),
@@ -108,19 +86,7 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         input: 'index.html',
         output: {
-          // Optimized chunking for long-term caching
-          manualChunks: {
-            // Core vendor libraries
-            'vendor-core': ['@fontsource/inter'],
-            'vendor-icons': ['@fortawesome/fontawesome-free'],
-            'vendor-charts': ['chart.js'],
-            
-            // Application modules
-            'app-config': ['./config.js'],
-            'app-chart': ['./chart.js']
-          },
-          
-          // File naming for cache busting
+          // Let Rollup decide chunking; dynamic imports will create separate chunks
           chunkFileNames: isProduction 
             ? 'assets/js/[name]-[hash].js'
             : 'assets/js/[name].js',
@@ -133,8 +99,8 @@ export default defineConfig(({ command, mode }) => {
         }
       },
       
-      // Target will be handled by legacy plugin
-      // target: ['es2020', 'chrome88', 'firefox78', 'safari14', 'edge88'],
+      // Modern target; no legacy plugin
+      target: 'es2020',
       
       // Chunk size warnings
       chunkSizeWarningLimit: 1000,
@@ -167,10 +133,9 @@ export default defineConfig(({ command, mode }) => {
     optimizeDeps: {
       include: [
         '@fontsource/inter',
-        '@fortawesome/fontawesome-free',
-        'chart.js'
+        '@fortawesome/fontawesome-free'
       ],
-      exclude: []
+      exclude: ['chart.js']
     },
     
     // Define global constants

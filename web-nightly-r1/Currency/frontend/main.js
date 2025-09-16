@@ -16,8 +16,16 @@ import '@fortawesome/fontawesome-free/css/all.css';
 // Import secure configuration
 import { CONFIG, setDynamicCSP } from './config.js';
 
-// Import chart functionality
-import { initializeExchangeChart, updateChartCurrencyPair, addChartConversionData } from './chart.js';
+// Lazy-load chart functionality to reduce initial bundle size
+let ChartAPI = null;
+async function ensureChartLoaded() {
+    if (ChartAPI) return ChartAPI;
+    ChartAPI = await import('./chart.js');
+    if (ChartAPI?.initializeExchangeChart) {
+        ChartAPI.initializeExchangeChart();
+    }
+    return ChartAPI;
+}
 
 // Set CSP immediately
 setDynamicCSP();
@@ -600,8 +608,10 @@ function selectCurrency(currency, isFromInput) {
     console.log(`✅ Currency updated: ${isFromInput ? 'FROM' : 'TO'} = ${currency.code}`);
     console.log(`📊 Current pair: ${currentFromCurrency} → ${currentToCurrency}`);
     
-    // Update chart currency pair display immediately
-    updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+    // Update chart currency pair display immediately (lazy-load if needed)
+    ensureChartLoaded().then(api => {
+        api.updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+    });
     
     // Auto-fetch exchange rate
     getExchangeRate();
@@ -773,8 +783,10 @@ function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
     // Calculate converted amount
     const convertedAmount = validation.value * exchangeRate;
     
-    // Add conversion data to chart
-    addChartConversionData(fromCurrency, toCurrency, exchangeRate, validation.value, convertedAmount);
+    // Add conversion data to chart (lazy-load if needed)
+    ensureChartLoaded().then(api => {
+        api.addChartConversionData(fromCurrency, toCurrency, exchangeRate, validation.value, convertedAmount);
+    });
     
     // Show success animation
     showSuccessState();
@@ -1169,21 +1181,25 @@ function resetForm() {
             exRateTxt.classList.remove('loading', 'error', 'success');
         }
         
-        // Clear chart data and reset currency pair display
-        if (typeof addChartConversionData !== 'undefined') {
-            // Clear chart data
-            const chartFromDisplay = document.querySelector('.chart-from');
-            const chartToDisplay = document.querySelector('.chart-to');
-            const chartCurrentRate = document.querySelector('.chart-current-rate');
-            
-            if (chartFromDisplay) chartFromDisplay.textContent = '--';
-            if (chartToDisplay) chartToDisplay.textContent = '--';
-            if (chartCurrentRate) chartCurrentRate.textContent = '0.000000';
-            
-            // Clear chart data if chart exists
-            if (window.exchangeChart) {
-                window.exchangeChart.clearChartData();
-            }
+        // Clear chart data and reset currency pair display regardless of lazy load
+        const chartFromDisplay = document.querySelector('.chart-from');
+        const chartToDisplay = document.querySelector('.chart-to');
+        const chartCurrentRate = document.querySelector('.chart-current-rate');
+
+        if (chartFromDisplay) chartFromDisplay.textContent = '--';
+        if (chartToDisplay) chartToDisplay.textContent = '--';
+        if (chartCurrentRate) chartCurrentRate.textContent = '';
+
+        // Clear chart data if chart exists and reset pair to defaults
+        if (window.exchangeChart) {
+            window.exchangeChart.clearChartData();
+            // Reset base rate and current pair
+            window.exchangeChart.baseRate = undefined;
+            window.exchangeChart.updateCurrencyPair('USD', 'SGD');
+        } else {
+            // If chart not yet loaded, set default indicator now
+            if (chartFromDisplay) chartFromDisplay.textContent = '1 USD';
+            if (chartToDisplay) chartToDisplay.textContent = 'SGD';
         }
         
         if (fromSuggestions) fromSuggestions.style.display = 'none';
@@ -1200,7 +1216,8 @@ function resetForm() {
             if (window.KconvertModal) {
                 window.KconvertModal.open({
                     title: 'Reset Complete',
-                    message: 'Application has been reset to default settings with fresh data from server.'
+                    message: 'Application has been reset to default settings with fresh data from server.',
+                    icon: 'check'
                 });
             }
             
@@ -1327,8 +1344,19 @@ async function initApp() {
         // Task 3: Initialize UI components
         Promise.resolve().then(() => {
             initializeSearchInputs();
-            initializeExchangeChart();
-            updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+            // Auto-load chart when chart container becomes visible
+            const chartContainer = document.querySelector('.chart-container');
+            if (chartContainer) {
+                const observer = new IntersectionObserver(async (entries, obs) => {
+                    const entry = entries[0];
+                    if (entry && entry.isIntersecting) {
+                        const api = await ensureChartLoaded();
+                        api.updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+                        obs.disconnect();
+                    }
+                }, { root: null, rootMargin: '120px', threshold: 0.01 });
+                observer.observe(chartContainer);
+            }
             if (CONFIG.DEBUG_MODE) {
                 console.log('✅ Search UI and Chart initialized');
             }
@@ -1378,8 +1406,28 @@ async function initApp() {
     initializePerformanceDashboard();
     initializeOfflineMode();
 
-    // Initial display message
-    exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+    // Initial display message is hidden; use the Help icon to show usage modal instead
+    if (exRateTxt) exRateTxt.innerText = "";
+
+    // Wire the Help icon to open the floating modal with the same instruction copy
+    const helpIcon = document.getElementById('help-icon');
+    const openHelp = () => {
+        const helpMessage = "Enter amount and click 'Convert' (or press Enter). Click 'Reset' to start over.";
+        if (window.KconvertModal && typeof window.KconvertModal.open === 'function') {
+            window.KconvertModal.open({ title: 'How to use', message: helpMessage });
+        } else {
+            alert(helpMessage);
+        }
+    };
+    if (helpIcon) {
+        helpIcon.addEventListener('click', openHelp);
+        helpIcon.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openHelp();
+            }
+        });
+    }
     
     if (CONFIG.DEBUG_MODE) {
         console.log('🚀 Enhanced Currency Converter initialized successfully!');
