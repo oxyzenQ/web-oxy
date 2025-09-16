@@ -1,33 +1,32 @@
+# Kconvert - Optimized Production Dockerfile
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
-# Copy requirements first for better caching
+# Install dependencies in one layer
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application
+COPY main_optimized.py .
+COPY .env* ./
 
-# Copy application code
-COPY . .
-
-# Create non-root user for security
-RUN useradd --create-home --shell /bin/bash app \
-    && chown -R app:app /app
+# Security: non-root user
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
 USER app
 
-# Expose port
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/health')"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=2 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8000/', timeout=5)"
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run optimized app
+CMD ["uvicorn", "production_start:app", "--host", "0.0.0.0", "--port", "8000"]

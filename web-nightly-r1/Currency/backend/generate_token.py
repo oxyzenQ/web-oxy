@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Kconvert - JWT Token Generator
+
+Copyright (c) 2025 Team 6
+All rights reserved.
+"""
+"""
 JWT Token Generator for Currency Converter API
 Usage: python generate_token.py [duration_minutes]
 """

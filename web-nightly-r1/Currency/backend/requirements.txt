@@ -1,34 +1,10 @@
-# Core FastAPI and ASGI server
+# Kconvert - Minimal Production Dependencies
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
-
-# HTTP client with HTTP/2 support
-httpx[http2]==0.28.1
-
-# Environment and configuration
+httpx==0.28.1
 python-dotenv==1.1.1
-
-# JWT authentication and security
 python-jose[cryptography]==3.5.0
-passlib[bcrypt]==1.7.4
-
-# Rate limiting
 slowapi==0.1.9
-
-# Form data handling
-python-multipart==0.0.20
-
-# Production performance dependencies
-uvloop==0.21.0
-httptools==0.6.4
-
-# Additional HTTP/2 dependencies (auto-installed with httpx[http2])
-# h2==4.3.0
-# hpack==4.1.0
-# hyperframe==6.1.0
-
-# Development and testing (optional)
-# pytest==8.3.3
-# pytest-asyncio==0.24.0
-# black==24.8.0
-# flake8==7.1.1
+pydantic==2.9.2
+supervisor==4.2.5
+bcrypt==4.2.0
