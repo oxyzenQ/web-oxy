@@ -19,7 +19,7 @@ const isProduction = import.meta?.env?.MODE === 'production' ||
 
 // API Configuration
 const API_CONFIG = {
-    // Use environment variable or fallback to relative path for production
+    // Use environment variable - no hardcoded production URLs
     BASE_URL: import.meta?.env?.VITE_API_BASE_URL || 
              (isProduction ? '/api' : 'http://localhost:8000'),
     
@@ -43,7 +43,7 @@ const CSP_CONFIG = {
         styleSrc: "'self' 'unsafe-inline'",
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
-        connectSrc: "'self'"
+        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''}`
     },
     development: {
         defaultSrc: "'self'",

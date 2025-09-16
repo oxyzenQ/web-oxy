@@ -64,8 +64,8 @@
                     </div>
                 </div>
                 <div class="result" aria-live="polite">Ready to convert</div>
-                <button type="submit" id="convert-button">Convert</button>
-                <button type="reset" id="reset-button">Reset</button> <!-- Keep inside container -->
+                <button type="submit" id="convert-button"><i class="fas fa-arrow-right"></i><span>Convert</span></button>
+                <button type="reset" id="reset-button"><i class="fas fa-rotate-left"></i><span>Reset</span></button> <!-- Keep inside container -->
             </div>
         </form>
     </div>
@@ -119,7 +119,7 @@
                 <div class="info-item">
                     <i class="fas fa-code-branch"></i>
                     <span class="info-label">Type Apps:</span>
-                    <span class="info-value">Open Source Project</span>
+                    <span class="info-value">Creativity Project</span>
                 </div>
                 <div class="info-item">
                     <i class="fas fa-wrench"></i>
@@ -152,7 +152,7 @@
     <!-- Glass Notify Modal -->
     <dialog id="notify-modal" class="glass-modal">
         <div class="modal-content">
-            <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="modal-icon"><i class="fa-solid fa-circle-check"></i></div>
             <div class="modal-text">
                 <h3 id="modal-title">Warning</h3>
                 <p id="modal-message">Something needs your attention.</p>
@@ -178,16 +178,29 @@
       const modal = document.getElementById('notify-modal');
       const closeBtn = document.getElementById('modal-close');
       if (modal && closeBtn) {
-        closeBtn.addEventListener('click', () => modal.close());
+        closeBtn.addEventListener('click', () => window.KconvertModal.close());
       }
-      // Expose a simple API for main.js to open with custom message
+      // Enhanced modal API with smooth transitions
       window.KconvertModal = {
         open({title = 'Notice', message = ''} = {}) {
           document.getElementById('modal-title').textContent = title;
           document.getElementById('modal-message').textContent = message;
           modal.showModal();
+          // Disable background scrolling
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
         },
-        close(){ modal.close(); }
+        close(){ 
+          // Add closing animation
+          modal.style.animation = 'modalSlideOut 0.3s ease-out forwards';
+          setTimeout(() => {
+            modal.close();
+            modal.style.animation = '';
+            // Restore background scrolling
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+          }, 300);
+        }
       }
 
       // Currency Search Modal Functionality
@@ -246,7 +259,9 @@
       // Load currencies from backend API
       async function loadCurrencies() {
         try {
-          const response = await fetch('http://localhost:8000/api/currencies');
+          // Use environment variable or fallback to relative path
+          const apiBaseUrl = window.APP_CONFIG?.API_BASE_URL || '/api';
+          const response = await fetch(`${apiBaseUrl}/api/currencies`);
           const data = await response.json();
           availableCurrencies = data.currencies.map(currency => ({
             code: currency.code,

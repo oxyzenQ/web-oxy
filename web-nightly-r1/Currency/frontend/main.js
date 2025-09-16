@@ -1143,8 +1143,15 @@ function announceToScreenReader(message) {
     }, 1000);
 }
 
-// Form reset function
+// Enhanced reset function with app refresh
 function resetForm() {
+    // Clear all caches first
+    cacheManager.clear();
+    tokenManager.clearToken();
+    
+    // Reset performance metrics
+    performanceMonitor.reset();
+    
     if (fromSearch && toSearch && amount) {
         fromSearch.value = 'USD - US Dollar';
         fromSearch.dataset.currency = 'USD';
@@ -1158,7 +1165,7 @@ function resetForm() {
         updateFlagImage(document.getElementById('to-flag'), 'sg');
         
         if (exRateTxt) {
-            exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+            exRateTxt.innerText = "Ready to convert";
             exRateTxt.classList.remove('loading', 'error', 'success');
         }
         
@@ -1181,7 +1188,27 @@ function resetForm() {
         
         if (fromSuggestions) fromSuggestions.style.display = 'none';
         if (toSuggestions) toSuggestions.style.display = 'none';
+        
+        // Reload currencies and refresh app state
+        setTimeout(() => {
+            // Refresh currencies from backend
+            if (typeof fetchSupportedCurrencies === 'function') {
+                fetchSupportedCurrencies();
+            }
+            
+            // Show visible notification
+            if (window.KconvertModal) {
+                window.KconvertModal.open({
+                    title: 'Reset Complete',
+                    message: 'Application has been reset to default settings with fresh data from server.'
+                });
+            }
+            
+            announceToScreenReader('Application refreshed with default settings');
+        }, 100);
     }
+    
+    console.log('🔄 App reset: Cleared caches, reset form, refreshed data');
 }
 
 // ===== PERFORMANCE MONITORING DASHBOARD =====

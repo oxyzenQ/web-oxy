@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy application
 COPY main_optimized.py .
+COPY production_start.py .
 COPY .env* ./
 
 # Security: non-root user
