@@ -270,9 +270,28 @@
       // Load currencies from backend API
       async function loadCurrencies() {
         try {
-          // Use environment variable or fallback to relative path
-          const apiBaseUrl = window.APP_CONFIG?.API_BASE_URL || '/api';
-          const response = await fetch(`${apiBaseUrl}/api/currencies`);
+          // Build robust URL to avoid double slashes or wrong origins
+          const apiBase = window.APP_CONFIG?.API_BASE_URL;
+          let currenciesUrl = '/api/currencies';
+          if (apiBase) {
+            try {
+              currenciesUrl = new URL('/api/currencies', apiBase).toString();
+            } catch (e) {
+              const base = String(apiBase).replace(/\/$/, '');
+              currenciesUrl = `${base}/api/currencies`;
+            }
+          }
+
+          const response = await fetch(currenciesUrl, { headers: { 'Accept': 'application/json' } });
+          const ct = response.headers.get('content-type') || '';
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status} ${response.statusText}: ${text.slice(0, 200)}...`);
+          }
+          if (!ct.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Expected JSON but received content-type '${ct}'. Body starts with: ${text.slice(0, 200)}...`);
+          }
           const data = await response.json();
           availableCurrencies = data.currencies.map(currency => ({
             code: currency.code,
