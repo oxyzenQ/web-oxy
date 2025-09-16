@@ -19,10 +19,10 @@ const isProduction = import.meta?.env?.MODE === 'production' ||
 
 // API Configuration
 const API_CONFIG = {
-    BASE_URL: import.meta?.env?.API_BASE_URL || '/api',
-    REQUEST_TIMEOUT: parseInt(import.meta?.env?.REQUEST_TIMEOUT) || 10000,
-    RETRY_ATTEMPTS: parseInt(import.meta?.env?.RETRY_ATTEMPTS) || 3,
-    CACHE_DURATION: parseInt(import.meta?.env?.CACHE_DURATION) || 300000
+    BASE_URL: import.meta?.env?.VITE_API_BASE_URL || '/api',
+    REQUEST_TIMEOUT: parseInt(import.meta?.env?.VITE_REQUEST_TIMEOUT) || 10000,
+    RETRY_ATTEMPTS: parseInt(import.meta?.env?.VITE_RETRY_ATTEMPTS) || 3,
+    CACHE_DURATION: parseInt(import.meta?.env?.VITE_CACHE_DURATION) || 300000
 };
 
 // CSP Configuration
@@ -34,7 +34,7 @@ const CSP_CONFIG = {
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
         scriptSrcElem: "'self' 'unsafe-inline'",
-        connectSrc: `'self' ${import.meta?.env?.API_BASE_URL || ''} https:`,
+        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''} https:`,
         objectSrc: "'none'",
         baseUri: "'self'"
     },
