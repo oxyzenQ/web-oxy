@@ -29,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=2 \
     CMD python -c "import httpx; httpx.get('http://localhost:8000/', timeout=5)"
 
 # Run optimized app
-CMD ["uvicorn", "main_optimized:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "production_start:app", "--host", "0.0.0.0", "--port", "8000"]

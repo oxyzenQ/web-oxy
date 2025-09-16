@@ -1,32 +1,68 @@
-// Currency Exchange Rate Chart Module
-// Real-time line chart visualization for currency exchange rates
+// Enhanced Currency Exchange Rate Chart Module
+// Optimized real-time line chart with lazy loading and performance improvements
 
-import Chart from 'chart.js/auto';
+// Lazy import Chart.js for better performance
+let Chart = null;
+const loadChart = async () => {
+    if (!Chart) {
+        const { default: ChartJS } = await import('chart.js/auto');
+        Chart = ChartJS;
+    }
+    return Chart;
+};
 
-// Chart configuration and data management
+// Performance-optimized chart configuration
 class ExchangeRateChart {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas.getContext('2d');
+        this.ctx = this.canvas?.getContext('2d');
         this.chart = null;
         this.currentRange = '12H';
         this.currentPair = { from: null, to: null };
+        this.isInitialized = false;
+        this.animationFrame = null;
         
-        // Chart data storage - starts empty
+        // Enhanced chart data storage with extended ranges
         this.chartData = {
-            '12H': { labels: [], data: [] },
-            '1D': { labels: [], data: [] },
-            '1W': { labels: [], data: [] },
-            '1M': { labels: [], data: [] }
+            '12H': { labels: [], data: [], cached: false },
+            '1D': { labels: [], data: [], cached: false },
+            '1W': { labels: [], data: [], cached: false },
+            '1M': { labels: [], data: [], cached: false },
+            '1Y': { labels: [], data: [], cached: false },
+            '2Y': { labels: [], data: [], cached: false },
+            '5Y': { labels: [], data: [], cached: false },
+            '10Y': { labels: [], data: [], cached: false }
         };
         
-        this.initializeChart();
-        this.setupEventListeners();
+        // Performance monitoring
+        this.performanceMetrics = {
+            renderTime: 0,
+            dataPoints: 0,
+            lastUpdate: Date.now()
+        };
+        
+        // Initialize with lazy loading
+        this.initializeAsync();
+    }
+    
+    async initializeAsync() {
+        try {
+            await loadChart();
+            if (this.canvas && this.ctx) {
+                this.initializeChart();
+                this.setupEventListeners();
+                this.isInitialized = true;
+            }
+        } catch (error) {
+            console.error('Failed to initialize chart:', error);
+        }
     }
     
     initializeChart() {
         const data = this.chartData[this.currentRange];
+        const startTime = performance.now();
         
+        // Performance-optimized chart configuration
         this.chart = new Chart(this.ctx, {
             type: 'line',
             data: {
@@ -42,7 +78,7 @@ class ExchangeRateChart {
                     pointBackgroundColor: '#4285f4',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
-                    pointRadius: 4,
+                    pointRadius: data.data.length > 100 ? 0 : 3, // Hide points for large datasets
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#4285f4',
                     pointHoverBorderColor: '#ffffff',
@@ -52,6 +88,10 @@ class ExchangeRateChart {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: data.data.length > 50 ? 0 : 750, // Disable animation for large datasets
+                    easing: 'easeInOutQuart'
+                },
                 interaction: {
                     intersect: false,
                     mode: 'index'
@@ -61,8 +101,7 @@ class ExchangeRateChart {
                         display: false
                     },
                     tooltip: {
-                        // Start disabled when there is no data
-                        enabled: false,
+                        enabled: false, // Start disabled when there is no data
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',

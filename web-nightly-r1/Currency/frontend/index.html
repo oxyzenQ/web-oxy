@@ -7,7 +7,7 @@
     <!-- Fonts: Inter + JetBrains Mono -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/kconvert-logo-orig.png">
     <title>A simple & fast currency converter</title>
@@ -81,6 +81,10 @@
             <button class="time-range-btn" data-range="1D">1D</button>
             <button class="time-range-btn" data-range="1W">1W</button>
             <button class="time-range-btn" data-range="1M">1M</button>
+            <button class="time-range-btn" data-range="1Y">1Y</button>
+            <button class="time-range-btn" data-range="2Y">2Y</button>
+            <button class="time-range-btn" data-range="5Y">5Y</button>
+            <button class="time-range-btn" data-range="10Y">10Y</button>
         </div>
         <div class="chart-wrapper">
             <canvas id="exchangeRateChart"></canvas>
@@ -107,7 +111,7 @@
     <div class="container about-container">
         <h2 class="section-title">About the Kconvert app</h2>
         <div class="section-content">
-            <p>Is an app for converter, not like traditional other, this project apps to make simple but modern look that function, this project leader by oxchin UI/UX by rezky_nightky. with license MIT you can use, modify, and distribute this software freely. The project emphasizes clean design principles, user-friendly interfaces, and reliable functionality while maintaining open-source accessibility for developers worldwide.</p>
+            <p>Is an app for converter, not like traditional other, this project apps to make simple but modern look that function, this project leader by Team 6. with license MIT you can use, modify, and distribute this software freely. The project emphasizes clean design principles, user-friendly interfaces, and reliable functionality while maintaining open-source accessibility for developers worldwide.</p>
             
             <div class="project-info">
                 <div class="info-item">
@@ -168,7 +172,7 @@
                 <i class="fa-brands fa-github"></i>
             </a>
         </p>
-        <p>&copy; 2024-2025 oxyzenQ. Licensed under <a class="mit" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a>.</p>
+        <p>&copy; 2025 Team 6. Licensed under <a class="mit" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a>.</p>
     </footer>
 
     <script type="module" src="./main.js"></script>
@@ -200,18 +204,46 @@
       // Enhanced currency data with 100+ countries - loaded from backend
       let availableCurrencies = [];
       
-      // Country code mapping for flags
+      // Comprehensive country code mapping for 100+ currencies
       const currencyToCountry = {
+        // Major currencies
         'USD': 'us', 'EUR': 'eu', 'GBP': 'gb', 'JPY': 'jp', 'AUD': 'au', 'CAD': 'ca',
         'CHF': 'ch', 'CNY': 'cn', 'SEK': 'se', 'NZD': 'nz', 'MXN': 'mx', 'SGD': 'sg',
         'HKD': 'hk', 'NOK': 'no', 'TRY': 'tr', 'RUB': 'ru', 'INR': 'in', 'BRL': 'br',
         'ZAR': 'za', 'KRW': 'kr', 'PLN': 'pl', 'THB': 'th', 'MYR': 'my', 'AED': 'ae',
         'SAR': 'sa', 'ILS': 'il', 'CLP': 'cl', 'COP': 'co', 'ARS': 'ar', 'TWD': 'tw',
+        
+        // European currencies
         'DKK': 'dk', 'CZK': 'cz', 'HUF': 'hu', 'RON': 'ro', 'BGN': 'bg', 'HRK': 'hr',
-        'ISK': 'is', 'PHP': 'ph', 'IDR': 'id', 'VND': 'vn', 'EGP': 'eg', 'NGN': 'ng',
-        'KES': 'ke', 'GHS': 'gh', 'MAD': 'ma', 'TND': 'tn', 'LKR': 'lk', 'BDT': 'bd',
-        'PKR': 'pk', 'NPR': 'np', 'MMK': 'mm', 'KHR': 'kh', 'LAK': 'la', 'UZS': 'uz',
-        'KZT': 'kz', 'GEL': 'ge', 'AMD': 'am', 'AZN': 'az', 'BYN': 'by', 'UAH': 'ua'
+        'ISK': 'is', 'ALL': 'al', 'BAM': 'ba', 'MKD': 'mk', 'RSD': 'rs', 'MDL': 'md',
+        
+        // Asian currencies
+        'PHP': 'ph', 'IDR': 'id', 'VND': 'vn', 'KHR': 'kh', 'LAK': 'la', 'MMK': 'mm',
+        'BDT': 'bd', 'PKR': 'pk', 'NPR': 'np', 'LKR': 'lk', 'MVR': 'mv', 'BTN': 'bt',
+        'AFN': 'af', 'UZS': 'uz', 'KZT': 'kz', 'KGS': 'kg', 'TJS': 'tj', 'TMT': 'tm',
+        'MNT': 'mn', 'KPW': 'kp', 'JPY': 'jp',
+        
+        // Middle Eastern currencies
+        'QAR': 'qa', 'KWD': 'kw', 'BHD': 'bh', 'OMR': 'om', 'JOD': 'jo', 'LBP': 'lb',
+        'SYP': 'sy', 'IQD': 'iq', 'IRR': 'ir', 'GEL': 'ge', 'AMD': 'am', 'AZN': 'az',
+        
+        // African currencies
+        'EGP': 'eg', 'NGN': 'ng', 'KES': 'ke', 'GHS': 'gh', 'MAD': 'ma', 'TND': 'tn',
+        'DZD': 'dz', 'LYD': 'ly', 'ETB': 'et', 'UGX': 'ug', 'TZS': 'tz', 'RWF': 'rw',
+        'XOF': 'sn', 'XAF': 'cm', 'MGA': 'mg', 'MUR': 'mu', 'SCR': 'sc', 'SZL': 'sz',
+        'LSL': 'ls', 'BWP': 'bw', 'NAD': 'na', 'ZMW': 'zm', 'ZWL': 'zw', 'MWK': 'mw',
+        'MZN': 'mz', 'AOA': 'ao', 'CVE': 'cv', 'GMD': 'gm', 'GNF': 'gn', 'LRD': 'lr',
+        'SLL': 'sl', 'STD': 'st', 'CDF': 'cd', 'XPF': 'pf', 'DJF': 'dj', 'ERN': 'er',
+        'SOS': 'so', 'SDP': 'sd', 'SSP': 'ss',
+        
+        // Eastern European & CIS
+        'BYN': 'by', 'UAH': 'ua', 'GEL': 'ge', 'AMD': 'am', 'AZN': 'az',
+        
+        // Caribbean & Pacific
+        'JMD': 'jm', 'TTD': 'tt', 'BBD': 'bb', 'BSD': 'bs', 'BZD': 'bz', 'XCD': 'ag',
+        'HTG': 'ht', 'DOP': 'do', 'CUP': 'cu', 'KYD': 'ky', 'AWG': 'aw', 'ANG': 'cw',
+        'SRD': 'sr', 'GYD': 'gy', 'FJD': 'fj', 'TOP': 'to', 'WST': 'ws', 'VUV': 'vu',
+        'SBD': 'sb', 'PGK': 'pg', 'NCX': 'nc', 'XPF': 'pf',
       };
       
       // Load currencies from backend API

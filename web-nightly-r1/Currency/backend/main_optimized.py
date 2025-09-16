@@ -74,8 +74,9 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Top 30 most traded currencies (simplified)
+# Comprehensive 100+ currencies list
 CURRENCIES = {
+    # Major world currencies
     "USD": "US Dollar", "EUR": "Euro", "GBP": "British Pound", "JPY": "Japanese Yen",
     "AUD": "Australian Dollar", "CAD": "Canadian Dollar", "CHF": "Swiss Franc", 
     "CNY": "Chinese Yuan", "SEK": "Swedish Krona", "NZD": "New Zealand Dollar",
@@ -85,7 +86,55 @@ CURRENCIES = {
     "KRW": "South Korean Won", "PLN": "Polish Zloty", "THB": "Thai Baht",
     "MYR": "Malaysian Ringgit", "AED": "UAE Dirham", "SAR": "Saudi Riyal",
     "ILS": "Israeli Shekel", "CLP": "Chilean Peso", "COP": "Colombian Peso",
-    "ARS": "Argentine Peso", "TWD": "Taiwan Dollar"
+    "ARS": "Argentine Peso", "TWD": "Taiwan Dollar",
+    
+    # European currencies
+    "DKK": "Danish Krone", "CZK": "Czech Koruna", "HUF": "Hungarian Forint",
+    "RON": "Romanian Leu", "BGN": "Bulgarian Lev", "HRK": "Croatian Kuna",
+    "ISK": "Icelandic Krona", "ALL": "Albanian Lek", "BAM": "Bosnia-Herzegovina Convertible Mark",
+    "MKD": "Macedonian Denar", "RSD": "Serbian Dinar", "MDL": "Moldovan Leu",
+    
+    # Asian currencies
+    "PHP": "Philippine Peso", "IDR": "Indonesian Rupiah", "VND": "Vietnamese Dong",
+    "KHR": "Cambodian Riel", "LAK": "Laotian Kip", "MMK": "Myanmar Kyat",
+    "BDT": "Bangladeshi Taka", "PKR": "Pakistani Rupee", "NPR": "Nepalese Rupee",
+    "LKR": "Sri Lankan Rupee", "MVR": "Maldivian Rufiyaa", "BTN": "Bhutanese Ngultrum",
+    "AFN": "Afghan Afghani", "UZS": "Uzbekistani Som", "KZT": "Kazakhstani Tenge",
+    "KGS": "Kyrgystani Som", "TJS": "Tajikistani Somoni", "TMT": "Turkmenistani Manat",
+    "MNT": "Mongolian Tugrik", "KPW": "North Korean Won",
+    
+    # Middle Eastern currencies
+    "QAR": "Qatari Riyal", "KWD": "Kuwaiti Dinar", "BHD": "Bahraini Dinar",
+    "OMR": "Omani Rial", "JOD": "Jordanian Dinar", "LBP": "Lebanese Pound",
+    "SYP": "Syrian Pound", "IQD": "Iraqi Dinar", "IRR": "Iranian Rial",
+    "GEL": "Georgian Lari", "AMD": "Armenian Dram", "AZN": "Azerbaijani Manat",
+    
+    # African currencies
+    "EGP": "Egyptian Pound", "NGN": "Nigerian Naira", "KES": "Kenyan Shilling",
+    "GHS": "Ghanaian Cedi", "MAD": "Moroccan Dirham", "TND": "Tunisian Dinar",
+    "DZD": "Algerian Dinar", "LYD": "Libyan Dinar", "ETB": "Ethiopian Birr",
+    "UGX": "Ugandan Shilling", "TZS": "Tanzanian Shilling", "RWF": "Rwandan Franc",
+    "XOF": "West African CFA Franc", "XAF": "Central African CFA Franc",
+    "MGA": "Malagasy Ariary", "MUR": "Mauritian Rupee", "SCR": "Seychellois Rupee",
+    "SZL": "Swazi Lilangeni", "LSL": "Lesotho Loti", "BWP": "Botswanan Pula",
+    "NAD": "Namibian Dollar", "ZMW": "Zambian Kwacha", "ZWL": "Zimbabwean Dollar",
+    "MWK": "Malawian Kwacha", "MZN": "Mozambican Metical", "AOA": "Angolan Kwanza",
+    "CVE": "Cape Verdean Escudo", "GMD": "Gambian Dalasi", "GNF": "Guinean Franc",
+    "LRD": "Liberian Dollar", "SLL": "Sierra Leonean Leone", "STD": "São Tomé and Príncipe Dobra",
+    "CDF": "Congolese Franc", "DJF": "Djiboutian Franc", "ERN": "Eritrean Nakfa",
+    "SOS": "Somali Shilling", "SDP": "Sudanese Pound", "SSP": "South Sudanese Pound",
+    
+    # Eastern European & CIS
+    "BYN": "Belarusian Ruble", "UAH": "Ukrainian Hryvnia",
+    
+    # Caribbean & Pacific
+    "JMD": "Jamaican Dollar", "TTD": "Trinidad and Tobago Dollar", "BBD": "Barbadian Dollar",
+    "BSD": "Bahamian Dollar", "BZD": "Belize Dollar", "XCD": "East Caribbean Dollar",
+    "HTG": "Haitian Gourde", "DOP": "Dominican Peso", "CUP": "Cuban Peso",
+    "KYD": "Cayman Islands Dollar", "AWG": "Aruban Florin", "ANG": "Netherlands Antillean Guilder",
+    "SRD": "Surinamese Dollar", "GYD": "Guyanese Dollar", "FJD": "Fijian Dollar",
+    "TOP": "Tongan Pa'anga", "WST": "Samoan Tala", "VUV": "Vanuatu Vatu",
+    "SBD": "Solomon Islands Dollar", "PGK": "Papua New Guinean Kina", "XPF": "CFP Franc",
 }
 
 # Pydantic models for request validation
