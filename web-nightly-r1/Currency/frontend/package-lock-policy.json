@@ -1,0 +1,47 @@
+{
+  "name": "kconvert-lockfile-policy",
+  "version": "1.0.0",
+  "description": "Future-proof dependency management policy for Kconvert Currency Converter",
+  "lockfileVersion": 3,
+  "policies": {
+    "security": {
+      "auditLevel": "moderate",
+      "autoFixVulnerabilities": true,
+      "allowedVulnerabilities": [],
+      "securityUpdateSchedule": "weekly"
+    },
+    "updates": {
+      "strategy": "lts-conservative",
+      "allowMajorUpdates": false,
+      "allowMinorUpdates": true,
+      "allowPatchUpdates": true,
+      "testingRequired": true
+    },
+    "compatibility": {
+      "nodeVersions": ["18.18.0", "20.18.0", "22.x"],
+      "browserSupport": {
+        "chrome": ">=88",
+        "firefox": ">=78", 
+        "safari": ">=14",
+        "edge": ">=88"
+      }
+    },
+    "performance": {
+      "bundleSizeLimit": "500KB",
+      "dependencyCount": "max-50",
+      "treeshakingRequired": true
+    }
+  },
+  "pinnedDependencies": {
+    "vite": "5.4.x",
+    "chart.js": "4.4.x",
+    "@vitejs/plugin-legacy": "5.4.x",
+    "@fontsource/inter": "5.1.x",
+    "@fortawesome/fontawesome-free": "6.6.x"
+  },
+  "deprecationPolicy": {
+    "warningPeriod": "6 months",
+    "migrationPeriod": "12 months",
+    "supportEnd": "24 months"
+  }
+}

@@ -1,101 +1,182 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { defineConfig, loadEnv } from 'vite'
+import legacy from '@vitejs/plugin-legacy'
+import { visualizer } from 'rollup-plugin-visualizer'
+import replace from '@rollup/plugin-replace'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  root: '.',
-  server: {
-    port: 3000,
-    strictPort: true,
-    host: true,
-    open: false,
-    cors: true,
-    hmr: {
-      overlay: false
-    }
-  },
-  preview: {
-    port: 3000,
-    strictPort: true,
-    open: false,
-    cors: true
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: process.env.NODE_ENV === 'development',
-    minify: 'terser',
-    target: 'es2020',
-    cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production',
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
-        passes: 2
-      },
-      mangle: {
-        safari10: true
+export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const isProduction = mode === 'production'
+  const isAnalyze = mode === 'analyze'
+  
+  return {
+    root: '.',
+    base: './',
+    
+    // Server configuration for development
+    server: {
+      port: 3000,
+      strictPort: true,
+      host: '0.0.0.0',
+      open: false,
+      cors: true,
+      hmr: {
+        overlay: true
       }
     },
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html')
-      },
-      output: {
-        manualChunks: {
-          // Core libraries
-          vendor: ['@fontsource/inter'],
-          // Chart functionality
-          chart: ['chart.js'],
-          // Utils and config
-          utils: ['config.js']
+    
+    // Preview configuration
+    preview: {
+      port: 4173,
+      strictPort: true,
+      host: '0.0.0.0',
+      open: false
+    },
+    
+    // Plugin configuration
+    plugins: [
+      // Legacy browser support for LTS stability
+      legacy({
+        targets: [
+          'Chrome >= 88',
+          'Firefox >= 78', 
+          'Safari >= 14',
+          'Edge >= 88',
+          '> 0.5%',
+          'not dead',
+          'not IE 11'
+        ],
+        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+        renderLegacyChunks: true,
+        polyfills: [
+          'es.symbol',
+          'es.array.filter',
+          'es.promise',
+          'es.promise.finally'
+        ]
+      }),
+      
+      // Environment variable replacement
+      replace({
+        __MODE__: JSON.stringify(mode),
+        __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+        preventAssignment: true
+      }),
+      
+      // Bundle analyzer (only in analyze mode)
+      ...(isAnalyze ? [
+        visualizer({
+          filename: 'dist/stats.html',
+          open: true,
+          gzipSize: true,
+          brotliSize: true
+        })
+      ] : [])
+    ],
+    
+    // Build configuration optimized for LTS
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      sourcemap: !isProduction,
+      minify: isProduction ? 'terser' : false,
+      
+      // Terser options for production optimization
+      terserOptions: isProduction ? {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug'],
+          passes: 2
         },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.')
-          const ext = info[info.length - 1]
-          if (/\.(css)$/.test(assetInfo.name)) {
-            return `assets/css/[name]-[hash].${ext}`
-          }
-          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
-            return `assets/images/[name]-[hash].${ext}`
-          }
-          return `assets/[name]-[hash].${ext}`
+        mangle: {
+          safari10: true
+        },
+        format: {
+          safari10: true
+        }
+      } : {},
+      
+      // Rollup options for chunking strategy
+      rollupOptions: {
+        input: 'index.html',
+        output: {
+          // Optimized chunking for long-term caching
+          manualChunks: {
+            // Core vendor libraries
+            'vendor-core': ['@fontsource/inter'],
+            'vendor-icons': ['@fortawesome/fontawesome-free'],
+            'vendor-charts': ['chart.js'],
+            
+            // Application modules
+            'app-config': ['./config.js'],
+            'app-chart': ['./chart.js']
+          },
+          
+          // File naming for cache busting
+          chunkFileNames: isProduction 
+            ? 'assets/js/[name]-[hash].js'
+            : 'assets/js/[name].js',
+          entryFileNames: isProduction
+            ? 'assets/js/[name]-[hash].js' 
+            : 'assets/js/[name].js',
+          assetFileNames: isProduction
+            ? 'assets/[ext]/[name]-[hash].[ext]'
+            : 'assets/[ext]/[name].[ext]'
         }
       },
-      external: [],
-      treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        unknownGlobalSideEffects: false
+      
+      // Target will be handled by legacy plugin
+      // target: ['es2020', 'chrome88', 'firefox78', 'safari14', 'edge88'],
+      
+      // Chunk size warnings
+      chunkSizeWarningLimit: 1000,
+      
+      // CSS code splitting
+      cssCodeSplit: true,
+      
+      // Asset inlining threshold
+      assetsInlineLimit: 4096
+    },
+    
+    // ESBuild configuration
+    esbuild: {
+      target: 'es2020',
+      drop: isProduction ? ['console', 'debugger'] : [],
+      legalComments: 'none'
+    },
+    
+    // CSS configuration
+    css: {
+      devSourcemap: !isProduction,
+      preprocessorOptions: {
+        css: {
+          charset: false
+        }
+      }
+    },
+    
+    // Dependency optimization
+    optimizeDeps: {
+      include: [
+        '@fontsource/inter',
+        '@fortawesome/fontawesome-free',
+        'chart.js'
+      ],
+      exclude: []
+    },
+    
+    // Define global constants
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.0'),
+      __BUILD_MODE__: JSON.stringify(mode)
+    },
+    
+    // Resolve configuration
+    resolve: {
+      alias: {
+        '@': new URL('./', import.meta.url).pathname
       }
     }
-  },
-  esbuild: {
-    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
-    legalComments: 'none',
-    target: 'es2020'
-  },
-  optimizeDeps: {
-    include: ['@fontsource/inter'],
-    exclude: [],
-    esbuildOptions: {
-      target: 'es2020'
-    }
-  },
-  css: {
-    devSourcemap: process.env.NODE_ENV === 'development',
-    preprocessorOptions: {
-      css: {
-        charset: false
-      }
-    }
-  },
-  define: {
-    __DEV__: process.env.NODE_ENV === 'development',
-    __PROD__: process.env.NODE_ENV === 'production'
   }
 })

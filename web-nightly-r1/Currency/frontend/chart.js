@@ -1,68 +1,36 @@
-// Enhanced Currency Exchange Rate Chart Module
-// Optimized real-time line chart with lazy loading and performance improvements
+// Currency Exchange Rate Chart Module
+// Real-time line chart visualization for currency exchange rates
 
-// Lazy import Chart.js for better performance
-let Chart = null;
-const loadChart = async () => {
-    if (!Chart) {
-        const { default: ChartJS } = await import('chart.js/auto');
-        Chart = ChartJS;
-    }
-    return Chart;
-};
+import Chart from 'chart.js/auto';
 
-// Performance-optimized chart configuration
+// Chart configuration and data management
 class ExchangeRateChart {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas?.getContext('2d');
+        this.ctx = this.canvas.getContext('2d');
         this.chart = null;
         this.currentRange = '12H';
         this.currentPair = { from: null, to: null };
-        this.isInitialized = false;
-        this.animationFrame = null;
         
-        // Enhanced chart data storage with extended ranges
+        // Chart data storage - starts empty
         this.chartData = {
-            '12H': { labels: [], data: [], cached: false },
-            '1D': { labels: [], data: [], cached: false },
-            '1W': { labels: [], data: [], cached: false },
-            '1M': { labels: [], data: [], cached: false },
-            '1Y': { labels: [], data: [], cached: false },
-            '2Y': { labels: [], data: [], cached: false },
-            '5Y': { labels: [], data: [], cached: false },
-            '10Y': { labels: [], data: [], cached: false }
+            '12H': { labels: [], data: [] },
+            '1D': { labels: [], data: [] },
+            '1W': { labels: [], data: [] },
+            '1M': { labels: [], data: [] },
+            '1Y': { labels: [], data: [] },
+            '2Y': { labels: [], data: [] },
+            '5Y': { labels: [], data: [] },
+            '10Y': { labels: [], data: [] }
         };
         
-        // Performance monitoring
-        this.performanceMetrics = {
-            renderTime: 0,
-            dataPoints: 0,
-            lastUpdate: Date.now()
-        };
-        
-        // Initialize with lazy loading
-        this.initializeAsync();
-    }
-    
-    async initializeAsync() {
-        try {
-            await loadChart();
-            if (this.canvas && this.ctx) {
-                this.initializeChart();
-                this.setupEventListeners();
-                this.isInitialized = true;
-            }
-        } catch (error) {
-            console.error('Failed to initialize chart:', error);
-        }
+        this.initializeChart();
+        this.setupEventListeners();
     }
     
     initializeChart() {
         const data = this.chartData[this.currentRange];
-        const startTime = performance.now();
         
-        // Performance-optimized chart configuration
         this.chart = new Chart(this.ctx, {
             type: 'line',
             data: {
@@ -78,7 +46,7 @@ class ExchangeRateChart {
                     pointBackgroundColor: '#4285f4',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
-                    pointRadius: data.data.length > 100 ? 0 : 3, // Hide points for large datasets
+                    pointRadius: 4,
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#4285f4',
                     pointHoverBorderColor: '#ffffff',
@@ -88,10 +56,6 @@ class ExchangeRateChart {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: {
-                    duration: data.data.length > 50 ? 0 : 750, // Disable animation for large datasets
-                    easing: 'easeInOutQuart'
-                },
                 interaction: {
                     intersect: false,
                     mode: 'index'
@@ -101,7 +65,8 @@ class ExchangeRateChart {
                         display: false
                     },
                     tooltip: {
-                        enabled: false, // Start disabled when there is no data
+                        // Start disabled when there is no data
+                        enabled: false,
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
@@ -255,12 +220,18 @@ class ExchangeRateChart {
     updateCurrencyPair(fromCurrency, toCurrency) {
         this.currentPair = { from: fromCurrency, to: toCurrency };
         
-        // Update currency pair display
+        // Update currency pair display with input amount if available
         const fromDisplay = document.querySelector('.chart-from');
         const toDisplay = document.querySelector('.chart-to');
         
-        if (fromDisplay) fromDisplay.textContent = fromCurrency;
-        if (toDisplay) toDisplay.textContent = toCurrency;
+        if (fromDisplay) {
+            // Use stored input amount if available, otherwise default to 1
+            const displayAmount = this.inputAmount || 1;
+            fromDisplay.textContent = `${displayAmount} ${fromCurrency}`;
+        }
+        if (toDisplay) {
+            toDisplay.textContent = toCurrency;
+        }
         
         // Update chart
         this.updateChart();
@@ -280,6 +251,26 @@ class ExchangeRateChart {
                 const date = new Date();
                 date.setDate(date.getDate() - (29-i));
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }},
+            '1Y': { count: 12, interval: 'month', label: (i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - (11-i));
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            }},
+            '2Y': { count: 24, interval: 'month', label: (i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - (23-i));
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            }},
+            '5Y': { count: 60, interval: 'month', label: (i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - (59-i));
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            }},
+            '10Y': { count: 120, interval: 'month', label: (i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - (119-i));
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
             }}
         };
         
@@ -294,7 +285,11 @@ class ExchangeRateChart {
             '12H': 0.002, // 0.2% volatility
             '1D': 0.005,  // 0.5% volatility
             '1W': 0.015,  // 1.5% volatility
-            '1M': 0.03    // 3% volatility
+            '1M': 0.03,   // 3% volatility
+            '1Y': 0.08,   // 8% volatility
+            '2Y': 0.12,   // 12% volatility
+            '5Y': 0.20,   // 20% volatility
+            '10Y': 0.35   // 35% volatility
         }[timeRange];
         
         let previousRate = currentRate * (0.98 + Math.random() * 0.04); // Start within ±2%
@@ -323,18 +318,21 @@ class ExchangeRateChart {
         // Update current pair
         this.currentPair = { from: fromCurrency, to: toCurrency };
         
+        // Store the input amount for display
+        this.inputAmount = amount;
+        
         // Generate historical data for all time ranges based on current rate
         Object.keys(this.chartData).forEach(range => {
             const historicalData = this.generateHistoricalData(exchangeRate, range);
             this.chartData[range] = historicalData;
         });
         
-        // Update currency pair display
+        // Update currency pair display with input amount
         const fromDisplay = document.querySelector('.chart-from');
         const toDisplay = document.querySelector('.chart-to');
         
-        if (fromDisplay) fromDisplay.textContent = fromCurrency;
-        if (toDisplay) toDisplay.textContent = toCurrency;
+        if (fromDisplay) fromDisplay.textContent = `${amount} ${fromCurrency}`;
+        if (toDisplay) toDisplay.textContent = `${toCurrency} ${convertedAmount.toFixed(4)}`;
         
         this.updateChart();
         

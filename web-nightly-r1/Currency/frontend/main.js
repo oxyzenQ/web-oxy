@@ -54,13 +54,13 @@ class TokenManager {
     }
 
     async fetchNewToken() {
-        const response = await fetchWithRetry(CONFIG.API_ENDPOINTS.auth, {
+        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/auth`, {
             method: 'GET',
             cache: 'no-store'
         });
         
-        if (!response || !response.ok) {
-            throw new Error(`Auth failed: ${response?.status || 'Network error'}`);
+        if (!response.ok) {
+            throw new Error(`Auth failed: ${response.status}`);
         }
         
         const data = await response.json();
@@ -417,7 +417,6 @@ async function ensureJwtLoaded() {
 
 // DOM elements
 let fromSearch, toSearch, amount, exRateTxt, exchangeIcon, fromSuggestions, toSuggestions;
-let currencyModal, searchBackdrop, modalSearchInput, modalCurrencyList;
 let currentFromCurrency = 'USD';
 let currentToCurrency = 'SGD';
 
@@ -426,14 +425,12 @@ window.currentFromCurrency = currentFromCurrency;
 window.currentToCurrency = currentToCurrency;
 let highlightedIndex = -1;
 let currentSuggestions = [];
-let currentSearchType = null;
-let currentSearchInput = null;
 
 // Parallel fetch for multiple API endpoints
 async function fetchMultipleEndpoints(endpoints) {
     try {
         const promises = endpoints.map(async (endpoint) => {
-            const response = await fetch(CONFIG.API_BASE_URL + endpoint.url);
+            const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint.url}`);
             if (!response.ok) {
                 throw new Error(`${endpoint.name} failed: ${response.status}`);
             }
@@ -1079,222 +1076,6 @@ function showSuccessState(message) {
     }
 }
 
-// ===== ENHANCED MODAL ANIMATIONS =====
-// Smooth modal opening with performance optimization
-function showCurrencyModal(searchType, inputElement) {
-    if (!currencyModal || !searchBackdrop) return;
-    
-    currentSearchType = searchType;
-    currentSearchInput = inputElement;
-    
-    // Performance optimization: use requestAnimationFrame
-    requestAnimationFrame(() => {
-        // Show backdrop first
-        searchBackdrop.classList.add('show');
-        searchBackdrop.classList.remove('hide');
-        
-        // Show modal with slight delay for smooth animation
-        setTimeout(() => {
-            currencyModal.classList.add('show');
-            currencyModal.classList.remove('hide');
-            
-            // Focus search input for accessibility
-            if (modalSearchInput) {
-                modalSearchInput.focus();
-                modalSearchInput.value = '';
-            }
-            
-            // Load currencies if not already loaded
-            populateModalCurrencies();
-        }, 50);
-    });
-    
-    // Prevent body scroll
-    document.body.style.overflow = 'hidden';
-    
-    if (CONFIG.features.enableDebugMode) {
-        console.log('🔍 Currency modal opened for:', searchType);
-    }
-}
-
-// Smooth modal closing with cleanup
-function hideCurrencyModal() {
-    if (!currencyModal || !searchBackdrop) return;
-    
-    // Performance optimization: use requestAnimationFrame
-    requestAnimationFrame(() => {
-        // Hide modal first
-        currencyModal.classList.add('hide');
-        currencyModal.classList.remove('show');
-        
-        // Hide backdrop with delay
-        setTimeout(() => {
-            searchBackdrop.classList.add('hide');
-            searchBackdrop.classList.remove('show');
-            
-            // Cleanup
-            currentSearchType = null;
-            currentSearchInput = null;
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
-            
-            // Clear search
-            if (modalSearchInput) {
-                modalSearchInput.value = '';
-            }
-        }, 250);
-    });
-    
-    if (CONFIG.features.enableDebugMode) {
-        console.log('❌ Currency modal closed');
-    }
-}
-
-// Populate modal with currencies (lazy loading)
-async function populateModalCurrencies(searchTerm = '') {
-    if (!modalCurrencyList) return;
-    
-    try {
-        // Use cached currencies if available
-        let currencies = cacheManager.get('modal_currencies');
-        
-        if (!currencies) {
-            const response = await fetchWithRetry(`${CONFIG.API_ENDPOINTS.v1.currencies}`);
-            const data = await response.json();
-            currencies = data.currencies || [];
-            cacheManager.set('modal_currencies', currencies, CONFIG.PERFORMANCE_CONFIG.cache.currencies.ttl);
-        }
-        
-        // Filter currencies based on search term
-        const filteredCurrencies = searchTerm 
-            ? searchCurrencies(searchTerm, currencies).slice(0, 50) // Limit for performance
-            : currencies.slice(0, 50);
-        
-        // Clear existing content
-        modalCurrencyList.innerHTML = '';
-        
-        // Create currency items with smooth animations
-        filteredCurrencies.forEach((currency, index) => {
-            const item = createModalCurrencyItem(currency, index);
-            modalCurrencyList.appendChild(item);
-        });
-        
-        // Animate items in
-        requestAnimationFrame(() => {
-            const items = modalCurrencyList.querySelectorAll('.modal-currency-item');
-            items.forEach((item, index) => {
-                setTimeout(() => {
-                    item.classList.add('show');
-                }, index * 20); // Stagger animation
-            });
-        });
-        
-    } catch (error) {
-        console.error('Failed to populate modal currencies:', error);
-        modalCurrencyList.innerHTML = '<div class="modal-error">Failed to load currencies</div>';
-    }
-}
-
-// Create modal currency item with enhanced styling
-function createModalCurrencyItem(currency, index) {
-    const item = document.createElement('div');
-    item.className = 'modal-currency-item';
-    item.dataset.currency = currency.code;
-    item.style.animationDelay = `${index * 20}ms`;
-    
-    const flag = document.createElement('img');
-    flag.src = `https://flagcdn.com/48x36/${currency.country}.png`;
-    flag.alt = `${currency.name} flag`;
-    flag.className = 'modal-currency-flag';
-    flag.onerror = () => {
-        flag.src = 'https://flagcdn.com/48x36/un.png';
-    };
-    
-    const info = document.createElement('div');
-    info.className = 'modal-currency-info';
-    info.innerHTML = `
-        <span class="modal-currency-code">${currency.code}</span>
-        <span class="modal-currency-name">${currency.name}</span>
-    `;
-    
-    item.appendChild(flag);
-    item.appendChild(info);
-    
-    // Click handler with smooth selection
-    item.addEventListener('click', () => {
-        selectCurrencyFromModal(currency);
-    });
-    
-    return item;
-}
-
-// Select currency from modal with animation
-function selectCurrencyFromModal(currency) {
-    if (!currentSearchInput || !currentSearchType) return;
-    
-    // Update the input field
-    if (currentSearchType === 'from') {
-        currentFromCurrency = currency.code;
-        window.currentFromCurrency = currency.code;
-        currentSearchInput.value = `${currency.code} - ${currency.name}`;
-        currentSearchInput.dataset.currency = currency.code;
-        updateFlagImage(document.getElementById('from-flag'), currency.country);
-    } else {
-        currentToCurrency = currency.code;
-        window.currentToCurrency = currency.code;
-        currentSearchInput.value = `${currency.code} - ${currency.name}`;
-        currentSearchInput.dataset.currency = currency.code;
-        updateFlagImage(document.getElementById('to-flag'), currency.country);
-    }
-    
-    // Close modal with animation
-    hideCurrencyModal();
-    
-    // Update chart and fetch rate
-    updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
-    getExchangeRate();
-    
-    // Announce to screen reader
-    announceToScreenReader(`Selected ${currency.name} (${currency.code})`);
-}
-
-// Initialize modal event listeners
-function initializeModalEventListeners() {
-    if (!currencyModal || !searchBackdrop) return;
-    
-    // Close modal on backdrop click
-    searchBackdrop.addEventListener('click', hideCurrencyModal);
-    
-    // Close modal on close button click
-    const closeBtn = document.getElementById('modal-close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', hideCurrencyModal);
-    }
-    
-    // Search functionality
-    if (modalSearchInput) {
-        modalSearchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.trim();
-            populateModalCurrencies(searchTerm);
-        });
-        
-        // Keyboard navigation
-        modalSearchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                hideCurrencyModal();
-            }
-        });
-    }
-    
-    // Prevent modal close on modal content click
-    if (currencyModal) {
-        currencyModal.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
-}
-
 // ===== ACCESSIBILITY ENHANCEMENTS =====
 // Keyboard shortcuts
 function initializeKeyboardShortcuts() {
@@ -1340,7 +1121,7 @@ function initializeKeyboardShortcuts() {
 
 // Screen reader announcements
 function announceToScreenReader(message) {
-    if (!CONFIG.features.ACCESSIBILITY) return;
+    if (!CONFIG.FEATURES.ACCESSIBILITY) return;
     
     const announcement = document.createElement('div');
     announcement.setAttribute('aria-live', 'polite');
@@ -1437,7 +1218,7 @@ function initializePerformanceDashboard() {
 // ===== OFFLINE MODE SUPPORT =====
 // Detect online/offline status
 function initializeOfflineMode() {
-    if (!CONFIG.features.OFFLINE_MODE) return;
+    if (!CONFIG.FEATURES.OFFLINE_MODE) return;
     
     function updateOnlineStatus() {
         const isOnline = navigator.onLine;
@@ -1478,12 +1259,6 @@ async function initApp() {
     amount = document.querySelector("#amount-input");
     exRateTxt = document.querySelector(".result");
     
-    // Get modal elements
-    currencyModal = document.getElementById('currency-modal');
-    searchBackdrop = document.getElementById('search-backdrop');
-    modalSearchInput = document.getElementById('modal-search-input');
-    modalCurrencyList = document.getElementById('modal-currency-list');
-    
     // Initialize number formatting for amount input
     initializeNumberFormatting();
     exchangeIcon = document.querySelector(".reverse");
@@ -1508,15 +1283,23 @@ async function initApp() {
             if (CONFIG.DEBUG_MODE) {
                 console.log('✅ JWT token pre-loaded');
             }
+            return token;
+        }).catch(err => {
+            if (CONFIG.DEBUG_MODE) {
+                console.warn('⚠️ JWT pre-load failed, will fetch on demand:', err.message);
+            }
+            return null;
         }),
         
         // Task 3: Initialize UI components
         Promise.resolve().then(() => {
             initializeSearchInputs();
-            initializeKeyboardShortcuts();
-            initializeOfflineMode();
-            initializeModalEventListeners();
-            return initializeExchangeChart();
+            initializeExchangeChart();
+            updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+            if (CONFIG.DEBUG_MODE) {
+                console.log('✅ Search UI and Chart initialized');
+            }
+            return true;
         })
     ];
     
@@ -1790,8 +1573,7 @@ if (document.readyState === 'loading') {
 window.addEventListener('error', (event) => {
     console.error('🚨 Unhandled error:', event.error);
     
-    if (!CONFIG.features.ERROR_REPORTING) return;
-    {
+    if (CONFIG.FEATURES.ERROR_REPORTING) {
         // Could send to error reporting service here
         performanceMonitor.recordError();
     }
@@ -1801,8 +1583,7 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
     console.error('🚨 Unhandled promise rejection:', event.reason);
     
-    if (!CONFIG.features.ERROR_REPORTING) return;
-    {
+    if (CONFIG.FEATURES.ERROR_REPORTING) {
         performanceMonitor.recordError();
     }
     
@@ -1819,6 +1600,7 @@ if (CONFIG.DEBUG_MODE && typeof window !== 'undefined') {
         cacheManager,
         performanceMonitor,
         searchCurrencies,
+        selectCurrency,
         getExchangeRate,
         swapCurrencies,
         resetForm,

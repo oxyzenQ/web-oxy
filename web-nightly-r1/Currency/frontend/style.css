@@ -884,44 +884,27 @@ body::before {
     font-size: 0.9rem;
 }
 
-/* Enhanced Floating Search Modal with Smooth Animations */
+/* Centered Floating Search Modal */
 .currency-search-modal {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%);
     width: min(420px, 90vw);
-    height: min(600px, 80vh);
-    background: linear-gradient(135deg, 
-        rgba(27, 31, 58, 0.95), 
-        rgba(7, 10, 28, 0.98)
-    );
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    z-index: 1000;
-    display: flex;
+    max-height: 70vh;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), rgba(0,0,0,0.75);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.08);
+    z-index: 2000;
+    display: none;
     flex-direction: column;
     overflow: hidden;
+    /* Prevent scroll propagation to background */
+    overscroll-behavior: contain;
     touch-action: pan-y;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    will-change: transform, opacity;
-}
-
-.currency-search-modal.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translate(-50%, -50%) scale(1);
-}
-
-.currency-search-modal.hide {
-    opacity: 0;
-    visibility: hidden;
-    transform: translate(-50%, -50%) scale(0.95);
-    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .search-modal-header {
@@ -983,37 +966,16 @@ body::before {
 }
 
 .search-modal-backdrop {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.4);
-backdrop-filter: blur(8px);
-z-index: 999;
-cursor: pointer;
-opacity: 0;
-visibility: hidden;
-transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-will-change: opacity, backdrop-filter;
-}
-
-.search-modal-backdrop.show {
-opacity: 1;
-visibility: visible;
-}
-
-.search-modal-backdrop.hide {
-opacity: 0;
-visibility: hidden;
-transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-@keyframes fadeIn {
-from { opacity: 0; }
-to { opacity: 1; }
-}
-
-.search-modal-backdrop {
-overscroll-behavior: contain;
-touch-action: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1999;
+    display: none;
+    /* Prevent scrolling propagation */
+    overscroll-behavior: contain;
+    touch-action: none;
 }
 
 /* iOS-style Close Button - 1.5x larger with red background */
