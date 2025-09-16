@@ -19,20 +19,10 @@ const isProduction = import.meta?.env?.MODE === 'production' ||
 
 // API Configuration
 const API_CONFIG = {
-    // Use environment variable - no hardcoded production URLs
-    BASE_URL: import.meta?.env?.VITE_API_BASE_URL || 
-             (isProduction ? '/api' : 'http://localhost:8000'),
-    
-    // Timeout and retry settings - use env vars if available, otherwise defaults
+    BASE_URL: import.meta?.env?.API_BASE_URL || '/api',
     REQUEST_TIMEOUT: parseInt(import.meta?.env?.REQUEST_TIMEOUT) || 10000,
     RETRY_ATTEMPTS: parseInt(import.meta?.env?.RETRY_ATTEMPTS) || 3,
-    
-    // Cache durations - use env vars if available, otherwise defaults
-    CACHE_DURATION: {
-        CURRENCIES: 24 * 60 * 60 * 1000, // 24 hours
-        EXCHANGE_RATES: parseInt(import.meta?.env?.CACHE_DURATION) || 5 * 60 * 1000,   // 5 minutes
-        JWT_TOKEN: 9 * 60 * 1000         // 9 minutes (token expires in 10)
-    }
+    CACHE_DURATION: parseInt(import.meta?.env?.CACHE_DURATION) || 300000
 };
 
 // CSP Configuration
@@ -44,7 +34,7 @@ const CSP_CONFIG = {
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
         scriptSrcElem: "'self' 'unsafe-inline'",
-        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''} https:`,
+        connectSrc: `'self' ${import.meta?.env?.API_BASE_URL || ''} https:`,
         objectSrc: "'none'",
         baseUri: "'self'"
     },

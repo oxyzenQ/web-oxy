@@ -16,6 +16,27 @@ import '@fortawesome/fontawesome-free/css/all.css';
 // Import secure configuration
 import { CONFIG, setDynamicCSP } from './config.js';
 
+// Helper function to build API URLs correctly
+function buildApiUrl(endpoint) {
+    const apiBase = CONFIG.API_BASE_URL;
+    if (!apiBase || apiBase === '/api') {
+        return endpoint; // Use relative path for same-origin
+    }
+    
+    // Remove leading slash from endpoint if present
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    
+    // If apiBase already contains /api, use it as-is, otherwise append /api
+    const baseUrl = apiBase.includes('/api') ? apiBase : `${apiBase}/api`;
+    
+    try {
+        return new URL(cleanEndpoint, `${baseUrl}/`).toString();
+    } catch (e) {
+        const base = String(baseUrl).replace(/\/$/, '');
+        return `${base}/${cleanEndpoint}`;
+    }
+}
+
 // Lazy-load chart functionality to reduce initial bundle size
 let ChartAPI = null;
 async function ensureChartLoaded() {
@@ -68,7 +89,7 @@ class TokenManager {
     }
 
     async fetchNewToken() {
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/auth`, {
+        const response = await fetchWithRetry(buildApiUrl('auth'), {
             method: 'GET',
             cache: 'no-store'
         });
@@ -496,8 +517,8 @@ async function fetchSupportedCurrencies() {
         
         // Parallel fetch currencies and regions for better performance
         const endpoints = [
-            { name: 'currencies', url: '/api/currencies' },
-            { name: 'regions', url: '/api/regions' }
+            { name: 'currencies', url: buildApiUrl('currencies') },
+            { name: 'regions', url: buildApiUrl('regions') }
         ];
         
         const { successful } = await fetchMultipleEndpoints(endpoints);
@@ -810,7 +831,7 @@ async function handleApiError(response, fromCurrency, toCurrency, amountVal) {
                 tokenManager.clearToken();
                 const newToken = await tokenManager.getValidToken();
                 
-                const retryResponse = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}?targets=${toCurrency}&token=${newToken}`, {
+                const retryResponse = await fetchWithRetry(buildApiUrl(`rates/${fromCurrency}?targets=${toCurrency}&token=${newToken}`), {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${newToken}` }
                 });
@@ -871,7 +892,7 @@ async function fetchBatchExchangeRates(currencies) {
     
     try {
         const JWT_TOKEN = await tokenManager.getValidToken();
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/batch?token=${JWT_TOKEN}`, {
+        const response = await fetchWithRetry(buildApiUrl(`rates/batch?token=${JWT_TOKEN}`), {
             method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${JWT_TOKEN}`,
@@ -959,7 +980,7 @@ async function getExchangeRateOptimized(targetCurrencies = null) {
         const targetParam = `?targets=${targets.join(',')}`;
         const tokenParam = `${targetParam}&token=${JWT_TOKEN}`;
         
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}${tokenParam}`, {
+        const response = await fetchWithRetry(buildApiUrl(`rates/${fromCurrency}${tokenParam}`), {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${JWT_TOKEN}` }
         });

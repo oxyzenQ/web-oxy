@@ -275,10 +275,13 @@
           let currenciesUrl = '/api/currencies';
           if (apiBase) {
             try {
-              currenciesUrl = new URL('/api/currencies', apiBase).toString();
+              // If apiBase already contains /api, use it as-is, otherwise append /api
+              const baseUrl = apiBase.includes('/api') ? apiBase : `${apiBase}/api`;
+              currenciesUrl = new URL('/currencies', baseUrl).toString();
             } catch (e) {
               const base = String(apiBase).replace(/\/$/, '');
-              currenciesUrl = `${base}/api/currencies`;
+              const finalBase = base.includes('/api') ? base : `${base}/api`;
+              currenciesUrl = `${finalBase}/currencies`;
             }
           }
 
