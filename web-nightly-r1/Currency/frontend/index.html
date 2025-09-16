@@ -270,20 +270,8 @@
       // Load currencies from backend API
       async function loadCurrencies() {
         try {
-          // Build robust URL to avoid double slashes or wrong origins
-          const apiBase = window.APP_CONFIG?.API_BASE_URL;
-          let currenciesUrl = '/api/currencies';
-          if (apiBase) {
-            try {
-              // If apiBase already contains /api, use it as-is, otherwise append /api
-              const baseUrl = apiBase.includes('/api') ? apiBase : `${apiBase}/api`;
-              currenciesUrl = new URL('/currencies', baseUrl).toString();
-            } catch (e) {
-              const base = String(apiBase).replace(/\/$/, '');
-              const finalBase = base.includes('/api') ? base : `${base}/api`;
-              currenciesUrl = `${finalBase}/currencies`;
-            }
-          }
+          // Hardcoded backend URL
+          const currenciesUrl = 'https://kconvert-backend.zeabur.app/api/currencies';
 
           const response = await fetch(currenciesUrl, { headers: { 'Accept': 'application/json' } });
           const ct = response.headers.get('content-type') || '';

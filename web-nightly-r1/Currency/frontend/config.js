@@ -19,7 +19,7 @@ const isProduction = import.meta?.env?.MODE === 'production' ||
 
 // API Configuration
 const API_CONFIG = {
-    BASE_URL: import.meta?.env?.VITE_API_BASE_URL || '/api',
+    BASE_URL: 'https://kconvert-backend.zeabur.app',
     REQUEST_TIMEOUT: parseInt(import.meta?.env?.VITE_REQUEST_TIMEOUT) || 10000,
     RETRY_ATTEMPTS: parseInt(import.meta?.env?.VITE_RETRY_ATTEMPTS) || 3,
     CACHE_DURATION: parseInt(import.meta?.env?.VITE_CACHE_DURATION) || 300000
@@ -34,7 +34,7 @@ const CSP_CONFIG = {
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
         scriptSrcElem: "'self' 'unsafe-inline'",
-        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''} https:`,
+        connectSrc: `'self' https://kconvert-backend.zeabur.app https:`,
         objectSrc: "'none'",
         baseUri: "'self'"
     },
