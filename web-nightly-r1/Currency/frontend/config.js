@@ -43,7 +43,10 @@ const CSP_CONFIG = {
         styleSrc: "'self' 'unsafe-inline'",
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
-        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''}`
+        scriptSrcElem: "'self' 'unsafe-inline'",
+        connectSrc: `'self' ${import.meta?.env?.VITE_API_BASE_URL || ''} https:`,
+        objectSrc: "'none'",
+        baseUri: "'self'"
     },
     development: {
         defaultSrc: "'self'",
