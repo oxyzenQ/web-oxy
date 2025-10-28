@@ -19,20 +19,10 @@ const isProduction = import.meta?.env?.MODE === 'production' ||
 
 // API Configuration
 const API_CONFIG = {
-    // Use environment variable or fallback to relative path for production
-    BASE_URL: import.meta?.env?.VITE_API_BASE_URL || 
-             (isProduction ? '/api' : 'http://localhost:8000'),
-    
-    // Timeout and retry settings - use env vars if available, otherwise defaults
-    REQUEST_TIMEOUT: parseInt(import.meta?.env?.REQUEST_TIMEOUT) || 10000,
-    RETRY_ATTEMPTS: parseInt(import.meta?.env?.RETRY_ATTEMPTS) || 3,
-    
-    // Cache durations - use env vars if available, otherwise defaults
-    CACHE_DURATION: {
-        CURRENCIES: 24 * 60 * 60 * 1000, // 24 hours
-        EXCHANGE_RATES: parseInt(import.meta?.env?.CACHE_DURATION) || 5 * 60 * 1000,   // 5 minutes
-        JWT_TOKEN: 9 * 60 * 1000         // 9 minutes (token expires in 10)
-    }
+    BASE_URL: 'https://kconvert-backend.zeabur.app',
+    REQUEST_TIMEOUT: parseInt(import.meta?.env?.VITE_REQUEST_TIMEOUT) || 10000,
+    RETRY_ATTEMPTS: parseInt(import.meta?.env?.VITE_RETRY_ATTEMPTS) || 3,
+    CACHE_DURATION: parseInt(import.meta?.env?.VITE_CACHE_DURATION) || 300000
 };
 
 // CSP Configuration
@@ -43,7 +33,10 @@ const CSP_CONFIG = {
         styleSrc: "'self' 'unsafe-inline'",
         imgSrc: "'self' data: https://flagcdn.com",
         scriptSrc: "'self' 'unsafe-inline'",
-        connectSrc: "'self'"
+        scriptSrcElem: "'self' 'unsafe-inline'",
+        connectSrc: `'self' https://kconvert-backend.zeabur.app https:`,
+        objectSrc: "'none'",
+        baseUri: "'self'"
     },
     development: {
         defaultSrc: "'self'",
@@ -59,7 +52,10 @@ const CSP_CONFIG = {
 const FEATURES = {
     RATE_LIMITING_UI: true,
     ERROR_REPORTING: isProduction,
-    DEBUG_LOGGING: isDevelopment,
+    // Allow overriding debug via env: ENABLE_DEBUG=true/false
+    DEBUG_LOGGING: (import.meta?.env?.ENABLE_DEBUG === 'true') ? true
+                   : (import.meta?.env?.ENABLE_DEBUG === 'false') ? false
+                   : isDevelopment,
     OFFLINE_MODE: true,
     PERFORMANCE_MONITORING: isDevelopment,
     ACCESSIBILITY: true,
@@ -75,7 +71,10 @@ export const CONFIG = {
     REQUEST_TIMEOUT: API_CONFIG.REQUEST_TIMEOUT,
     RETRY_ATTEMPTS: API_CONFIG.RETRY_ATTEMPTS,
     CURRENCY_UPDATE_INTERVAL: 60000,
-    DEBUG_MODE: isDevelopment,
+    // DEBUG_MODE is aligned with DEBUG_LOGGING flag
+    DEBUG_MODE: (import.meta?.env?.VITE_ENABLE_DEBUG === 'true') ? true
+               : (import.meta?.env?.VITE_ENABLE_DEBUG === 'false') ? false
+               : isDevelopment,
     IS_PRODUCTION: isProduction,
     CACHE_DURATION: API_CONFIG.CACHE_DURATION,
     FEATURES: FEATURES

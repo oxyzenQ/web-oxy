@@ -20,7 +20,7 @@ load_dotenv()
 from main_optimized import app
 
 # Export app for ASGI servers (Zeabur, Gunicorn, etc.)
-application = app
+# app is already imported from main_optimized
 
 if __name__ == "__main__":
     import uvicorn

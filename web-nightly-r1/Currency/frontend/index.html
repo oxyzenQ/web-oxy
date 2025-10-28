@@ -6,7 +6,7 @@
     <!-- CSP will be set dynamically by JavaScript based on environment -->
     <!-- Fonts and icons are loaded via JavaScript modules for CSP compliance -->
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/kconvert-logo-orig.png">
+    <link rel="icon" href="assets/kconvert-logo-orig.webp" type="image/webp">
     <title>A simple & fast currency converter</title>
 </head>
 
@@ -15,9 +15,10 @@
         <!-- Animated Logo Header -->
         <div class="brand">
             <div class="brand-ring ring-outer"></div>
+            <div class="brand-ring ring-gold"></div>
             <div class="brand-ring ring-inner"></div>
             <div class="brand-logo">
-                <img src="assets/kconvert-logo-orig.png" alt="Kconvert logo" />
+                <img src="assets/kconvert-logo-orig.webp" alt="Kconvert logo" />
             </div>
         </div>
         <h2 class="app-title">Kconvert App</h2>
@@ -27,7 +28,7 @@
         </div>
         <form id="converter-form">
             <div class="amount">
-                <input type="text" id="amount-input" 
+                <input type="text" id="amount-input" class="form1"
                 aria-label="Amount to convert" placeholder="Enter amount" autocomplete="off">
             </div>
 
@@ -36,7 +37,7 @@
                     <p>From</p>
                     <div class="search-input-container" data-type="from">
                         <img id="from-flag" src="https://flagcdn.com/48x36/us.png" alt="From currency flag" class="flag-indicator">
-                        <input type="text" class="currency-search from-search" 
+                        <input type="text" class="currency-search from-search form2" 
                                placeholder="USD - United States Dollar" 
                                aria-label="Search from currency"
                                data-currency="USD"
@@ -53,7 +54,7 @@
                     <p>To</p>
                     <div class="search-input-container" data-type="to">
                         <img id="to-flag" src="https://flagcdn.com/48x36/sg.png" alt="To currency flag" class="flag-indicator">
-                        <input type="text" class="currency-search to-search" 
+                        <input type="text" class="currency-search to-search form3" 
                                placeholder="SGD - Singapore Dollar" 
                                aria-label="Search to currency"
                                data-currency="SGD"
@@ -64,8 +65,10 @@
                     </div>
                 </div>
                 <div class="result" aria-live="polite">Ready to convert</div>
-                <button type="submit" id="convert-button">Convert</button>
-                <button type="reset" id="reset-button">Reset</button> <!-- Keep inside container -->
+                <!-- Inline help icon (opens floating modal with instructions) -->
+                <span id="help-icon" class="info-help-icon" aria-label="Show usage help" tabindex="0">?</span>
+                <button type="submit" id="convert-button"><i class="fas fa-arrow-right"></i><span>Convert</span></button>
+                <button type="reset" id="reset-button"><i class="fas fa-rotate-left"></i><span>Reset</span></button> <!-- Keep inside container -->
             </div>
         </form>
     </div>
@@ -119,7 +122,7 @@
                 <div class="info-item">
                     <i class="fas fa-code-branch"></i>
                     <span class="info-label">Type Apps:</span>
-                    <span class="info-value">Open Source Project</span>
+                    <span class="info-value">Creativity Project</span>
                 </div>
                 <div class="info-item">
                     <i class="fas fa-wrench"></i>
@@ -152,7 +155,7 @@
     <!-- Glass Notify Modal -->
     <dialog id="notify-modal" class="glass-modal">
         <div class="modal-content">
-            <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="modal-icon" aria-hidden="true"><i class="fa-solid fa-circle-question"></i></div>
             <div class="modal-text">
                 <h3 id="modal-title">Warning</h3>
                 <p id="modal-message">Something needs your attention.</p>
@@ -164,11 +167,11 @@
     </dialog>
 
     <footer>
-        <p>
+        <!--<p>
             <a class="footer-gh" href="https://github.com/oxyzenq" aria-label="GitHub profile" rel="noopener" target="_blank">
                 <i class="fa-brands fa-github"></i>
             </a>
-        </p>
+        </p> -->
         <p>&copy; 2025 Team 6. Licensed under <a class="mit" href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a>.</p>
     </footer>
 
@@ -178,16 +181,37 @@
       const modal = document.getElementById('notify-modal');
       const closeBtn = document.getElementById('modal-close');
       if (modal && closeBtn) {
-        closeBtn.addEventListener('click', () => modal.close());
+        closeBtn.addEventListener('click', () => window.KconvertModal.close());
       }
-      // Expose a simple API for main.js to open with custom message
+      // Enhanced modal API with smooth transitions
       window.KconvertModal = {
-        open({title = 'Notice', message = ''} = {}) {
+        open({title = 'Notice', message = '', icon = 'question'} = {}) {
           document.getElementById('modal-title').textContent = title;
           document.getElementById('modal-message').textContent = message;
+          const iconEl = document.querySelector('#notify-modal .modal-icon i');
+          if (iconEl) {
+            if (icon === 'check') {
+              iconEl.className = 'fa-solid fa-circle-check';
+            } else {
+              iconEl.className = 'fa-solid fa-circle-question';
+            }
+          }
           modal.showModal();
+          // Disable background scrolling
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
         },
-        close(){ modal.close(); }
+        close(){ 
+          // Add closing animation
+          modal.style.animation = 'modalSlideOut 0.3s ease-out forwards';
+          setTimeout(() => {
+            modal.close();
+            modal.style.animation = '';
+            // Restore background scrolling
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+          }, 300);
+        }
       }
 
       // Currency Search Modal Functionality
@@ -246,7 +270,19 @@
       // Load currencies from backend API
       async function loadCurrencies() {
         try {
-          const response = await fetch('http://localhost:8000/api/currencies');
+          // Hardcoded backend URL
+          const currenciesUrl = 'https://kconvert-backend.zeabur.app/api/currencies';
+
+          const response = await fetch(currenciesUrl, { headers: { 'Accept': 'application/json' } });
+          const ct = response.headers.get('content-type') || '';
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status} ${response.statusText}: ${text.slice(0, 200)}...`);
+          }
+          if (!ct.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Expected JSON but received content-type '${ct}'. Body starts with: ${text.slice(0, 200)}...`);
+          }
           const data = await response.json();
           availableCurrencies = data.currencies.map(currency => ({
             code: currency.code,

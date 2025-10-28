@@ -6,7 +6,71 @@
  * All rights reserved.
  */
 
-import Chart from 'chart.js/auto';
+import {
+    Chart,
+    LineController,
+    LineElement,
+    PointElement,
+    LinearScale,
+    CategoryScale,
+    Tooltip,
+    Filler,
+    Legend
+} from 'chart.js';
+
+// Register only what we need for a lighter bundle
+Chart.register(
+    LineController,
+    LineElement,
+    PointElement,
+    LinearScale,
+    CategoryScale,
+    Tooltip,
+    Filler,
+    Legend
+);
+
+// Golden vertical crosshair plugin for elegant precision reading
+const crosshairLinePlugin = {
+    id: 'crosshairLine',
+    afterDatasetsDraw(chart, args, opts) {
+        const tooltip = chart.tooltip;
+        if (!tooltip || !tooltip.getActiveElements || !tooltip.getActiveElements().length) return;
+        const x = tooltip.caretX;
+        const { top, bottom } = chart.chartArea;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.strokeStyle = (opts && opts.color) || '#f1c40f';
+        ctx.lineWidth = (opts && opts.lineWidth) || 1;
+        ctx.setLineDash((opts && opts.dash) || [4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+
+        // Draw a small golden live dot at the active point for clarity
+        const active = tooltip.getActiveElements()[0];
+        if (active) {
+            const meta = chart.getDatasetMeta(active.datasetIndex);
+            const el = meta && meta.data && meta.data[active.index];
+            if (el) {
+                const px = el.x;
+                const py = el.y;
+                ctx.fillStyle = '#f1c40f';
+                ctx.strokeStyle = '#ffffff';
+                ctx.setLineDash([]);
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+};
+
+Chart.register(crosshairLinePlugin);
 
 // Chart configuration and data management
 class ExchangeRateChart {
@@ -43,17 +107,19 @@ class ExchangeRateChart {
                 datasets: [{
                     label: this.currentPair.from && this.currentPair.to ? `${this.currentPair.from} to ${this.currentPair.to}` : 'Exchange Rate',
                     data: data.data,
-                    borderColor: '#4285f4',
-                    backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                    borderWidth: 2,
+                    borderColor: '#f1c40f',
+                    backgroundColor: 'rgba(66, 133, 244, 0.18)',
+                    borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#4285f4',
+                    // More precise curve without overshoot
+                    tension: 0.25,
+                    cubicInterpolationMode: 'monotone',
+                    pointBackgroundColor: '#f1c40f',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointRadius: 4,
                     pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#4285f4',
+                    pointHoverBackgroundColor: '#f1c40f',
                     pointHoverBorderColor: '#ffffff',
                     pointHoverBorderWidth: 3
                 }]
@@ -61,6 +127,7 @@ class ExchangeRateChart {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
                 interaction: {
                     intersect: false,
                     mode: 'index'
@@ -75,7 +142,7 @@ class ExchangeRateChart {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: '#4285f4',
+                        borderColor: '#f1c40f',
                         borderWidth: 1,
                         cornerRadius: 8,
                         displayColors: false,
@@ -87,6 +154,11 @@ class ExchangeRateChart {
                                 return `Rate: ${context.parsed.y.toFixed(6)} ${this.currentPair.to}`;
                             }.bind(this)
                         }
+                    },
+                    crosshairLine: {
+                        color: '#f1c40f',
+                        lineWidth: 1,
+                        dash: [4, 4]
                     }
                 },
                 layout: {
@@ -95,6 +167,18 @@ class ExchangeRateChart {
                         right: 5,
                         bottom: 10,
                         left: 5
+                    }
+                },
+                elements: {
+                    line: {
+                        borderCapStyle: 'round',
+                        borderJoinStyle: 'round'
+                    },
+                    point: {
+                        pointStyle: 'circle',
+                        radius: 4,
+                        hitRadius: 6,
+                        hoverRadius: 6
                     }
                 },
                 scales: {
@@ -112,7 +196,7 @@ class ExchangeRateChart {
                             }
                         },
                         grid: {
-                            color: 'rgba(148, 163, 184, 0.1)',
+                            color: 'rgba(148, 163, 184, 0.08)',
                             drawBorder: false,
                             // hidden by default when no data
                             display: false
@@ -141,7 +225,7 @@ class ExchangeRateChart {
                             }
                         },
                         grid: {
-                            color: 'rgba(148, 163, 184, 0.1)',
+                            color: 'rgba(148, 163, 184, 0.08)',
                             drawBorder: false,
                             // hidden by default when no data
                             display: false
@@ -161,8 +245,26 @@ class ExchangeRateChart {
                     }
                 },
                 animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
+                    duration: 700,
+                    easing: 'easeOutCubic'
+                },
+                // Per-property animations for a gentle spring-like effect
+                animations: {
+                    y: {
+                        duration: 800,
+                        easing: 'easeOutBack'
+                    },
+                    x: {
+                        duration: 600,
+                        easing: 'easeOutCubic'
+                    }
+                },
+                // Slight emphasis when dataset becomes active (hover/tooltip)
+                transitions: {
+                    active: {
+                        animation: { duration: 200 },
+                        borderWidth: 4
+                    }
                 }
             }
         });
@@ -210,14 +312,21 @@ class ExchangeRateChart {
         // Tooltip visibility
         this.chart.options.plugins.tooltip.enabled = hasData;
         
-        // Update current rate display with dynamic precision
+        // Compose indicator line: 1 FROM -> TO BASE_RATE Live chart LIVE_RATE
+        const fromDisplay = document.querySelector('.chart-from');
+        const toDisplay = document.querySelector('.chart-to');
         const currentRateElement = document.querySelector('.chart-current-rate');
-        if (currentRateElement) {
-            // Use higher precision for very small numbers, standard for larger ones
-            const last = data.data[data.data.length - 1];
-            const precision = last < 0.001 ? 8 : last < 1 ? 6 : 4;
-            currentRateElement.textContent = data.data.length > 0 ? last.toFixed(precision) : '0.000000';
+        if (fromDisplay && toDisplay) {
+            const last = (data.data && data.data.length > 0) ? data.data[data.data.length - 1] : null;
+            const baseText = (typeof this.baseRate === 'number' && !isNaN(this.baseRate)) ? this.baseRate.toFixed(6) : '';
+            const liveText = (last !== null) ? ` Live chart ${last.toFixed(6)}` : '';
+            // Ensure left shows '1 FROM' (arrow icon is provided by HTML)
+            fromDisplay.textContent = `1 ${this.currentPair.from}`;
+            // Right shows 'TO BASE_RATE Live chart LIVE_RATE'
+            toDisplay.textContent = `${this.currentPair.to} ${baseText}${liveText}`.trim();
         }
+        // Clear separate current-rate element to avoid duplicate numbers
+        if (currentRateElement) currentRateElement.textContent = '';
         
         this.chart.update('active');
     }
@@ -230,12 +339,17 @@ class ExchangeRateChart {
         const toDisplay = document.querySelector('.chart-to');
         
         if (fromDisplay) {
-            // Use stored input amount if available, otherwise default to 1
-            const displayAmount = this.inputAmount || 1;
+            // Always show base indicator as 1 for precision; arrow icon comes from HTML
+            const displayAmount = 1;
             fromDisplay.textContent = `${displayAmount} ${fromCurrency}`;
         }
         if (toDisplay) {
-            toDisplay.textContent = toCurrency;
+            // If we have a base rate from last conversion, include it; else show currency only
+            if (typeof this.baseRate === 'number' && !isNaN(this.baseRate)) {
+                toDisplay.textContent = `${toCurrency} ${this.baseRate.toFixed(6)}`;
+            } else {
+                toDisplay.textContent = toCurrency;
+            }
         }
         
         // Update chart
@@ -322,6 +436,8 @@ class ExchangeRateChart {
     addConversionData(fromCurrency, toCurrency, exchangeRate, amount, convertedAmount) {
         // Update current pair
         this.currentPair = { from: fromCurrency, to: toCurrency };
+        // Remember base rate for 1 unit display
+        this.baseRate = exchangeRate;
         
         // Store the input amount for display
         this.inputAmount = amount;
@@ -336,8 +452,9 @@ class ExchangeRateChart {
         const fromDisplay = document.querySelector('.chart-from');
         const toDisplay = document.querySelector('.chart-to');
         
-        if (fromDisplay) fromDisplay.textContent = `${amount} ${fromCurrency}`;
-        if (toDisplay) toDisplay.textContent = `${toCurrency} ${convertedAmount.toFixed(4)}`;
+        // Always show indicator as: 1 FROM (arrow icon in HTML) TO BASE_RATE (live rate appended by updateChart)
+        if (fromDisplay) fromDisplay.textContent = `1 ${fromCurrency}`;
+        if (toDisplay) toDisplay.textContent = `${toCurrency} ${(exchangeRate).toFixed(6)}`;
         
         this.updateChart();
         
@@ -346,6 +463,40 @@ class ExchangeRateChart {
         }
     }
     
+    // Lightweight real-time simulation for demo/debug
+    startRealTimeSimulation() {
+        if (this.simulationInterval) return; // already running
+        const tick = () => {
+            try {
+                const dataset = this.chartData[this.currentRange];
+                if (!dataset) return;
+                const last = dataset.data.length > 0 ? dataset.data[dataset.data.length - 1] : 1;
+                const change = (Math.random() - 0.5) * 0.004; // ±0.4%
+                const next = Math.max(0, last * (1 + change));
+                const now = new Date();
+                const label = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                dataset.labels.push(label);
+                dataset.data.push(next);
+                // Keep recent window reasonable
+                const maxPoints = 60;
+                if (dataset.labels.length > maxPoints) dataset.labels.shift();
+                if (dataset.data.length > maxPoints) dataset.data.shift();
+                this.updateChart();
+            } catch (e) {
+                // Fail-safe: stop simulation if anything goes wrong
+                this.stopRealTimeSimulation();
+            }
+        };
+        this.simulationInterval = setInterval(tick, 3000);
+    }
+
+    stopRealTimeSimulation() {
+        if (this.simulationInterval) {
+            clearInterval(this.simulationInterval);
+            this.simulationInterval = null;
+        }
+    }
+
     // Clear all chart data
     clearChartData() {
         Object.keys(this.chartData).forEach(range => {

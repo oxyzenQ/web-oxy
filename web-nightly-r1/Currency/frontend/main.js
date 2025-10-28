@@ -16,8 +16,51 @@ import '@fortawesome/fontawesome-free/css/all.css';
 // Import secure configuration
 import { CONFIG, setDynamicCSP } from './config.js';
 
-// Import chart functionality
-import { initializeExchangeChart, updateChartCurrencyPair, addChartConversionData } from './chart.js';
+// Helper function to build API URLs correctly
+function buildApiUrl(endpoint) {
+    const apiBase = CONFIG.API_BASE_URL;
+    
+    // Debug logging
+    if (CONFIG.DEBUG_MODE) {
+        console.log('🔧 buildApiUrl debug:', { endpoint, apiBase, CONFIG });
+    }
+    
+    if (!apiBase || apiBase === '/api') {
+        return endpoint; // Use relative path for same-origin
+    }
+    
+    // Remove leading slash from endpoint if present
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    
+    // If apiBase already contains /api, use it as-is, otherwise append /api
+    const baseUrl = apiBase.includes('/api') ? apiBase : `${apiBase}/api`;
+    
+    try {
+        const fullUrl = new URL(cleanEndpoint, `${baseUrl}/`).toString();
+        if (CONFIG.DEBUG_MODE) {
+            console.log('🌐 Built API URL:', fullUrl);
+        }
+        return fullUrl;
+    } catch (e) {
+        const base = String(baseUrl).replace(/\/$/, '');
+        const fallbackUrl = `${base}/${cleanEndpoint}`;
+        if (CONFIG.DEBUG_MODE) {
+            console.log('🌐 Fallback API URL:', fallbackUrl);
+        }
+        return fallbackUrl;
+    }
+}
+
+// Lazy-load chart functionality to reduce initial bundle size
+let ChartAPI = null;
+async function ensureChartLoaded() {
+    if (ChartAPI) return ChartAPI;
+    ChartAPI = await import('./chart.js');
+    if (ChartAPI?.initializeExchangeChart) {
+        ChartAPI.initializeExchangeChart();
+    }
+    return ChartAPI;
+}
 
 // Set CSP immediately
 setDynamicCSP();
@@ -60,7 +103,7 @@ class TokenManager {
     }
 
     async fetchNewToken() {
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/auth`, {
+        const response = await fetchWithRetry(buildApiUrl('auth'), {
             method: 'GET',
             cache: 'no-store'
         });
@@ -488,8 +531,8 @@ async function fetchSupportedCurrencies() {
         
         // Parallel fetch currencies and regions for better performance
         const endpoints = [
-            { name: 'currencies', url: '/api/currencies' },
-            { name: 'regions', url: '/api/regions' }
+            { name: 'currencies', url: buildApiUrl('currencies') },
+            { name: 'regions', url: buildApiUrl('regions') }
         ];
         
         const { successful } = await fetchMultipleEndpoints(endpoints);
@@ -600,8 +643,10 @@ function selectCurrency(currency, isFromInput) {
     console.log(`✅ Currency updated: ${isFromInput ? 'FROM' : 'TO'} = ${currency.code}`);
     console.log(`📊 Current pair: ${currentFromCurrency} → ${currentToCurrency}`);
     
-    // Update chart currency pair display immediately
-    updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+    // Update chart currency pair display immediately (lazy-load if needed)
+    ensureChartLoaded().then(api => {
+        api.updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+    });
     
     // Auto-fetch exchange rate
     getExchangeRate();
@@ -773,8 +818,10 @@ function handleExchangeRateResponse(result, amount, fromCurrency, toCurrency) {
     // Calculate converted amount
     const convertedAmount = validation.value * exchangeRate;
     
-    // Add conversion data to chart
-    addChartConversionData(fromCurrency, toCurrency, exchangeRate, validation.value, convertedAmount);
+    // Add conversion data to chart (lazy-load if needed)
+    ensureChartLoaded().then(api => {
+        api.addChartConversionData(fromCurrency, toCurrency, exchangeRate, validation.value, convertedAmount);
+    });
     
     // Show success animation
     showSuccessState();
@@ -798,7 +845,7 @@ async function handleApiError(response, fromCurrency, toCurrency, amountVal) {
                 tokenManager.clearToken();
                 const newToken = await tokenManager.getValidToken();
                 
-                const retryResponse = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}?targets=${toCurrency}&token=${newToken}`, {
+                const retryResponse = await fetchWithRetry(buildApiUrl(`rates/${fromCurrency}?targets=${toCurrency}&token=${newToken}`), {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${newToken}` }
                 });
@@ -859,7 +906,7 @@ async function fetchBatchExchangeRates(currencies) {
     
     try {
         const JWT_TOKEN = await tokenManager.getValidToken();
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/batch?token=${JWT_TOKEN}`, {
+        const response = await fetchWithRetry(buildApiUrl(`rates/batch?token=${JWT_TOKEN}`), {
             method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${JWT_TOKEN}`,
@@ -947,7 +994,7 @@ async function getExchangeRateOptimized(targetCurrencies = null) {
         const targetParam = `?targets=${targets.join(',')}`;
         const tokenParam = `${targetParam}&token=${JWT_TOKEN}`;
         
-        const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/api/rates/${fromCurrency}${tokenParam}`, {
+        const response = await fetchWithRetry(buildApiUrl(`rates/${fromCurrency}${tokenParam}`), {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${JWT_TOKEN}` }
         });
@@ -1143,8 +1190,15 @@ function announceToScreenReader(message) {
     }, 1000);
 }
 
-// Form reset function
+// Enhanced reset function with app refresh
 function resetForm() {
+    // Clear all caches first
+    cacheManager.clear();
+    tokenManager.clearToken();
+    
+    // Reset performance metrics
+    performanceMonitor.reset();
+    
     if (fromSearch && toSearch && amount) {
         fromSearch.value = 'USD - US Dollar';
         fromSearch.dataset.currency = 'USD';
@@ -1158,30 +1212,55 @@ function resetForm() {
         updateFlagImage(document.getElementById('to-flag'), 'sg');
         
         if (exRateTxt) {
-            exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+            exRateTxt.innerText = "Ready to convert";
             exRateTxt.classList.remove('loading', 'error', 'success');
         }
         
-        // Clear chart data and reset currency pair display
-        if (typeof addChartConversionData !== 'undefined') {
-            // Clear chart data
-            const chartFromDisplay = document.querySelector('.chart-from');
-            const chartToDisplay = document.querySelector('.chart-to');
-            const chartCurrentRate = document.querySelector('.chart-current-rate');
-            
-            if (chartFromDisplay) chartFromDisplay.textContent = '--';
-            if (chartToDisplay) chartToDisplay.textContent = '--';
-            if (chartCurrentRate) chartCurrentRate.textContent = '0.000000';
-            
-            // Clear chart data if chart exists
-            if (window.exchangeChart) {
-                window.exchangeChart.clearChartData();
-            }
+        // Clear chart data and reset currency pair display regardless of lazy load
+        const chartFromDisplay = document.querySelector('.chart-from');
+        const chartToDisplay = document.querySelector('.chart-to');
+        const chartCurrentRate = document.querySelector('.chart-current-rate');
+
+        if (chartFromDisplay) chartFromDisplay.textContent = '--';
+        if (chartToDisplay) chartToDisplay.textContent = '--';
+        if (chartCurrentRate) chartCurrentRate.textContent = '';
+
+        // Clear chart data if chart exists and reset pair to defaults
+        if (window.exchangeChart) {
+            window.exchangeChart.clearChartData();
+            // Reset base rate and current pair
+            window.exchangeChart.baseRate = undefined;
+            window.exchangeChart.updateCurrencyPair('USD', 'SGD');
+        } else {
+            // If chart not yet loaded, set default indicator now
+            if (chartFromDisplay) chartFromDisplay.textContent = '1 USD';
+            if (chartToDisplay) chartToDisplay.textContent = 'SGD';
         }
         
         if (fromSuggestions) fromSuggestions.style.display = 'none';
         if (toSuggestions) toSuggestions.style.display = 'none';
+        
+        // Reload currencies and refresh app state
+        setTimeout(() => {
+            // Refresh currencies from backend
+            if (typeof fetchSupportedCurrencies === 'function') {
+                fetchSupportedCurrencies();
+            }
+            
+            // Show visible notification
+            if (window.KconvertModal) {
+                window.KconvertModal.open({
+                    title: 'Reset Complete',
+                    message: 'Application has been reset to default settings with fresh data from server.',
+                    icon: 'check'
+                });
+            }
+            
+            announceToScreenReader('Application refreshed with default settings');
+        }, 100);
     }
+    
+    console.log('🔄 App reset: Cleared caches, reset form, refreshed data');
 }
 
 // ===== PERFORMANCE MONITORING DASHBOARD =====
@@ -1300,8 +1379,19 @@ async function initApp() {
         // Task 3: Initialize UI components
         Promise.resolve().then(() => {
             initializeSearchInputs();
-            initializeExchangeChart();
-            updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+            // Auto-load chart when chart container becomes visible
+            const chartContainer = document.querySelector('.chart-container');
+            if (chartContainer) {
+                const observer = new IntersectionObserver(async (entries, obs) => {
+                    const entry = entries[0];
+                    if (entry && entry.isIntersecting) {
+                        const api = await ensureChartLoaded();
+                        api.updateChartCurrencyPair(currentFromCurrency, currentToCurrency);
+                        obs.disconnect();
+                    }
+                }, { root: null, rootMargin: '120px', threshold: 0.01 });
+                observer.observe(chartContainer);
+            }
             if (CONFIG.DEBUG_MODE) {
                 console.log('✅ Search UI and Chart initialized');
             }
@@ -1351,8 +1441,28 @@ async function initApp() {
     initializePerformanceDashboard();
     initializeOfflineMode();
 
-    // Initial display message
-    exRateTxt.innerText = "Enter amount and click 'Get Exchange Rate' to convert";
+    // Initial display message is hidden; use the Help icon to show usage modal instead
+    if (exRateTxt) exRateTxt.innerText = "";
+
+    // Wire the Help icon to open the floating modal with the same instruction copy
+    const helpIcon = document.getElementById('help-icon');
+    const openHelp = () => {
+        const helpMessage = "Enter amount and click 'Convert' (or press Enter). Click 'Reset' to start over.";
+        if (window.KconvertModal && typeof window.KconvertModal.open === 'function') {
+            window.KconvertModal.open({ title: 'How to use', message: helpMessage });
+        } else {
+            alert(helpMessage);
+        }
+    };
+    if (helpIcon) {
+        helpIcon.addEventListener('click', openHelp);
+        helpIcon.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openHelp();
+            }
+        });
+    }
     
     if (CONFIG.DEBUG_MODE) {
         console.log('🚀 Enhanced Currency Converter initialized successfully!');
